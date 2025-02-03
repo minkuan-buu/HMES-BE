@@ -1,3 +1,4 @@
+using HMES.Business.Services.UserServices;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers
@@ -11,11 +12,15 @@ namespace HMES.API.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
+        private readonly IUserServices _userServices;
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IConfiguration configuration, IUserServices userServices)
         {
             _logger = logger;
+            _configuration = configuration;
+            _userServices = userServices;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
@@ -28,6 +33,14 @@ namespace HMES.API.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+        
+        [HttpGet("Test")]
+        public async Task<IActionResult> Test()
+        {
+            //var connectionString = _configuration.GetValue<string>("Database:ConnectionString");
+            var result = await _userServices.GetUser();
+            return Ok(result);
         }
     }
 }

@@ -1,8 +1,10 @@
+using HMES.Business.Services.UserServices;
 using HMES.Data.Entities;
+using HMES.Data.Repositories.UserRepositories;
 using Microsoft.EntityFrameworkCore;
+DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -10,8 +12,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Lấy connection string từ cấu hình
+var rawConnectionString = builder.Configuration.GetSection("Database:ConnectionString").Value;
+
+// Thay thế biến môi trường
+var connectionString = rawConnectionString
+    .Replace("${DB_SERVER}", Environment.GetEnvironmentVariable("DB_SERVER") ?? "")
+    .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
+    .Replace("${DB_PASSWORD}", Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "")
+    .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "");
+
 builder.Services.AddDbContext<HmesContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
+
+//========================================== REPOSITORY ===========================================
+builder.Services.AddScoped<IUserRepositories, UserRepositories>();
+
+//=========================================== SERVICE =============================================
+builder.Services.AddScoped<IUserServices, UserServices>();
 
 var app = builder.Build();
 
