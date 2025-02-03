@@ -12,10 +12,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Lấy connection string từ cấu hình
 var rawConnectionString = builder.Configuration.GetSection("Database:ConnectionString").Value;
 
-// Thay thế biến môi trường
 var connectionString = rawConnectionString
     .Replace("${DB_SERVER}", Environment.GetEnvironmentVariable("DB_SERVER") ?? "")
     .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
