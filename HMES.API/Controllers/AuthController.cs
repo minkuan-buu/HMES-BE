@@ -17,6 +17,7 @@ namespace HMES.API.Controllers
         {
             _userServices = userServices;
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginReqModel User)
         {
@@ -24,19 +25,12 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        // [HttpPost("register")]
-        // public async Task<IActionResult> Register([FromBody] UserRegisterReqModel newUser)
-        // {
-        //     try
-        //     {
-        //         var result = await _userServices.RegisterUser(newUser);
-        //         return Ok(result);
-        //     }
-        //     catch (CustomException ex)
-        //     {
-        //         return BadRequest(new { message = ex.Message });
-        //     }
-        // }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterReqModel newUser)
+        {
+            var result = await _userServices.Register(newUser);
+            return Ok(result);
+        }
 
         // [HttpPost("reset-password")]
         // [Authorize(AuthenticationSchemes = "MeowWoofAuthentication")]

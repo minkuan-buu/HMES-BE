@@ -5,6 +5,8 @@ using HMES.Data.Repositories.UserRepositories;
 using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.RequestModel;
 using AutoMapper;
+using MeowWoofSocial.Data.DTO.ResponseModel;
+using System.Net;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
@@ -24,7 +26,7 @@ public class UserServices : IUserServices
         return list.FirstOrDefault();
     }
 
-    public async Task<UserLoginResModel> Login(UserLoginReqModel UserReqModel)
+    public async Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel)
     {
         var user = await _userRepositories.GetUserByEmail(UserReqModel.Email);
         if(user == null)
@@ -37,6 +39,32 @@ public class UserServices : IUserServices
             throw new CustomException("Password is incorrect");
         }
         UserLoginResModel Result = _mapper.Map<UserLoginResModel>(user);
-        return Result;
+        return new ResultModel<DataResultModel<UserLoginResModel>>(){
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new DataResultModel<UserLoginResModel>(){
+                Data = Result
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> Register(UserRegisterReqModel UserReqModel)
+    {
+        var User = await _userRepositories.GetUserByEmail(UserReqModel.Email);
+        if(User != null) {
+            throw new CustomException("This email is existed!");
+        }
+        CreateHashPasswordModel PasswordSet = Authentication.CreateHashPassword(UserReqModel.Password);
+        User NewUser = _mapper.Map<User>(UserReqModel);
+        NewUser.Password = PasswordSet.HashedPassword;
+        NewUser.Salt = PasswordSet.Salt;
+        await _userRepositories.Insert(NewUser);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Account is created!"
+            }
+        };
     }
 }

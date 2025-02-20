@@ -5,6 +5,7 @@ using HMES.Data.Entities;
 using HMES.Data.Repositories.UserRepositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,43 @@ var connectionString = rawConnectionString
 
 builder.Services.AddDbContext<HmesContext>(options =>
     options.UseSqlServer(connectionString));
+
+//========================================== SWAGGER ==============================================
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "HMES.API",
+        Description = "Hydroponic Monitoring Equipment System"
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. " +
+                      "\n\nEnter your token in the text input below. " +
+                      "\n\nExample: '12345abcde'",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 //======================================= AUTHENTICATION ==========================================
 builder.Services.AddAuthentication("HMESAuthentication")
