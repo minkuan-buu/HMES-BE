@@ -12,12 +12,21 @@ namespace HMES.Data.Repositories.GenericRepositories
     public class GenericRepositories<T> : IGenericRepositories<T> where T : class
     {
         private readonly HmesContext context;
-        private readonly DbSet<T> dbSet;
+        protected DbSet<T> dbSet;
 
         public GenericRepositories(HmesContext context)
         {
             this.context = context;
             dbSet = context.Set<T>();
+        }
+
+        protected HmesContext Context
+        {
+            get
+            {
+                if (context == null!) return new HmesContext();
+                return context;
+            }
         }
 
         private IQueryable<T> GetQueryable(

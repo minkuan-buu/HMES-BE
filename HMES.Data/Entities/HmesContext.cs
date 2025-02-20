@@ -6,6 +6,10 @@ namespace HMES.Data.Entities;
 
 public partial class HmesContext : DbContext
 {
+    public HmesContext()
+    {
+    }
+
     public HmesContext(DbContextOptions<HmesContext> options)
         : base(options)
     {
@@ -17,7 +21,7 @@ public partial class HmesContext : DbContext
 
     public virtual DbSet<Category> Categories { get; set; }
 
-    public virtual DbSet<CropHydroponicDevice> CropHydroponicDevices { get; set; }
+    public virtual DbSet<Device> Devices { get; set; }
 
     public virtual DbSet<NutritionReport> NutritionReports { get; set; }
 
@@ -27,13 +31,21 @@ public partial class HmesContext : DbContext
 
     public virtual DbSet<OrderDetail> OrderDetails { get; set; }
 
+    public virtual DbSet<Plant> Plants { get; set; }
+
     public virtual DbSet<Product> Products { get; set; }
 
-    public virtual DbSet<RecNutrition> RecNutritions { get; set; }
+    public virtual DbSet<TargetOfPlant> TargetOfPlants { get; set; }
 
-    public virtual DbSet<RecNutritionDetail> RecNutritionDetails { get; set; }
+    public virtual DbSet<TargetValue> TargetValues { get; set; }
 
-    public virtual DbSet<TicketReport> TicketReports { get; set; }
+    public virtual DbSet<Ticket> Tickets { get; set; }
+
+    public virtual DbSet<TicketAttachment> TicketAttachments { get; set; }
+
+    public virtual DbSet<TicketResponse> TicketResponses { get; set; }
+
+    public virtual DbSet<TicketResponseAttachment> TicketResponseAttachments { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
@@ -41,11 +53,15 @@ public partial class HmesContext : DbContext
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=localhost;Database=HMES;user=sa;password=123456;Trusted_Connection=True;TrustServerCertificate=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Cart__3214EC0769B342A3");
+            entity.HasKey(e => e.Id).HasName("PK__Cart__3214EC078466E34A");
 
             entity.ToTable("Cart");
 
@@ -56,12 +72,12 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Carts)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Cart__UserId__571DF1D5");
+                .HasConstraintName("FK__Cart__UserId__619B8048");
         });
 
         modelBuilder.Entity<CartItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__CartItem__3214EC073DFFB87C");
+            entity.HasKey(e => e.Id).HasName("PK__CartItem__3214EC07E0F58175");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -72,17 +88,17 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.CartId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CartItems__CartI__5629CD9C");
+                .HasConstraintName("FK__CartItems__CartI__60A75C0F");
 
             entity.HasOne(d => d.IdNavigation).WithOne(p => p.CartItem)
                 .HasForeignKey<CartItem>(d => d.Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CartItems__Id__5812160E");
+                .HasConstraintName("FK__CartItems__Id__628FA481");
         });
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC0700AAA76B");
+            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC0796F30D11");
 
             entity.ToTable("Category");
 
@@ -96,44 +112,42 @@ public partial class HmesContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Categories)
-                .HasForeignKey(d => d.CreatedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Category__Create__5441852A");
-
             entity.HasOne(d => d.ParentCategory).WithMany(p => p.InverseParentCategory)
                 .HasForeignKey(d => d.ParentCategoryId)
-                .HasConstraintName("FK__Category__Parent__5CD6CB2B");
+                .HasConstraintName("FK__Category__Parent__6754599E");
         });
 
-        modelBuilder.Entity<CropHydroponicDevice>(entity =>
+        modelBuilder.Entity<Device>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__CropHydr__3214EC07EE6F0EB0");
+            entity.HasKey(e => e.Id).HasName("PK__Device__3214EC0753A7F5FC");
 
-            entity.ToTable("CropHydroponicDevice");
+            entity.ToTable("Device");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Attachment)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.Name)
                 .HasMaxLength(500)
                 .IsUnicode(false);
+            entity.Property(e => e.Price).HasColumnType("decimal(8, 0)");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.WarrantyExpiryDate).HasColumnType("datetime");
 
-            entity.HasOne(d => d.User).WithMany(p => p.CropHydroponicDevices)
+            entity.HasOne(d => d.User).WithMany(p => p.Devices)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CropHydro__UserI__5AEE82B9");
+                .HasConstraintName("FK__Device__UserId__656C112C");
         });
 
         modelBuilder.Entity<NutritionReport>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC07D29A254A");
+            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC078AE0F6E2");
 
             entity.ToTable("NutritionReport");
 
@@ -143,33 +157,32 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.Device).WithMany(p => p.NutritionReports)
                 .HasForeignKey(d => d.DeviceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Nutrition__Devic__59063A47");
+                .HasConstraintName("FK__Nutrition__Devic__6383C8BA");
         });
 
         modelBuilder.Entity<NutritionReportDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC07C865E0D8");
+            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC075B657345");
 
             entity.ToTable("NutritionReportDetail");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.Record).HasColumnType("decimal(8, 2)");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.Type)
-                .HasMaxLength(100)
-                .IsUnicode(false);
+            entity.Property(e => e.RecordValue).HasColumnType("decimal(8, 2)");
 
             entity.HasOne(d => d.Nutrition).WithMany(p => p.NutritionReportDetails)
                 .HasForeignKey(d => d.NutritionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Nutrition__Nutri__59FA5E80");
+                .HasConstraintName("FK__Nutrition__Nutri__6477ECF3");
+
+            entity.HasOne(d => d.TargetValue).WithMany(p => p.NutritionReportDetails)
+                .HasForeignKey(d => d.TargetValueId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Nutrition__Targe__5FB337D6");
         });
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Order__3214EC07BDBD9E4F");
+            entity.HasKey(e => e.Id).HasName("PK__Order__3214EC07C23B00C4");
 
             entity.ToTable("Order");
 
@@ -178,18 +191,18 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+            entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 0)");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.User).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Order__UserId__5EBF139D");
+                .HasConstraintName("FK__Order__UserId__693CA210");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__OrderDet__3214EC07BEAA3F7A");
+            entity.HasKey(e => e.Id).HasName("PK__OrderDet__3214EC07AD4A5A77");
 
             entity.ToTable("OrderDetail");
 
@@ -200,22 +213,37 @@ public partial class HmesContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Device).WithMany(p => p.OrderDetails)
+                .HasForeignKey(d => d.DeviceId)
+                .HasConstraintName("FK__OrderDeta__Devic__6E01572D");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Order__5FB337D6");
+                .HasConstraintName("FK__OrderDeta__Order__6A30C649");
 
             entity.HasOne(d => d.Product).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Produ__628FA481");
+                .HasConstraintName("FK__OrderDeta__Produ__6D0D32F4");
+        });
+
+        modelBuilder.Entity<Plant>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Plant__3214EC07679665E3");
+
+            entity.ToTable("Plant");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Product__3214EC07601502C5");
+            entity.HasKey(e => e.Id).HasName("PK__Product__3214EC07BAAC8527");
 
             entity.ToTable("Product");
 
@@ -228,63 +256,52 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Product__Categor__619B8048");
-
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Products)
-                .HasForeignKey(d => d.CreatedBy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Product__Created__5535A963");
+                .HasConstraintName("FK__Product__Categor__6C190EBB");
         });
 
-        modelBuilder.Entity<RecNutrition>(entity =>
+        modelBuilder.Entity<TargetOfPlant>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__RecNutri__3214EC0708CEF2FB");
+            entity.HasKey(e => e.Id).HasName("PK__TargetOf__3214EC07AE521F45");
 
-            entity.ToTable("RecNutrition");
+            entity.ToTable("TargetOfPlant");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
-            entity.Property(e => e.Name)
-                .HasMaxLength(200)
-                .IsUnicode(false);
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.RecNutritions)
-                .HasForeignKey(d => d.CreatedBy)
+            entity.HasOne(d => d.Plant).WithMany(p => p.TargetOfPlants)
+                .HasForeignKey(d => d.PlantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RecNutrit__Creat__52593CB8");
+                .HasConstraintName("FK__TargetOfP__Plant__5DCAEF64");
+
+            entity.HasOne(d => d.TargetValue).WithMany(p => p.TargetOfPlants)
+                .HasForeignKey(d => d.TargetValueId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TargetOfP__Targe__5EBF139D");
         });
 
-        modelBuilder.Entity<RecNutritionDetail>(entity =>
+        modelBuilder.Entity<TargetValue>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__RecNutri__3214EC07C3110AF5");
+            entity.HasKey(e => e.Id).HasName("PK__TargetVa__3214EC07747DCBB4");
 
-            entity.ToTable("RecNutritionDetail");
+            entity.ToTable("TargetValue");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.Record).HasColumnType("decimal(8, 2)");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false);
+            entity.Property(e => e.MaxValue).HasColumnType("decimal(8, 2)");
+            entity.Property(e => e.MinValue).HasColumnType("decimal(8, 2)");
             entity.Property(e => e.Type)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-
-            entity.HasOne(d => d.RecNutrition).WithMany(p => p.RecNutritionDetails)
-                .HasForeignKey(d => d.RecNutritionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RecNutrit__RecNu__534D60F1");
         });
 
-        modelBuilder.Entity<TicketReport>(entity =>
+        modelBuilder.Entity<Ticket>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TicketRe__3214EC073B5FF7AE");
+            entity.HasKey(e => e.Id).HasName("PK__Ticket__3214EC0701A44F85");
 
-            entity.ToTable("TicketReport");
+            entity.ToTable("Ticket");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -299,15 +316,71 @@ public partial class HmesContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.IdNavigation).WithOne(p => p.TicketReport)
-                .HasForeignKey<TicketReport>(d => d.Id)
+            entity.HasOne(d => d.IdNavigation).WithOne(p => p.TicketIdNavigation)
+                .HasForeignKey<Ticket>(d => d.Id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TicketReport__Id__5DCAEF64");
+                .HasConstraintName("FK__Ticket__Id__68487DD7");
+
+            entity.HasOne(d => d.Teachnician).WithMany(p => p.TicketTeachnicians)
+                .HasForeignKey(d => d.TeachnicianId)
+                .HasConstraintName("FK__Ticket__Teachnic__59FA5E80");
+        });
+
+        modelBuilder.Entity<TicketAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TicketAt__3214EC076C9530CC");
+
+            entity.ToTable("TicketAttachment");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Attachment)
+                .HasMaxLength(2000)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.TicketAttachments)
+                .HasForeignKey(d => d.TicketId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TicketAtt__Ticke__5CD6CB2B");
+        });
+
+        modelBuilder.Entity<TicketResponse>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TicketRe__3214EC07684EC420");
+
+            entity.ToTable("TicketResponse");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.Message)
+                .HasMaxLength(1000)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Ticket).WithMany(p => p.TicketResponses)
+                .HasForeignKey(d => d.TicketId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TicketRes__Ticke__5BE2A6F2");
+        });
+
+        modelBuilder.Entity<TicketResponseAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TicketRe__3214EC077FDB957E");
+
+            entity.ToTable("TicketResponseAttachment");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Attachment)
+                .HasMaxLength(2000)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.TicketResponse).WithMany(p => p.TicketResponseAttachments)
+                .HasForeignKey(d => d.TicketResponseId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TicketRes__Ticke__5AEE82B9");
         });
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Transact__3214EC0737004287");
+            entity.HasKey(e => e.Id).HasName("PK__Transact__3214EC07F7D96100");
 
             entity.ToTable("Transaction");
 
@@ -319,17 +392,17 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Order).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Transacti__Order__60A75C0F");
+                .HasConstraintName("FK__Transacti__Order__6B24EA82");
         });
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__User__3214EC07B9CB862C");
+            entity.HasKey(e => e.Id).HasName("PK__User__3214EC07B4A00BDC");
 
             entity.ToTable("User");
 
@@ -353,12 +426,12 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<UserToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserToke__3214EC075B395BA1");
+            entity.HasKey(e => e.Id).HasName("PK__UserToke__3214EC077D8C3127");
 
             entity.ToTable("UserToken");
 
@@ -375,7 +448,7 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserTokens)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__UserToken__UserI__5BE2A6F2");
+                .HasConstraintName("FK__UserToken__UserI__66603565");
         });
 
         OnModelCreatingPartial(modelBuilder);

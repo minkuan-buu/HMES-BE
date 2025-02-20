@@ -9,13 +9,13 @@ public partial class Order
 
     public Guid UserId { get; set; }
 
-    public decimal UnitPrice { get; set; }
+    public decimal TotalPrice { get; set; }
 
     public string Status { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdateAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
