@@ -1,5 +1,6 @@
 ﻿using HMES.Data.Entities;
 using HMES.Data.Repositories.GenericRepositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,9 @@ namespace HMES.Data.Repositories.UserRepositories
         : base(context)
         {
         }
-
+        
+        public async Task<User?> GetUserByEmail(string email){
+            return await Context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
     }
 }

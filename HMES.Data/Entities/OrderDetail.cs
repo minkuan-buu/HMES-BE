@@ -9,7 +9,9 @@ public partial class OrderDetail
 
     public Guid OrderId { get; set; }
 
-    public Guid ProductId { get; set; }
+    public Guid? ProductId { get; set; }
+
+    public Guid? DeviceId { get; set; }
 
     public decimal UnitPrice { get; set; }
 
@@ -19,9 +21,11 @@ public partial class OrderDetail
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdateAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    public virtual Device? Device { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 
-    public virtual Product Product { get; set; } = null!;
+    public virtual Product? Product { get; set; }
 }

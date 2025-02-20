@@ -10,6 +10,6 @@ namespace HMES.Data.Repositories.UserRepositories
 {
     public interface IUserRepositories : IGenericRepositories<User>
     {
-       
+       Task<User?> GetUserByEmail(string email);
     }
 }

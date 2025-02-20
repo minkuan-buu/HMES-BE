@@ -1,6 +1,9 @@
+using HMES.API.Middleware;
+using HMES.Business.MapperProfiles;
 using HMES.Business.Services.UserServices;
 using HMES.Data.Entities;
 using HMES.Data.Repositories.UserRepositories;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 DotNetEnv.Env.Load();
 
@@ -14,6 +17,11 @@ builder.Services.AddSwaggerGen();
 
 var rawConnectionString = builder.Configuration.GetSection("Database:ConnectionString").Value;
 
+if(rawConnectionString == null)
+{
+    throw new Exception("Connection string is not found");
+}
+
 var connectionString = rawConnectionString
     .Replace("${DB_SERVER}", Environment.GetEnvironmentVariable("DB_SERVER") ?? "")
     .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
@@ -22,6 +30,16 @@ var connectionString = rawConnectionString
 
 builder.Services.AddDbContext<HmesContext>(options =>
     options.UseSqlServer(connectionString));
+
+//======================================= AUTHENTICATION ==========================================
+builder.Services.AddAuthentication("HMESAuthentication")
+    .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null);
+
+//========================================== MIDDLEWARE ===========================================
+builder.Services.AddSingleton<GlobalExceptionMiddleware>();
+
+//========================================== MAPPER ===============================================
+builder.Services.AddAutoMapper(typeof(MapperProfileConfiguration).Assembly);
 
 //========================================== REPOSITORY ===========================================
 builder.Services.AddScoped<IUserRepositories, UserRepositories>();
@@ -37,6 +55,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
