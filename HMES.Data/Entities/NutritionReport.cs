@@ -11,7 +11,7 @@ public partial class NutritionReport
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual CropHydroponicDevice Device { get; set; } = null!;
+    public virtual Device Device { get; set; } = null!;
 
     public virtual ICollection<NutritionReportDetail> NutritionReportDetails { get; set; } = new List<NutritionReportDetail>();
 }

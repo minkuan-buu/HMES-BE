@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 namespace HMES.Data.Entities;
 
-public partial class TicketReport
+public partial class Ticket
 {
     public Guid Id { get; set; }
 
     public Guid UserId { get; set; }
+
+    public Guid? TeachnicianId { get; set; }
 
     public string? Type { get; set; }
 
@@ -22,4 +24,10 @@ public partial class TicketReport
     public DateTime? UpdatedAt { get; set; }
 
     public virtual User IdNavigation { get; set; } = null!;
+
+    public virtual User? Teachnician { get; set; }
+
+    public virtual ICollection<TicketAttachment> TicketAttachments { get; set; } = new List<TicketAttachment>();
+
+    public virtual ICollection<TicketResponse> TicketResponses { get; set; } = new List<TicketResponse>();
 }

@@ -17,17 +17,13 @@ public partial class Product
 
     public string Status { get; set; } = null!;
 
-    public Guid CreatedBy { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdateAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual CartItem? CartItem { get; set; }
 
     public virtual Category Category { get; set; } = null!;
-
-    public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 }

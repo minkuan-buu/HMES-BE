@@ -25,21 +25,17 @@ public partial class User
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdateAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
 
-    public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
-
-    public virtual ICollection<CropHydroponicDevice> CropHydroponicDevices { get; set; } = new List<CropHydroponicDevice>();
+    public virtual ICollection<Device> Devices { get; set; } = new List<Device>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
-    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+    public virtual Ticket? TicketIdNavigation { get; set; }
 
-    public virtual ICollection<RecNutrition> RecNutritions { get; set; } = new List<RecNutrition>();
-
-    public virtual TicketReport? TicketReport { get; set; }
+    public virtual ICollection<Ticket> TicketTeachnicians { get; set; } = new List<Ticket>();
 
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
 }

@@ -15,7 +15,7 @@ public partial class Transaction
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdateAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 }
