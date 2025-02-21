@@ -42,7 +42,6 @@ public class UserServices : IUserServices
             throw new CustomException("Password is incorrect");
         }
         UserLoginResModel Result = _mapper.Map<UserLoginResModel>(user);
-        var checkOldToken = await _userTokenRepositories.GetSingle(x => x.Id.Equals(user.Id));
         UserToken NewUserToken = new UserToken()
         {
             Id = Guid.NewGuid(),
@@ -51,6 +50,7 @@ public class UserServices : IUserServices
             RefreshToken = Result.RefeshToken,
             CreatedAt = DateTime.Now
         };
+        Result.DeviceId = NewUserToken.Id;
         await _userTokenRepositories.Insert(NewUserToken);
         return new ResultModel<DataResultModel<UserLoginResModel>>(){
             StatusCodes = (int)HttpStatusCode.OK,
