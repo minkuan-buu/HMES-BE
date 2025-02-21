@@ -7,17 +7,20 @@ using HMES.Data.DTO.RequestModel;
 using AutoMapper;
 using MeowWoofSocial.Data.DTO.ResponseModel;
 using System.Net;
+using HMES.Data.Repositories.UserTokenRepositories;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
 {
     private readonly IUserRepositories _userRepositories;
+    private readonly IUserTokenRepositories _userTokenRepositories;
     private readonly IMapper _mapper;
 
-    public UserServices(IUserRepositories userRepositories, IMapper mapper)
+    public UserServices(IUserRepositories userRepositories, IMapper mapper, IUserTokenRepositories userTokenRepositories)
     {
         _userRepositories = userRepositories;
         _mapper = mapper;
+        _userTokenRepositories = userTokenRepositories;
     }
     
     public async Task<User> GetUser()
@@ -39,6 +42,16 @@ public class UserServices : IUserServices
             throw new CustomException("Password is incorrect");
         }
         UserLoginResModel Result = _mapper.Map<UserLoginResModel>(user);
+        var checkOldToken = await _userTokenRepositories.GetSingle(x => x.Id.Equals(user.Id));
+        UserToken NewUserToken = new UserToken()
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            AccesToken = Result.Token,
+            RefreshToken = Result.RefeshToken,
+            CreatedAt = DateTime.Now
+        };
+        await _userTokenRepositories.Insert(NewUserToken);
         return new ResultModel<DataResultModel<UserLoginResModel>>(){
             StatusCodes = (int)HttpStatusCode.OK,
             Response = new DataResultModel<UserLoginResModel>(){
@@ -64,6 +77,21 @@ public class UserServices : IUserServices
             Response = new MessageResultModel()
             {
                 Message = "Account is created!"
+            }
+        };
+    }
+
+    public async Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token){
+        var userId = Authentication.DecodeToken(Token,"userid");
+        var user = await _userRepositories.GetSingle(x => x.Id.Equals(Guid.Parse(userId)));
+        if(user == null){
+            throw new CustomException("User not found");
+        }
+        UserProfileResModel Result = _mapper.Map<UserProfileResModel>(user);
+        return new ResultModel<DataResultModel<UserProfileResModel>>(){
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new DataResultModel<UserProfileResModel>(){
+                Data = Result
             }
         };
     }

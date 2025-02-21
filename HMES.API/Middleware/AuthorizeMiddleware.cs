@@ -9,19 +9,26 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
+using HMES.Data.Repositories.UserTokenRepositories;
+using HMES.Business.Services.UserTokenServices;
+using HMES.Data.Entities;
 
 namespace HMES.API.Middleware
 {
     public class AuthorizeMiddleware : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         private readonly IUserRepositories _userRepositories;
+        private readonly IUserTokenServices _userTokenServices;
+        private static string Key = "TestingIssuerSigningKeyPTEducationMS@123";
+        private static string Issuser = "TestingJWTIssuerSigningPTEducationMS@123";
 
         public AuthorizeMiddleware(IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock, IUserRepositories userRepositories)
+            ISystemClock clock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
             : base(options, logger, encoder, clock)
         {
+            _userTokenServices = userTokenServices;
             _userRepositories = userRepositories;
         }
 
@@ -51,49 +58,47 @@ namespace HMES.API.Middleware
 
             try
             {
-                var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                var tokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true, // Kiểm tra thời gian sống của token
+                    ValidateLifetime = false, // Tắt kiểm tra thời gian sống để tránh bị throw exception
                     ValidIssuer = "TestingJWTIssuerSigningPTEducationMS@123",
                     ValidAudience = "TestingJWTIssuerSigningPTEducationMS@123",
                     IssuerSigningKey = new SymmetricSecurityKey(key)
-                }, out SecurityToken validatedToken);
+                };
 
-                // Kiểm tra nếu token đã hết hạn
+                // Giải mã token, không kiểm tra thời gian sống
+                var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+
+                // Kiểm tra nếu token đã hết hạn (tự handle)
                 if (validatedToken.ValidTo < DateTime.UtcNow)
                 {
-                    return AuthenticateResult.Fail("Token has expired.");
+                    return await HandleExpiredTokenAsync();
                 }
 
-                // Token is valid, create the authentication ticket
                 var identity = claimsPrincipal.Identity as ClaimsIdentity;
-
                 if (identity == null || !identity.IsAuthenticated)
                 {
                     return AuthenticateResult.Fail("Unauthorized");
                 }
 
                 // Kiểm tra yêu cầu đặt lại mật khẩu
+                var typeClaim = identity.FindFirst("type")?.Value;
                 if (requestPath.StartsWithSegments("/api/auth/reset-password"))
                 {
-                    var typeClaim = identity.FindFirst("type")?.Value;
                     if (typeClaim != "reset")
                     {
                         return AuthenticateResult.Fail("Invalid token for reset-password.");
                     }
-                } else
+                }
+                else if (typeClaim == "reset")
                 {
-                    var typeClaim = identity.FindFirst("type")?.Value;
-                    if (typeClaim == "reset")
-                    {
-                        return AuthenticateResult.Fail("Invalid token for reset-password.");
-                    }
+                    return AuthenticateResult.Fail("Invalid token for reset-password.");
                 }
 
-                // You can further check user status or other conditions by querying your repository
+                // Kiểm tra user trong DB
                 var userIdClaim = identity.FindFirst("userid")?.Value;
                 if (Guid.TryParse(userIdClaim, out var userId))
                 {
@@ -104,7 +109,7 @@ namespace HMES.API.Middleware
                     }
                 }
 
-                // Kiểm tra vai trò yêu cầu cho endpoint (nếu có)
+                // Kiểm tra vai trò
                 var endpointRoles = GetEndpointRoles();
                 var userRoles = identity.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
                 if (endpointRoles.Any() && !userRoles.Any(ur => endpointRoles.Contains(ur)))
@@ -115,22 +120,91 @@ namespace HMES.API.Middleware
                 var ticket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
                 return AuthenticateResult.Success(ticket);
             }
-            catch (SecurityTokenExpiredException ex)
-            {
-                // Token đã hết hạn
-                return AuthenticateResult.Fail($"Token has expired: {ex.Message}");
-            }
             catch (SecurityTokenException ex)
             {
-                // Token không hợp lệ
                 return AuthenticateResult.Fail($"Token validation failed: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Lỗi khác
                 return AuthenticateResult.Fail($"An error occurred: {ex.Message}");
             }
         }
+
+        private async Task<AuthenticateResult> HandleExpiredTokenAsync()
+        {
+            var DeviceId = Context.Request.Cookies["DeviceId"];
+            var RefreshToken = Context.Request.Cookies["RefreshToken"];
+
+            if (string.IsNullOrEmpty(DeviceId))
+                return AuthenticateResult.Fail("DeviceId is missing.");
+            
+            if (string.IsNullOrEmpty(RefreshToken))
+                return AuthenticateResult.Fail("RefreshToken is missing.");
+
+            if (!Guid.TryParse(DeviceId, out var deviceGuid))
+                return AuthenticateResult.Fail("Invalid DeviceId format.");
+
+            var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
+
+            if (UserToken == null || UserToken.RefreshToken != RefreshToken)
+                return AuthenticateResult.Fail("RefreshToken is invalid.");
+
+            var lastUpdated = UserToken.UpdatedAt ?? UserToken.CreatedAt;
+            if (DateTime.UtcNow - lastUpdated > TimeSpan.FromDays(180))
+            {
+                return AuthenticateResult.Fail("RefreshToken is expired.");
+            }
+
+            var user = await _userRepositories.GetSingle(u => u.Id == UserToken.UserId);
+            if (user == null || user.Status.Equals(AccountStatusEnums.Inactive.ToString()))
+            {
+                return AuthenticateResult.Fail("User is inactive or not found.");
+            }
+
+            // Tạo token mới
+            var newToken = GenerateJwtToken(user);
+            UserToken.AccesToken = newToken;
+            UserToken.UpdatedAt = DateTime.UtcNow;
+            await _userTokenServices.UpdateUserToken(UserToken);
+
+            // Lưu token vào response header để client lấy về
+            Context.Response.Headers["New-Access-Token"] = newToken;
+
+            var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("userid", user.Id.ToString()),
+                new Claim("email", user.Email)
+            }, Scheme.Name));
+
+            var ticket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
+            return AuthenticateResult.Success(ticket);
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("userid", user.Id.ToString()),
+                new Claim("email", user.Email),
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: Issuser,
+                audience: Issuser,
+                claims: claims,
+                expires: DateTime.Now.AddHours(3),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
         private List<string> GetEndpointRoles()
         {
             var endpoint = Context.GetEndpoint();
