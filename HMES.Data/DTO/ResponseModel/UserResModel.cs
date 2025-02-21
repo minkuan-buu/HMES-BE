@@ -25,6 +25,19 @@ namespace HMES.Data.DTO.ResponseModel
         public string Role { get; set; } = null!;
         public string Status { get; set; } = null!;
         public string Attachment { get; set; } = null!;
+        public Guid DeviceId { get; set; }
         public string Token { get; set; } = null!;
+        public string RefeshToken { get; set; } = null!;
+    }
+
+    public class UserProfileResModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        public string Role { get; set; } = null!;
+        public string Status { get; set; } = null!;
+        public string Attachment { get; set; } = null!;
     }
 }

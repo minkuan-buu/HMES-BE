@@ -1,8 +1,10 @@
 using HMES.API.Middleware;
 using HMES.Business.MapperProfiles;
 using HMES.Business.Services.UserServices;
+using HMES.Business.Services.UserTokenServices;
 using HMES.Data.Entities;
 using HMES.Data.Repositories.UserRepositories;
+using HMES.Data.Repositories.UserTokenRepositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -81,9 +83,11 @@ builder.Services.AddAutoMapper(typeof(MapperProfileConfiguration).Assembly);
 
 //========================================== REPOSITORY ===========================================
 builder.Services.AddScoped<IUserRepositories, UserRepositories>();
+builder.Services.AddScoped<IUserTokenRepositories, UserTokenRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
 
 var app = builder.Build();
 
@@ -93,6 +97,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseAuthentication();
+
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
