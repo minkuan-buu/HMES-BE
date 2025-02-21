@@ -10,4 +10,5 @@ public interface IUserServices
     Task<User> GetUser();
     Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel);
     Task<ResultModel<MessageResultModel>> Register(UserRegisterReqModel UserReqModel);
+    Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token);
 }

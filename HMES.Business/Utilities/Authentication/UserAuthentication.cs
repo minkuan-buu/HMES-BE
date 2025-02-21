@@ -86,7 +86,7 @@ public class Authentication
             issuer: Issuser,
             audience: Issuser,
             claims: Claims,
-            expires: DateTime.Now.AddMonths(1),
+            expires: DateTime.Now.AddMinutes(1),
             signingCredentials: Credential
             );
         var Encodetoken = new JwtSecurityTokenHandler().WriteToken(Token);
@@ -112,6 +112,11 @@ public class Authentication
             );
         var Encodetoken = new JwtSecurityTokenHandler().WriteToken(Token);
         return Encodetoken;
+    }
+
+    public static string GenerateRefreshToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }
 
     public static string GenerateRandomPassword()
