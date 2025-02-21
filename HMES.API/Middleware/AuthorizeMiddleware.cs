@@ -68,14 +68,34 @@ namespace HMES.API.Middleware
                     ValidAudience = "TestingJWTIssuerSigningPTEducationMS@123",
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
+                var DeviceId = Context.Request.Cookies["DeviceId"];
+                
+                var RefreshToken = Context.Request.Cookies["RefreshToken"];
+                
+                if (string.IsNullOrEmpty(RefreshToken))
+                    return AuthenticateResult.Fail("RefreshToken is missing.");
+                
+                if (string.IsNullOrEmpty(DeviceId))
+                    return AuthenticateResult.Fail("DeviceId is missing.");
+
+                if (!Guid.TryParse(DeviceId, out var deviceGuid))
+                    return AuthenticateResult.Fail("Invalid DeviceId format.");
+
+                var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
+                
+                if (UserToken == null || UserToken.RefreshToken != RefreshToken)
+                    return AuthenticateResult.Fail("RefreshToken is invalid.");
+
+                if(token != UserToken.AccesToken)
+                    return AuthenticateResult.Fail("AccessToken is invalid.");
 
                 // Giải mã token, không kiểm tra thời gian sống
                 var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-
+                
                 // Kiểm tra nếu token đã hết hạn (tự handle)
                 if (validatedToken.ValidTo < DateTime.UtcNow)
                 {
-                    return await HandleExpiredTokenAsync();
+                    return await HandleExpiredTokenAsync(UserToken);
                 }
 
                 var identity = claimsPrincipal.Identity as ClaimsIdentity;
@@ -130,26 +150,10 @@ namespace HMES.API.Middleware
             }
         }
 
-        private async Task<AuthenticateResult> HandleExpiredTokenAsync()
+        private async Task<AuthenticateResult> HandleExpiredTokenAsync(UserToken UserToken)
         {
-            var DeviceId = Context.Request.Cookies["DeviceId"];
-            var RefreshToken = Context.Request.Cookies["RefreshToken"];
-
-            if (string.IsNullOrEmpty(DeviceId))
-                return AuthenticateResult.Fail("DeviceId is missing.");
-            
-            if (string.IsNullOrEmpty(RefreshToken))
-                return AuthenticateResult.Fail("RefreshToken is missing.");
-
-            if (!Guid.TryParse(DeviceId, out var deviceGuid))
-                return AuthenticateResult.Fail("Invalid DeviceId format.");
-
-            var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
-
-            if (UserToken == null || UserToken.RefreshToken != RefreshToken)
-                return AuthenticateResult.Fail("RefreshToken is invalid.");
-
             var lastUpdated = UserToken.UpdatedAt ?? UserToken.CreatedAt;
+
             if (DateTime.UtcNow - lastUpdated > TimeSpan.FromDays(180))
             {
                 return AuthenticateResult.Fail("RefreshToken is expired.");
