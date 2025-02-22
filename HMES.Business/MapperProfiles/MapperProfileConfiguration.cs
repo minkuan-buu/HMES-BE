@@ -16,9 +16,10 @@ namespace HMES.Business.MapperProfiles
             //Login
             CreateMap<User, UserLoginResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
-                .ForMember(dest => dest.DeviceId, opt => opt.Ignore())
-                .ForMember(dest => dest.RefeshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
-                .ForMember(dest => dest.Token, opt => opt.MapFrom(src => Authentication.GenerateJWT(src)));
+                .ForPath(dest => dest.Auth.DeviceId, opt => opt.Ignore())
+                .ForPath(dest => dest.Auth.RefeshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
+                .ForPath(dest => dest.Auth.Token, opt => opt.MapFrom(src => Authentication.GenerateJWT(src)));
+
             //Register
             CreateMap<UserRegisterReqModel, User>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
@@ -27,6 +28,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
+                
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
