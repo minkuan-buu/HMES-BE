@@ -46,11 +46,11 @@ public class UserServices : IUserServices
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            AccesToken = Result.Token,
-            RefreshToken = Result.RefeshToken,
+            AccesToken = Result.Auth.Token,
+            RefreshToken = Result.Auth.RefeshToken,
             CreatedAt = DateTime.Now
         };
-        Result.DeviceId = NewUserToken.Id;
+        Result.Auth.DeviceId = NewUserToken.Id;
         await _userTokenRepositories.Insert(NewUserToken);
         return new ResultModel<DataResultModel<UserLoginResModel>>(){
             StatusCodes = (int)HttpStatusCode.OK,

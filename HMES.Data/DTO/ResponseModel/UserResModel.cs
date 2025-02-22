@@ -25,9 +25,7 @@ namespace HMES.Data.DTO.ResponseModel
         public string Role { get; set; } = null!;
         public string Status { get; set; } = null!;
         public string Attachment { get; set; } = null!;
-        public Guid DeviceId { get; set; }
-        public string Token { get; set; } = null!;
-        public string RefeshToken { get; set; } = null!;
+        public UserAuthResModel Auth { get; set; } = null!;
     }
 
     public class UserProfileResModel
@@ -39,5 +37,12 @@ namespace HMES.Data.DTO.ResponseModel
         public string Role { get; set; } = null!;
         public string Status { get; set; } = null!;
         public string Attachment { get; set; } = null!;
+    }
+
+    public class UserAuthResModel
+    {
+        public Guid DeviceId { get; set; }
+        public string Token { get; set; } = null!;
+        public string RefeshToken { get; set; } = null!;
     }
 }
