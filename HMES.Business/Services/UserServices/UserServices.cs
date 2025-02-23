@@ -143,4 +143,24 @@ public class UserServices : IUserServices
             }
         };
     }
+
+    public async Task<ResultModel<MessageResultModel>> Update(UserUpdateReqModel UserReqModel, string Token)
+    {
+        var UserId = Guid.Parse(Authentication.DecodeToken(Token,"userid"));
+        var User = await _userRepositories.GetSingle(x => x.Id == UserId);
+        if(User == null)
+        {
+            throw new CustomException("User not found");
+        }
+        User = _mapper.Map<User>(UserReqModel);
+        await _userRepositories.Update(User);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "User is updated!"
+            }
+        };
+    }
 }

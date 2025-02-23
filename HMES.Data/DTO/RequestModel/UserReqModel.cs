@@ -30,4 +30,10 @@ namespace HMES.Data.DTO.RequestModel
         public string NewPassword { get; set; } = null!;
         public string ConfirmPassword { get; set; } = null!;
     }
+
+    public class UserUpdateReqModel
+    {
+        public string Name { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+    }
 }

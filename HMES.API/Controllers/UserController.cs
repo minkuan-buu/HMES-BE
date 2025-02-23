@@ -27,6 +27,15 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPut("me")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UserUpdateReqModel UserReqModel)
+        {
+            var Token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _userServices.Update(UserReqModel, Token);
+            return Ok(result);
+        }
+
         // [HttpPost("reset-password")]
         // [Authorize(AuthenticationSchemes = "MeowWoofAuthentication")]
         // public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordReqModel User)
