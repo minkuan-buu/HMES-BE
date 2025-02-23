@@ -32,6 +32,19 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("logout")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> Logout([FromBody] UserLoginReqModel User)
+        {
+            var DeviceId = Request.Cookies["DeviceId"];
+            if (DeviceId == null)
+            {
+                throw new CustomException("DeviceId cookie is missing.");
+            }
+            var result = await _userServices.Logout(Guid.Parse(DeviceId));
+            return Ok(result);
+        }
+
         // [HttpPost("reset-password")]
         // [Authorize(AuthenticationSchemes = "MeowWoofAuthentication")]
         // public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordReqModel User)

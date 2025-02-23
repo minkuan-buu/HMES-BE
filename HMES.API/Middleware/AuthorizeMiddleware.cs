@@ -74,18 +74,18 @@ namespace HMES.API.Middleware
                 var RefreshToken = Context.Request.Cookies["RefreshToken"];
                 
                 if (string.IsNullOrEmpty(RefreshToken))
-                    return AuthenticateResult.Fail("RefreshToken is missing.");
+                    throw new CustomException("RefreshToken is missing.");
                 
                 if (string.IsNullOrEmpty(DeviceId))
-                    return AuthenticateResult.Fail("DeviceId is missing.");
+                    throw new CustomException("DeviceId is missing.");
 
                 if (!Guid.TryParse(DeviceId, out var deviceGuid))
-                    return AuthenticateResult.Fail("Invalid DeviceId format.");
+                    throw new CustomException("Invalid DeviceId format.");
 
                 var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
                 
                 if (UserToken == null || UserToken.RefreshToken != RefreshToken)
-                    return AuthenticateResult.Fail("RefreshToken is invalid.");
+                    throw new CustomException("RefreshToken is invalid.");
 
                 if(token != UserToken.AccesToken)
                     return AuthenticateResult.Fail("AccessToken is invalid.");

@@ -95,4 +95,22 @@ public class UserServices : IUserServices
             }
         };
     }
+
+    public async Task<ResultModel<MessageResultModel>> Logout(Guid DeviceId)
+    {
+        var MessageReturn = "Logout success! ";
+        var UserToken = await _userTokenRepositories.GetSingle(x => x.Id == DeviceId);
+        if(UserToken == null)
+        {
+            MessageReturn += "Warning: DeviceId is not found!";
+        } else await _userTokenRepositories.Delete(UserToken);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = MessageReturn
+            }
+        };
+    }
 }
