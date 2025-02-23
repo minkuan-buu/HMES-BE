@@ -43,6 +43,8 @@ builder.Services.AddSwaggerGen(c =>
         Title = "HMES.API",
         Description = "Hydroponic Monitoring Equipment System"
     });
+
+    // 🟢 Cấu hình Bearer Token
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -53,6 +55,15 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "bearer"
+    });
+
+    // 🟢 Cấu hình Cookie Authentication
+    c.AddSecurityDefinition("cookieAuth", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        Name = "Cookie",
+        In = ParameterLocation.Header,
+        Description = "Nhập Cookie vào đây (VD: sessionId=xyz123)"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -67,9 +78,21 @@ builder.Services.AddSwaggerGen(c =>
                 }
             },
             new string[] {}
+        },
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "cookieAuth"
+                }
+            },
+            new string[] {}
         }
     });
 });
+
 
 //======================================= AUTHENTICATION ==========================================
 builder.Services.AddAuthentication("HMESAuthentication")
@@ -98,9 +121,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseAuthentication();
-
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.UseAuthentication();
 
 app.UseHttpsRedirection();
 

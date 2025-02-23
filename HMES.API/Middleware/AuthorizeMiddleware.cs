@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Data.Entities;
+using HMES.Data.DTO.Custom;
 
 namespace HMES.API.Middleware
 {
@@ -25,8 +26,8 @@ namespace HMES.API.Middleware
         public AuthorizeMiddleware(IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
-            : base(options, logger, encoder, clock)
+            ISystemClock systemClock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
+            : base(options, logger, encoder, systemClock)
         {
             _userTokenServices = userTokenServices;
             _userRepositories = userRepositories;
@@ -43,7 +44,7 @@ namespace HMES.API.Middleware
             }
 
             // Get the Authorization header
-            string authorizationHeader = Request.Headers["Authorization"];
+            string authorizationHeader = Request.Headers["Authorization"].FirstOrDefault() ?? string.Empty;
 
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             {
@@ -131,10 +132,14 @@ namespace HMES.API.Middleware
 
                 // Kiểm tra vai trò
                 var endpointRoles = GetEndpointRoles();
-                var userRoles = identity.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+                var userRoles = identity.Claims
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => c.Value)
+                    .ToList();
+
                 if (endpointRoles.Any() && !userRoles.Any(ur => endpointRoles.Contains(ur)))
                 {
-                    return AuthenticateResult.Fail("User does not have the required role.");
+                    throw new CustomException("Access denied"); // Dùng đúng thông báo để middleware xử lý 403
                 }
 
                 var ticket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
@@ -143,10 +148,6 @@ namespace HMES.API.Middleware
             catch (SecurityTokenException ex)
             {
                 return AuthenticateResult.Fail($"Token validation failed: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                return AuthenticateResult.Fail($"An error occurred: {ex.Message}");
             }
         }
 

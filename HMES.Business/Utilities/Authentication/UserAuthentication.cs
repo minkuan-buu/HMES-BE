@@ -24,10 +24,7 @@ public class Authentication
 
         byte[] Salt = new byte[SaltLength];
 
-        using (var Rng = new RNGCryptoServiceProvider())
-        {
-            Rng.GetBytes(Salt);
-        }
+        RandomNumberGenerator.Fill(Salt);
 
         return BitConverter.ToString(Salt).Replace("-", "");
     }
@@ -86,7 +83,7 @@ public class Authentication
             issuer: Issuser,
             audience: Issuser,
             claims: Claims,
-            expires: DateTime.Now.AddMinutes(1),
+            expires: DateTime.Now.AddHours(3),
             signingCredentials: Credential
             );
         var Encodetoken = new JwtSecurityTokenHandler().WriteToken(Token);
@@ -124,20 +121,17 @@ public class Authentication
         int length = 12;
         string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
         byte[] data = new byte[length];
-        using (RNGCryptoServiceProvider crypto = new RNGCryptoServiceProvider())
+        byte[] buffer = new byte[sizeof(int)];
+        StringBuilder result = new StringBuilder(length);
+        for (int i = 0; i < length; i++)
         {
-            byte[] buffer = new byte[sizeof(int)];
-            StringBuilder result = new StringBuilder(length);
-            for (int i = 0; i < length; i++)
-            {
-                crypto.GetBytes(buffer);
-                int randomNumber = BitConverter.ToInt32(buffer, 0);
-                randomNumber = Math.Abs(randomNumber);
-                int index = randomNumber % chars.Length;
-                result.Append(chars[index]);
-            }
-            return result.ToString();
+            RandomNumberGenerator.Fill(buffer);
+            int randomNumber = BitConverter.ToInt32(buffer, 0);
+            randomNumber = Math.Abs(randomNumber);
+            int index = randomNumber % chars.Length;
+            result.Append(chars[index]);
         }
+        return result.ToString();
     }
 
     public static string DecodeToken(string jwtToken, string nameClaim)

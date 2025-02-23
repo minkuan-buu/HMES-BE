@@ -19,7 +19,7 @@ namespace HMES.API.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
         public async Task<IActionResult> Profile()
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
