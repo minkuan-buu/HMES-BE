@@ -121,9 +121,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseAuthentication();
-
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.UseAuthentication();
 
 app.UseHttpsRedirection();
 

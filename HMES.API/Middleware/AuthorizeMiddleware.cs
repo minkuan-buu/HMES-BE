@@ -26,8 +26,8 @@ namespace HMES.API.Middleware
         public AuthorizeMiddleware(IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock clock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
-            : base(options, logger, encoder, clock)
+            ISystemClock systemClock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
+            : base(options, logger, encoder, systemClock)
         {
             _userTokenServices = userTokenServices;
             _userRepositories = userRepositories;
@@ -44,7 +44,7 @@ namespace HMES.API.Middleware
             }
 
             // Get the Authorization header
-            string authorizationHeader = Request.Headers["Authorization"];
+            string authorizationHeader = Request.Headers["Authorization"].FirstOrDefault() ?? string.Empty;
 
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             {
@@ -130,7 +130,7 @@ namespace HMES.API.Middleware
                     }
                 }
 
-               // Kiểm tra vai trò
+                // Kiểm tra vai trò
                 var endpointRoles = GetEndpointRoles();
                 var userRoles = identity.Claims
                     .Where(c => c.Type == ClaimTypes.Role)
