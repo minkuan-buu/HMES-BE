@@ -21,10 +21,14 @@ public class GlobalExceptionMiddleware : IMiddleware
         {
             _logger.LogError(ex, "An unhandled exception has occurred");
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = ex is CustomException customEx && customEx.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ? StatusCodes.Status404NotFound
-                : ex is CustomException
-                ? StatusCodes.Status400BadRequest
-                : StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = ex switch
+            {
+                CustomException e when e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status404NotFound,
+                CustomException e when e.Message.Contains("denied", StringComparison.OrdinalIgnoreCase) => StatusCodes.Status403Forbidden,
+                CustomException => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status500InternalServerError
+            };
+
 
             var reponse = new
             {
