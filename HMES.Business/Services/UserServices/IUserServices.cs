@@ -11,5 +11,6 @@ public interface IUserServices
     Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel);
     Task<ResultModel<MessageResultModel>> Register(UserRegisterReqModel UserReqModel);
     Task<ResultModel<MessageResultModel>> Logout(Guid DeviceId);
+    Task<ResultModel<MessageResultModel>> ChangePassword(UserChangePasswordReqModel UserReqModel, string Token);
     Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token);
 }

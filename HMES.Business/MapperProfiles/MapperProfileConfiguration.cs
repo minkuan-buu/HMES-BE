@@ -32,6 +32,11 @@ namespace HMES.Business.MapperProfiles
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
+
+            //UpdateUser
+            CreateMap<UserUpdateReqModel, User>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)));
+                
         } 
     }
 }

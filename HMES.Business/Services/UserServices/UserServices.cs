@@ -113,4 +113,34 @@ public class UserServices : IUserServices
             }
         };
     }
+
+    public async Task<ResultModel<MessageResultModel>> ChangePassword(UserChangePasswordReqModel UserReqModel, string Token)
+    {
+        var UserId = Authentication.DecodeToken(Token,"userid");
+        var User = await _userRepositories.GetSingle(x => x.Id.Equals(Guid.Parse(UserId)));
+        if(User == null){
+            throw new CustomException("User not found");
+        }
+        var CheckPassword = Authentication.VerifyPasswordHashed(UserReqModel.OldPassword, User.Salt, User.Password);
+        if(!CheckPassword)
+        {
+            throw new CustomException("Old password is incorrect");
+        }
+        if(UserReqModel.NewPassword != UserReqModel.ConfirmPassword)
+        {
+            throw new CustomException("New password and confirm password are not matched");
+        }
+        CreateHashPasswordModel PasswordSet = Authentication.CreateHashPassword(UserReqModel.NewPassword);
+        User.Password = PasswordSet.HashedPassword;
+        User.Salt = PasswordSet.Salt;
+        await _userRepositories.Update(User);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Password is changed!"
+            }
+        };
+    }
 }

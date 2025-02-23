@@ -23,4 +23,11 @@ namespace HMES.Data.DTO.RequestModel
         public string Phone { get; set; } = null!;
         public string Password { get; set; } = null!;
     }
+
+    public class UserChangePasswordReqModel
+    {
+        public string OldPassword { get; set; } = null!;
+        public string NewPassword { get; set; } = null!;
+        public string ConfirmPassword { get; set; } = null!;
+    }
 }
