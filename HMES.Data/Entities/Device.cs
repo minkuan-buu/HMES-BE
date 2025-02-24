@@ -15,13 +15,15 @@ public partial class Device
 
     public string Status { get; set; } = null!;
 
-    public string IsActive { get; set; } = null!;
+    public bool IsActive { get; set; }
 
-    public Guid Serial { get; set; }
+    public bool IsOnline { get; set; }
+
+    public string Serial { get; set; } = null!;
 
     public decimal Price { get; set; }
 
-    public DateTime WarrantyExpiryDate { get; set; }
+    public DateTime? WarrantyExpiryDate { get; set; }
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
 

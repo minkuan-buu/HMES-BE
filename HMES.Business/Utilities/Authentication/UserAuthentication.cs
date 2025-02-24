@@ -140,4 +140,20 @@ public class Authentication
         Claim? claim = _tokenHandler.ReadJwtToken(jwtToken).Claims.FirstOrDefault(selector => selector.Type.ToString().Equals(nameClaim));
         return claim != null ? claim.Value : "Error!!!";
     }
+
+    public static string GenerateRandomSerial(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder result = new StringBuilder(length);
+        using (RNGCryptoServiceProvider crypto = new RNGCryptoServiceProvider())
+        {
+            byte[] data = new byte[length];
+            crypto.GetBytes(data);
+            foreach (byte b in data)
+            {
+                result.Append(chars[b % chars.Length]);
+            }
+        }
+        return result.ToString();
+    }
 }
