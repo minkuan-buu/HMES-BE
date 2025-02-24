@@ -44,7 +44,6 @@ namespace HMES.Business.Services.DeviceServices
                 Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var user = await _userRepositories.GetSingle(x => x.Id == userId);
 
-                //cai nay se thay doi code sau, check xem co phai admin khong, tam thoi de status cua account, doi thanh role sau
                 if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
                 {
                     throw new CustomException("You are banned from creating device due to violate of terms!");
@@ -52,30 +51,31 @@ namespace HMES.Business.Services.DeviceServices
 
                 foreach (var DeviceReqModel in DeviceReqModels)
                 {
-                    var newDeviceId = Guid.NewGuid();
-                    var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
-                    DeviceEntity.Id = newDeviceId;
-                    DeviceEntity.UserId = userId;
-                    DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
-                    string filePath = $"device/{DeviceEntity.Id}/attachments";
-                    if (DeviceReqModel.Attachment != null)
+                    for (int i = 0; i < DeviceReqModel.Quantity; i++)
                     {
-                        var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
-                        DeviceEntity.Attachment = attachments;
+                        var newDeviceId = Guid.NewGuid();
+                        var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
+                        DeviceEntity.Id = newDeviceId;
+                        DeviceEntity.UserId = userId;
+                        DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
+                        string filePath = $"device/{DeviceEntity.Id}/attachments";
+                        if (DeviceReqModel.Attachment != null)
+                        {
+                            var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
+                            DeviceEntity.Attachment = attachments;
+                        }
+                        DeviceEntity.Status = DeviceStatusEnum.Deactive.ToString();
+                        DeviceEntity.IsActive = false;
+                        DeviceEntity.IsOnline = false;
+                        DeviceEntity.Serial = Authentication.GenerateRandomSerial(24);
+                        DeviceEntity.Price = DeviceReqModel.Price;
+
+                        deviceEntities.Add(DeviceEntity);
                     }
-                    DeviceEntity.Status = DeviceStatusEnum.Deactive.ToString();
-                    DeviceEntity.IsActive = false;
-                    DeviceEntity.IsOnline = false;
-                    DeviceEntity.Serial = Authentication.GenerateRandomSerial(24);
-                    DeviceEntity.Price = DeviceReqModel.Price;
-
-                    deviceEntities.Add(DeviceEntity);
                 }
 
-                foreach (var deviceEntity in deviceEntities)
-                {
-                    await _deviceRepositories.Insert(deviceEntity);
-                }
+                    await _deviceRepositories.InsertRange(deviceEntities);
+                
                 result.Data = _mapper.Map<List<DeviceCreateResModel>>(deviceEntities);
             }
             catch (Exception ex)
