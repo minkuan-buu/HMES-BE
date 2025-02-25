@@ -136,19 +136,29 @@ public class CategoryServices : ICategoryServices
             Response = new DataResultModel<CategoryResModel> { Data = updatedCategoryRes }
         };
     }
-    
+
     public async Task<ResultModel<MessageResultModel>> DeleteCategory(Guid id)
     {
-        var category = await _categoryRepository.GetSingle(c => c.Id == id);
-        if (category == null)
-            return new ResultModel<MessageResultModel> { StatusCodes = 404, Response = new MessageResultModel { Message = "Category not found" } };
-
-        await _categoryRepository.Delete(category);
-        return new ResultModel<MessageResultModel>
+        try
         {
-            StatusCodes = 200,
-            Response = new MessageResultModel { Message = "Category deleted successfully" }
-        };
+            var category = await _categoryRepository.GetSingle(c => c.Id == id);
+            if (category == null)
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = 404, Response = new MessageResultModel { Message = "Category not found" }
+                };
+
+            await _categoryRepository.Delete(category);
+
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = 200, Response = new MessageResultModel { Message = "Category deleted successfully" }
+            };
+        }
+        catch (Exception e)
+        {
+            throw new CustomException("Cannot delete (in use or having child)!");
+        }
     }
     public async Task<ResultModel<List<CategoryResModel>>> GetAllRootCategories()
     {
