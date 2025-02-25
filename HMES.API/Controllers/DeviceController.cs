@@ -24,7 +24,7 @@ namespace HMES.API.Controllers
         public async Task<IActionResult> CreateDevice([FromForm] DeviceCreateReqModel device)
         {
                 var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                var result = await _deviceServices.CreateDevices(new List<DeviceCreateReqModel> { device }, token);
+                var result = await _deviceServices.CreateDevices(device, token);
                 return Ok(result);
         }
 

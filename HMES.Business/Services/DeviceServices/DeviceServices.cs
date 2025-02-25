@@ -35,52 +35,42 @@ namespace HMES.Business.Services.DeviceServices
             _cloudServices = cloudServices;
         }
 
-        public async Task<ResultModel<DataResultModel<List<DeviceCreateResModel>>>> CreateDevices(List<DeviceCreateReqModel> DeviceReqModels, string token)
+        public async Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token)
         {
-            var result = new DataResultModel<List<DeviceCreateResModel>>();
             var deviceEntities = new List<Device>();
             try
             {
-                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var user = await _userRepositories.GetSingle(x => x.Id == userId);
-
-                if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
+                for (int i = 0; i < DeviceReqModel.Quantity; i++)
                 {
-                    throw new CustomException("You are banned from creating device due to violate of terms!");
-                }
-
-                foreach (var DeviceReqModel in DeviceReqModels)
-                {
-                    for (int i = 0; i < DeviceReqModel.Quantity; i++)
+                    var newDeviceId = Guid.NewGuid();
+                    var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
+                    DeviceEntity.Id = newDeviceId;
+                    DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
+                    string filePath = $"device/{DeviceEntity.Id}/attachments";
+                    if (DeviceReqModel.Attachment != null)
                     {
-                        var newDeviceId = Guid.NewGuid();
-                        var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
-                        DeviceEntity.Id = newDeviceId;
-                        DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
-                        string filePath = $"device/{DeviceEntity.Id}/attachments";
-                        if (DeviceReqModel.Attachment != null)
-                        {
-                            var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
-                            DeviceEntity.Attachment = attachments;
-                        }
-                        DeviceEntity.Status = DeviceStatusEnum.Deactive.ToString();
-                        DeviceEntity.IsActive = false;
-                        DeviceEntity.IsOnline = false;
-                        DeviceEntity.Serial = Authentication.GenerateRandomSerial(24);
-                        DeviceEntity.Price = DeviceReqModel.Price;
-
-                        deviceEntities.Add(DeviceEntity);
+                        var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
+                        DeviceEntity.Attachment = attachments;
                     }
+                    DeviceEntity.Status = DeviceStatusEnum.Deactive.ToString();
+                    DeviceEntity.IsActive = false;
+                    DeviceEntity.IsOnline = false;
+                    DeviceEntity.Serial = Authentication.GenerateRandomSerial(24);
+                    DeviceEntity.Price = DeviceReqModel.Price;
+
+                    deviceEntities.Add(DeviceEntity);
                 }
+
 
                 await _deviceRepositories.InsertRange(deviceEntities);
 
-                result.Data = _mapper.Map<List<DeviceCreateResModel>>(deviceEntities);
-
-                return new ResultModel<DataResultModel<List<DeviceCreateResModel>>>()
+                return new ResultModel<MessageResultModel>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
-                    Response = result
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is created!"
+                    }
                 };
             }
             catch (Exception ex)
