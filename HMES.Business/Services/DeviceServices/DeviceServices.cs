@@ -92,5 +92,41 @@ namespace HMES.Business.Services.DeviceServices
                 Response = result
             };
         }
+
+        public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token)
+        {
+            var result = new DataResultModel<DeviceDetailResModel>();
+
+            try
+            {
+                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var user = await _userRepositories.GetSingle(x => x.Id == userId);
+
+                if (user == null || !user.Id.Equals(userId))
+                {
+                    throw new CustomException("You Do Not Have Permission To View This Device");
+                }
+                var newDevice = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
+                includeProperties: "NutritionReports");
+
+                var deviceResModel = _mapper.Map<DeviceDetailResModel>(newDevice);
+                result.Data = deviceResModel;
+            }
+            catch (Exception ex)
+            {
+                return new ResultModel<DataResultModel<DeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+
+            return new ResultModel<DataResultModel<DeviceDetailResModel>>()
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+
+        }
     }
 }

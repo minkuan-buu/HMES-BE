@@ -34,5 +34,20 @@ namespace HMES.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpGet("device/{Id}")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetDeviceDetailById(Guid Id, string token)
+        {
+            try
+            {
+                var result = await _deviceServices.GetDeviceDetailById(Id, token);
+                return Ok(result);
+            }
+            catch (CustomException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
