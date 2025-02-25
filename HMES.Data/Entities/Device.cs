@@ -7,7 +7,7 @@ public partial class Device
 {
     public Guid Id { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public string Name { get; set; } = null!;
 
@@ -29,5 +29,5 @@ public partial class Device
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 }

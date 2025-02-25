@@ -56,7 +56,6 @@ namespace HMES.Business.Services.DeviceServices
                         var newDeviceId = Guid.NewGuid();
                         var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
                         DeviceEntity.Id = newDeviceId;
-                        DeviceEntity.UserId = userId;
                         DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
                         string filePath = $"device/{DeviceEntity.Id}/attachments";
                         if (DeviceReqModel.Attachment != null)
