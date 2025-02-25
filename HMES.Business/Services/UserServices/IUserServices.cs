@@ -1,7 +1,6 @@
 ﻿using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
-using MeowWoofSocial.Data.DTO.ResponseModel;
 
 namespace HMES.Business.Services.UserServices;
 
