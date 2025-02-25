@@ -73,23 +73,21 @@ namespace HMES.Business.Services.DeviceServices
                     }
                 }
 
-                    await _deviceRepositories.InsertRange(deviceEntities);
-                
+                await _deviceRepositories.InsertRange(deviceEntities);
+
                 result.Data = _mapper.Map<List<DeviceCreateResModel>>(deviceEntities);
-            }
-            catch (Exception ex)
-            {
+
                 return new ResultModel<DataResultModel<List<DeviceCreateResModel>>>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = result
                 };
             }
-            return new ResultModel<DataResultModel<List<DeviceCreateResModel>>>()
+            catch (Exception ex)
             {
-                StatusCodes = (int)HttpStatusCode.OK,
-                Response = result
-            };
+                throw new CustomException(ex.Message);
+            }
+
         }
 
         public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token)
@@ -99,33 +97,30 @@ namespace HMES.Business.Services.DeviceServices
             try
             {
                 Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var user = await _userRepositories.GetSingle(x => x.Id == userId);
-
-                if (user == null || !user.Id.Equals(userId))
-                {
-                    throw new CustomException("You Do Not Have Permission To View This Device");
-                }
-                var newDevice = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
                 includeProperties: "NutritionReports");
+                if (!deviceDetail.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
+                }
+                else if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
 
-                var deviceResModel = _mapper.Map<DeviceDetailResModel>(newDevice);
+                var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
                 result.Data = deviceResModel;
-            }
-            catch (Exception ex)
-            {
+
                 return new ResultModel<DataResultModel<DeviceDetailResModel>>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = result
                 };
             }
-
-            return new ResultModel<DataResultModel<DeviceDetailResModel>>()
+            catch (Exception ex)
             {
-                StatusCodes = (int)HttpStatusCode.OK,
-                Response = result
-            };
-
+                throw new CustomException(ex.Message);
+            }
         }
     }
 }
