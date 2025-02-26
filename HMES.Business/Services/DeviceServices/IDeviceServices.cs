@@ -11,6 +11,8 @@ namespace HMES.Business.Services.DeviceServices
 {
     public interface IDeviceServices
     {
-        Task<ResultModel<DataResultModel<List<DeviceCreateResModel>>>> CreateDevices(List<DeviceCreateReqModel> DeviceReqModels, string token);
+        Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token);
+
+        Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token);
     }
 }

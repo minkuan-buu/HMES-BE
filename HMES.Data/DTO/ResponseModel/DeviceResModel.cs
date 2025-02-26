@@ -15,6 +15,20 @@ namespace HMES.Data.DTO.ResponseModel
     {
         public Guid Id { get; set; }
 
+        public string Name { get; set; } = null!;
+
+        public string? Attachment { get; set; }
+
+        public string Serial { get; set; } = null!;
+
+        public decimal Price { get; set; }
+
+    }
+
+    public class DeviceDetailResModel
+    {
+        public Guid Id { get; set; }
+
         public Guid UserId { get; set; }
 
         public string Name { get; set; } = null!;

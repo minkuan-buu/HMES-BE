@@ -35,27 +35,16 @@ namespace HMES.Business.Services.DeviceServices
             _cloudServices = cloudServices;
         }
 
-        public async Task<ResultModel<DataResultModel<List<DeviceCreateResModel>>>> CreateDevices(List<DeviceCreateReqModel> DeviceReqModels, string token)
+        public async Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token)
         {
-            var result = new DataResultModel<List<DeviceCreateResModel>>();
             var deviceEntities = new List<Device>();
             try
             {
-                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var user = await _userRepositories.GetSingle(x => x.Id == userId);
-
-                //cai nay se thay doi code sau, check xem co phai admin khong, tam thoi de status cua account, doi thanh role sau
-                if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
-                {
-                    throw new CustomException("You are banned from creating device due to violate of terms!");
-                }
-
-                foreach (var DeviceReqModel in DeviceReqModels)
+                for (int i = 0; i < DeviceReqModel.Quantity; i++)
                 {
                     var newDeviceId = Guid.NewGuid();
                     var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
                     DeviceEntity.Id = newDeviceId;
-                    DeviceEntity.UserId = userId;
                     DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
                     string filePath = $"device/{DeviceEntity.Id}/attachments";
                     if (DeviceReqModel.Attachment != null)
@@ -72,25 +61,56 @@ namespace HMES.Business.Services.DeviceServices
                     deviceEntities.Add(DeviceEntity);
                 }
 
-                foreach (var deviceEntity in deviceEntities)
+
+                await _deviceRepositories.InsertRange(deviceEntities);
+
+                return new ResultModel<MessageResultModel>()
                 {
-                    await _deviceRepositories.Insert(deviceEntity);
-                }
-                result.Data = _mapper.Map<List<DeviceCreateResModel>>(deviceEntities);
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is created!"
+                    }
+                };
             }
             catch (Exception ex)
             {
-                return new ResultModel<DataResultModel<List<DeviceCreateResModel>>>()
+                throw new CustomException(ex.Message);
+            }
+
+        }
+
+        public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token)
+        {
+            var result = new DataResultModel<DeviceDetailResModel>();
+
+            try
+            {
+                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
+                includeProperties: "NutritionReports");
+                if (!deviceDetail.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
+                }
+                else if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+
+                var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
+                result.Data = deviceResModel;
+
+                return new ResultModel<DataResultModel<DeviceDetailResModel>>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = result
                 };
             }
-            return new ResultModel<DataResultModel<List<DeviceCreateResModel>>>()
+            catch (Exception ex)
             {
-                StatusCodes = (int)HttpStatusCode.OK,
-                Response = result
-            };
+                throw new CustomException(ex.Message);
+            }
         }
     }
 }
