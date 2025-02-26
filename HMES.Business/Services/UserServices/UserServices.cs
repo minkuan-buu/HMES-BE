@@ -5,7 +5,6 @@ using HMES.Data.Repositories.UserRepositories;
 using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.RequestModel;
 using AutoMapper;
-using MeowWoofSocial.Data.DTO.ResponseModel;
 using System.Net;
 using HMES.Data.Repositories.UserTokenRepositories;
 namespace HMES.Business.Services.UserServices;
@@ -92,6 +91,74 @@ public class UserServices : IUserServices
             StatusCodes = (int)HttpStatusCode.OK,
             Response = new DataResultModel<UserProfileResModel>(){
                 Data = Result
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> Logout(Guid DeviceId)
+    {
+        var MessageReturn = "Logout success! ";
+        var UserToken = await _userTokenRepositories.GetSingle(x => x.Id == DeviceId);
+        if(UserToken == null)
+        {
+            MessageReturn += "Warning: DeviceId is not found!";
+        } else await _userTokenRepositories.Delete(UserToken);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = MessageReturn
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> ChangePassword(UserChangePasswordReqModel UserReqModel, string Token)
+    {
+        var UserId = Authentication.DecodeToken(Token,"userid");
+        var User = await _userRepositories.GetSingle(x => x.Id.Equals(Guid.Parse(UserId)));
+        if(User == null){
+            throw new CustomException("User not found");
+        }
+        var CheckPassword = Authentication.VerifyPasswordHashed(UserReqModel.OldPassword, User.Salt, User.Password);
+        if(!CheckPassword)
+        {
+            throw new CustomException("Old password is incorrect");
+        }
+        if(UserReqModel.NewPassword != UserReqModel.ConfirmPassword)
+        {
+            throw new CustomException("New password and confirm password are not matched");
+        }
+        CreateHashPasswordModel PasswordSet = Authentication.CreateHashPassword(UserReqModel.NewPassword);
+        User.Password = PasswordSet.HashedPassword;
+        User.Salt = PasswordSet.Salt;
+        await _userRepositories.Update(User);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Password is changed!"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> Update(UserUpdateReqModel UserReqModel, string Token)
+    {
+        var UserId = Guid.Parse(Authentication.DecodeToken(Token,"userid"));
+        var User = await _userRepositories.GetSingle(x => x.Id == UserId);
+        if(User == null)
+        {
+            throw new CustomException("User not found");
+        }
+        User = _mapper.Map<User>(UserReqModel);
+        await _userRepositories.Update(User);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "User is updated!"
             }
         };
     }

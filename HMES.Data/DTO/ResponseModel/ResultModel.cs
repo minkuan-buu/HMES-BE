@@ -1,4 +1,4 @@
-namespace MeowWoofSocial.Data.DTO.ResponseModel
+namespace HMES.Data.DTO.ResponseModel
 {
     public class ResultModel<T>
     {

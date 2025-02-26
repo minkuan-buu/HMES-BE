@@ -10,7 +10,6 @@ using HMES.Data.Enums;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
-using MeowWoofSocial.Data.DTO.ResponseModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
