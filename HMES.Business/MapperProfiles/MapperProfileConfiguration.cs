@@ -28,15 +28,48 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
-                
+
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
-
+                
             //UpdateUser
             CreateMap<UserUpdateReqModel, User>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)));
-                
-        } 
+
+            //Device
+            CreateMap<DeviceCreateReqModel, Device>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));        
+
+            CreateMap<Device, DeviceDetailResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
+                .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
+                .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+            // Category
+            CreateMap<Category, CategoryRecursiveResModel>()
+                .ForMember(dest => dest.ParentCategory, opt => opt.MapFrom(src => src.ParentCategory));
+        
+            CreateMap<CategoryCreateReqModel, Category>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
+
+            CreateMap<CategoryUpdateReqModel, Category>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.ParentCategoryId, opt => opt.MapFrom(src => src.ParentCategoryId));
+            CreateMap<Category, CategoryResModel>();
+        }
     }
 }

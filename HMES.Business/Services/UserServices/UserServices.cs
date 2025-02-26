@@ -5,7 +5,6 @@ using HMES.Data.Repositories.UserRepositories;
 using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.RequestModel;
 using AutoMapper;
-using MeowWoofSocial.Data.DTO.ResponseModel;
 using System.Net;
 using HMES.Data.Repositories.UserTokenRepositories;
 namespace HMES.Business.Services.UserServices;

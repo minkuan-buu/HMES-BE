@@ -1,8 +1,14 @@
+using Google.Cloud.Storage.V1;
 using HMES.API.Middleware;
 using HMES.Business.MapperProfiles;
+using HMES.Business.Services.CategoryServices;
+using HMES.Business.Services.CloudServices;
+using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Data.Entities;
+using HMES.Data.Repositories.CategoryRepositories;
+using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
 using Microsoft.AspNetCore.Authentication;
@@ -98,6 +104,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthentication("HMESAuthentication")
     .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null);
 
+//=========================================== FIREBASE ============================================
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"meowwoofsocial.json");
+builder.Services.AddSingleton<ICloudServices>(s => new CloudServices(StorageClient.Create()));
+
 //========================================== MIDDLEWARE ===========================================
 builder.Services.AddSingleton<GlobalExceptionMiddleware>();
 
@@ -107,10 +117,14 @@ builder.Services.AddAutoMapper(typeof(MapperProfileConfiguration).Assembly);
 //========================================== REPOSITORY ===========================================
 builder.Services.AddScoped<IUserRepositories, UserRepositories>();
 builder.Services.AddScoped<IUserTokenRepositories, UserTokenRepositories>();
+builder.Services.AddScoped<IDeviceRepositories, DeviceRepositories>();
+builder.Services.AddScoped<ICategoryRepositories, CategoryRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
+builder.Services.AddScoped<IDeviceServices, DeviceServices>();
+builder.Services.AddScoped<ICategoryServices,CategoryServices>();
 
 var app = builder.Build();
 
