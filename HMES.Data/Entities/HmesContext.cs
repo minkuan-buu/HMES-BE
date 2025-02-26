@@ -106,8 +106,12 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Attachment)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
-            entity.Property(e => e.Description).HasColumnType("text");
-            entity.Property(e => e.Name).HasColumnType("text");
+            entity.Property(e => e.Description)
+                .HasMaxLength(300) 
+                .IsUnicode(true); 
+            entity.Property(e => e.Name)
+                .HasMaxLength(100) 
+                .IsUnicode(true);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -116,6 +120,7 @@ public partial class HmesContext : DbContext
                 .HasForeignKey(d => d.ParentCategoryId)
                 .HasConstraintName("FK__Category__Parent__6754599E");
         });
+
 
         modelBuilder.Entity<Device>(entity =>
         {
@@ -250,7 +255,7 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.Name)
                 .HasMaxLength(500)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)

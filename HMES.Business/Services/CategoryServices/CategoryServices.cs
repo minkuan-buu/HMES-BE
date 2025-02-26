@@ -1,8 +1,10 @@
+using System.Net;
 using AutoMapper;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
+using HMES.Data.Enums;
 using HMES.Data.Repositories.CategoryRepositories;
 
 namespace HMES.Business.Services.CategoryServices;
@@ -34,18 +36,15 @@ public class CategoryServices : ICategoryServices
         
         return new ResultModel<ListDataResultModel<CategoryResModel>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = new ListDataResultModel<CategoryResModel> { Data = resultList.ToList() }
         };
     }
     
     
-    private async Task<Category> GetCategoryWithAllParents(Guid categoryId)
+    private async Task<Category?> GetCategoryWithAllParents(Guid categoryId)
     {
-        var category = await _categoryRepository.GetSingle(
-            c => c.Id == categoryId,
-            includeProperties: "ParentCategory"
-        );
+        var category = await _categoryRepository.GetCategoryByIdWithParent(categoryId);
 
         if (category?.ParentCategory != null)
         {
@@ -63,7 +62,7 @@ public class CategoryServices : ICategoryServices
         {
             return new ResultModel<DataResultModel<CategoryRecursiveResModel>>
             {
-                StatusCodes = 404,
+                StatusCodes = (int) HttpStatusCode.NotFound,
                 Response = null
             };
         }
@@ -72,7 +71,7 @@ public class CategoryServices : ICategoryServices
 
         return new ResultModel<DataResultModel<CategoryRecursiveResModel>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = new DataResultModel<CategoryRecursiveResModel> { Data = categoryDto }
         };
     }
@@ -86,7 +85,7 @@ public class CategoryServices : ICategoryServices
         }
         return new ResultModel<DataResultModel<Category>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = new DataResultModel<Category> { Data = category }
         };
     }
@@ -94,8 +93,15 @@ public class CategoryServices : ICategoryServices
     
     public async Task<ResultModel<DataResultModel<CategoryResModel>>> CreateCategory(CategoryCreateReqModel category)
     {
-
-        var checkName = _categoryRepository.GetSingle(c => c.Name.Equals(category.Name));
+        if (category.ParentCategoryId != null)
+        {
+             bool isSecondLevel = await _categoryRepository.IsSecondLevelCategory(category.ParentCategoryId.Value);
+            if (isSecondLevel)
+            {
+                throw new CustomException("The category parent is at second level!");
+            }
+        }
+        var checkName = await _categoryRepository.GetCategoryByName(category.Name);
         if (checkName != null)
         { 
             throw new CustomException("Name duplicated!");
@@ -103,13 +109,15 @@ public class CategoryServices : ICategoryServices
         
         var newCategory = _mapper.Map<Category>(category);
 
-        await _categoryRepository.Insert(newCategory);
+        newCategory.Status = CategoryStatusEnums.Active.ToString();
         
-        var resCategory = _mapper.Map<CategoryResModel>(category);
+        await _categoryRepository.Insert(newCategory);
+
+        var resCategory = _mapper.Map<CategoryResModel>(newCategory);
         
         return new ResultModel<DataResultModel<CategoryResModel>>
         {
-            StatusCodes = 201,
+            StatusCodes = (int) HttpStatusCode.Created,
             Response = new DataResultModel<CategoryResModel> { Data = resCategory }
         };
     }
@@ -119,7 +127,7 @@ public class CategoryServices : ICategoryServices
         if (id != category.Id)
             return new ResultModel<DataResultModel<CategoryResModel>>
             {
-                StatusCodes = 400,
+                StatusCodes = (int) HttpStatusCode.BadRequest,
                 Response = null
             };
 
@@ -132,7 +140,7 @@ public class CategoryServices : ICategoryServices
 
         return new ResultModel<DataResultModel<CategoryResModel>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = new DataResultModel<CategoryResModel> { Data = updatedCategoryRes }
         };
     }
@@ -141,18 +149,18 @@ public class CategoryServices : ICategoryServices
     {
         try
         {
-            var category = await _categoryRepository.GetSingle(c => c.Id == id);
+            var category = await _categoryRepository.GetCategoryById(id);
             if (category == null)
                 return new ResultModel<MessageResultModel>
                 {
-                    StatusCodes = 404, Response = new MessageResultModel { Message = "Category not found" }
+                    StatusCodes = (int) HttpStatusCode.NotFound, Response = new MessageResultModel { Message = "Category not found" }
                 };
 
             await _categoryRepository.Delete(category);
 
             return new ResultModel<MessageResultModel>
             {
-                StatusCodes = 200, Response = new MessageResultModel { Message = "Category deleted successfully" }
+                StatusCodes = (int) HttpStatusCode.OK, Response = new MessageResultModel { Message = "Category deleted successfully" }
             };
         }
         catch (Exception e)
@@ -168,7 +176,7 @@ public class CategoryServices : ICategoryServices
 
         return new ResultModel<List<CategoryResModel>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = rootCategoryDtos
         };
     }
@@ -181,7 +189,7 @@ public class CategoryServices : ICategoryServices
 
         return new ResultModel<List<CategoryResModel>>
         {
-            StatusCodes = 200,
+            StatusCodes = (int) HttpStatusCode.OK,
             Response = childCategoryDtos
         };
     }
