@@ -32,6 +32,10 @@ namespace HMES.Business.MapperProfiles
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
+                
+            //UpdateUser
+            CreateMap<UserUpdateReqModel, User>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)));
 
             //Device
             CreateMap<DeviceCreateReqModel, Device>()
@@ -66,9 +70,6 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.ParentCategoryId, opt => opt.MapFrom(src => src.ParentCategoryId));
             CreateMap<Category, CategoryResModel>();
-
-
-
         }
     }
 }
