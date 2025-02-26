@@ -51,6 +51,24 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
                 .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+            // Category
+            CreateMap<Category, CategoryRecursiveResModel>()
+                .ForMember(dest => dest.ParentCategory, opt => opt.MapFrom(src => src.ParentCategory));
+        
+            CreateMap<CategoryCreateReqModel, Category>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
+
+            CreateMap<CategoryUpdateReqModel, Category>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.ParentCategoryId, opt => opt.MapFrom(src => src.ParentCategoryId));
+            CreateMap<Category, CategoryResModel>();
+
+
+
         }
     }
 }
