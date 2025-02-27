@@ -1,3 +1,4 @@
+using HMES.Data.DTO.Custom;
 using HMES.Data.Entities;
 using HMES.Data.Repositories.GenericRepositories;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,14 @@ public class CategoryRepositories : GenericRepositories<Category>, ICategoryRepo
 
     public async Task<Category?> GetCategoryById(Guid id)
     {
-        return await Context.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        try
+        {
+            return await Context.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
     }
 
     public async Task<Category?> GetCategoryByName(string name)

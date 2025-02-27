@@ -78,7 +78,8 @@ public class CategoryServices : ICategoryServices
 
     public async Task<ResultModel<DataResultModel<Category>>> GetCategoryById(Guid id)
     {
-        var category = await _categoryRepository.GetSingle(c => c.Id == id);
+        
+        var category = await _categoryRepository.GetCategoryById(id);
         if (category == null)
         {
             throw new CustomException("Category not found!");
@@ -106,20 +107,29 @@ public class CategoryServices : ICategoryServices
         { 
             throw new CustomException("Name duplicated!");
         }
-        
-        var newCategory = _mapper.Map<Category>(category);
 
-        newCategory.Status = CategoryStatusEnums.Active.ToString();
-        
-        await _categoryRepository.Insert(newCategory);
-
-        var resCategory = _mapper.Map<CategoryResModel>(newCategory);
-        
-        return new ResultModel<DataResultModel<CategoryResModel>>
+        try
         {
-            StatusCodes = (int) HttpStatusCode.Created,
-            Response = new DataResultModel<CategoryResModel> { Data = resCategory }
-        };
+            var newCategory = _mapper.Map<Category>(category);
+
+            newCategory.Status = CategoryStatusEnums.Active.ToString();
+
+            await _categoryRepository.Insert(newCategory);
+
+            var resCategory = _mapper.Map<CategoryResModel>(newCategory);
+
+            return new ResultModel<DataResultModel<CategoryResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.Created,
+                Response = new DataResultModel<CategoryResModel> { Data = resCategory }
+            };
+           
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
     }
 
     public async Task<ResultModel<DataResultModel<CategoryResModel>>> UpdateCategory(Guid id, CategoryUpdateReqModel category)
@@ -130,19 +140,26 @@ public class CategoryServices : ICategoryServices
                 StatusCodes = (int) HttpStatusCode.BadRequest,
                 Response = null
             };
-
-        var updatingCategory = _mapper.Map<Category>(category);
-        await _categoryRepository.Update(updatingCategory);
-        
-        var updatedCategory = await _categoryRepository.GetSingle(c => c.Id == id);
-
-        var updatedCategoryRes = _mapper.Map<CategoryResModel>(updatedCategory);
-
-        return new ResultModel<DataResultModel<CategoryResModel>>
+        try
         {
-            StatusCodes = (int) HttpStatusCode.OK,
-            Response = new DataResultModel<CategoryResModel> { Data = updatedCategoryRes }
-        };
+            var updatingCategory = _mapper.Map<Category>(category);
+            await _categoryRepository.Update(updatingCategory);
+
+            var updatedCategory = await _categoryRepository.GetSingle(c => c.Id == id);
+
+            var updatedCategoryRes = _mapper.Map<CategoryResModel>(updatedCategory);
+
+            return new ResultModel<DataResultModel<CategoryResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<CategoryResModel> { Data = updatedCategoryRes }
+            };
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
     }
 
     public async Task<ResultModel<MessageResultModel>> DeleteCategory(Guid id)
@@ -170,28 +187,45 @@ public class CategoryServices : ICategoryServices
     }
     public async Task<ResultModel<List<CategoryResModel>>> GetAllRootCategories()
     {
-        var rootCategories = await _categoryRepository.GetList(c => c.ParentCategoryId == null);
-
-        var rootCategoryDtos = _mapper.Map<List<CategoryResModel>>(rootCategories);
-
-        return new ResultModel<List<CategoryResModel>>
+        
+        try
         {
-            StatusCodes = (int) HttpStatusCode.OK,
-            Response = rootCategoryDtos
-        };
+            var rootCategories = await _categoryRepository.GetList(c => c.ParentCategoryId == null);
+
+            var rootCategoryDtos = _mapper.Map<List<CategoryResModel>>(rootCategories);
+
+            return new ResultModel<List<CategoryResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = rootCategoryDtos
+            };
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
     }
 
     public async Task<ResultModel<List<CategoryResModel>>> GetChildCategories(Guid parentId)
     {
-        var childCategories = await _categoryRepository.GetList(c => c.ParentCategoryId == parentId);
-
-        var childCategoryDtos = _mapper.Map<List<CategoryResModel>>(childCategories);
-
-        return new ResultModel<List<CategoryResModel>>
+        try
         {
-            StatusCodes = (int) HttpStatusCode.OK,
-            Response = childCategoryDtos
-        };
+            var childCategories = await _categoryRepository.GetList(c => c.ParentCategoryId == parentId);
+
+            var childCategoryDtos = _mapper.Map<List<CategoryResModel>>(childCategories);
+
+            return new ResultModel<List<CategoryResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = childCategoryDtos
+            };
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
     }
     
     

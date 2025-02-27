@@ -1,6 +1,7 @@
 using Google.Cloud.Storage.V1;
 using HMES.API.Middleware;
 using HMES.Business.MapperProfiles;
+using HMES.Business.Services.CartServices;
 using HMES.Business.Services.CategoryServices;
 using HMES.Business.Services.CloudServices;
 using HMES.Business.Services.DeviceServices;
@@ -9,6 +10,7 @@ using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.CartRepositories;
 using HMES.Data.Repositories.CategoryRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.ProductRepositories;
@@ -130,6 +132,8 @@ builder.Services.AddScoped<IUserTokenRepositories, UserTokenRepositories>();
 builder.Services.AddScoped<IDeviceRepositories, DeviceRepositories>();
 builder.Services.AddScoped<ICategoryRepositories, CategoryRepositories>();
 builder.Services.AddScoped<IProductRepositories, ProductRepositories>();
+builder.Services.AddScoped<ICartRepositories, CartRepositories>();
+builder.Services.AddScoped<ICartItemsRepositories, CartItemsRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -137,6 +141,7 @@ builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
 builder.Services.AddScoped<IDeviceServices, DeviceServices>();
 builder.Services.AddScoped<ICategoryServices,CategoryServices>();
 builder.Services.AddScoped<IProductServices, ProductServices>();
+builder.Services.AddScoped<ICartServices, CartServices>();
 
 var app = builder.Build();
 

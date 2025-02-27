@@ -25,42 +25,59 @@ public class ProductServices : IProductServices
 
     public async Task<ResultModel<ListDataResultModel<ProductResponseDto>>> GetAllProducts(int pageIndex, int pageSize,ProductStatusEnums status)
     {
-        var (products, totalItems) = await _productRepository.GetListWithPagination(pageIndex, pageSize, status);
-        int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-        var result = new ListDataResultModel<ProductResponseDto>
+        try
         {
-            Data = _mapper.Map<List<ProductResponseDto>>(products),
-            CurrentPage = pageIndex,
-            TotalPages = totalPages,
-            TotalItems = totalItems,
-            PageSize = pageSize
-        };
+            var (products, totalItems) = await _productRepository.GetListWithPagination(pageIndex, pageSize, status);
+            int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
-        return new ResultModel<ListDataResultModel<ProductResponseDto>>
+            var result = new ListDataResultModel<ProductResponseDto>
+            {
+                Data = _mapper.Map<List<ProductResponseDto>>(products),
+                CurrentPage = pageIndex,
+                TotalPages = totalPages,
+                TotalItems = totalItems,
+                PageSize = pageSize
+            };
+
+            return new ResultModel<ListDataResultModel<ProductResponseDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+        }
+        catch (Exception e)
         {
-            StatusCodes = (int)HttpStatusCode.OK,
-            Response = result
-        };
+            throw new CustomException(e.Message);
+        }
+        
     }
 
     public async Task<ResultModel<DataResultModel<ProductResponseDto>>> GetProductById(Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
-        if (product == null)
+        try
         {
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null)
+            {
+                return new ResultModel<DataResultModel<ProductResponseDto>>
+                {
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = null
+                };
+            }
+
             return new ResultModel<DataResultModel<ProductResponseDto>>
             {
-                StatusCodes = (int)HttpStatusCode.NotFound,
-                Response = null
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<ProductResponseDto> { Data = _mapper.Map<ProductResponseDto>(product) }
             };
         }
-
-        return new ResultModel<DataResultModel<ProductResponseDto>>
+        catch (Exception e)
         {
-            StatusCodes = (int)HttpStatusCode.OK,
-            Response = new DataResultModel<ProductResponseDto> { Data = _mapper.Map<ProductResponseDto>(product) }
-        };
+            throw new CustomException(e.Message);
+        }
+        
+        
     }
 
     public async Task<ResultModel<ListDataResultModel<ProductResponseDto>>> SearchProducts( string? keyword, 
@@ -71,90 +88,123 @@ public class ProductServices : IProductServices
         DateTime? createdAfter, DateTime? createdBefore,
         int pageIndex, int pageSize)
     {
-        var (products, totalItems) = await _productRepository.GetProductsWithPagination(keyword,categoryId,minAmount,maxAmount,minPrice,maxPrice,status,createdAfter,createdBefore, pageIndex, pageSize);
-        int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-        var result = new ListDataResultModel<ProductResponseDto>
+        
+        try
         {
-            Data = _mapper.Map<List<ProductResponseDto>>(products),
-            CurrentPage = pageIndex,
-            TotalPages = totalPages,
-            TotalItems = totalItems,
-            PageSize = pageSize
-        };
+            var (products, totalItems) = await _productRepository.GetProductsWithPagination(keyword, categoryId,
+                minAmount, maxAmount, minPrice, maxPrice, status, createdAfter, createdBefore, pageIndex, pageSize);
+            int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
-        return new ResultModel<ListDataResultModel<ProductResponseDto>>
+            var result = new ListDataResultModel<ProductResponseDto>
+            {
+                Data = _mapper.Map<List<ProductResponseDto>>(products),
+                CurrentPage = pageIndex,
+                TotalPages = totalPages,
+                TotalItems = totalItems,
+                PageSize = pageSize
+            };
+
+            return new ResultModel<ListDataResultModel<ProductResponseDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+        }
+        catch (Exception e)
         {
-            StatusCodes = (int)HttpStatusCode.OK,
-            Response = result
-        };
+            throw new CustomException(e.Message);
+        }
+        
+        
     }
 
     public async Task<ResultModel<DataResultModel<ProductResponseDto>>> AddProduct(ProductCreateDto productDto)
     {
-        bool isSecondLevel = await _categoryRepository.IsSecondLevelCategory(productDto.CategoryId);
-        if (!isSecondLevel)
+        try
         {
-            throw new CustomException("The category parent is not at second level!");
+            bool isSecondLevel = await _categoryRepository.IsSecondLevelCategory(productDto.CategoryId);
+            if (!isSecondLevel)
+            {
+                throw new CustomException("The category parent is not at second level!");
+            }
+
+            var product = _mapper.Map<Product>(productDto);
+
+            await _productRepository.Insert(product);
+
+            var createdProduct = _mapper.Map<ProductResponseDto>(product);
+
+            return new ResultModel<DataResultModel<ProductResponseDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.Created,
+                Response = new DataResultModel<ProductResponseDto> { Data = createdProduct }
+            };
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
         }
         
-        var product = _mapper.Map<Product>(productDto);
-
-        await _productRepository.Insert(product);
-
-        var createdProduct = _mapper.Map<ProductResponseDto>(product);
-
-        return new ResultModel<DataResultModel<ProductResponseDto>>
-        {
-            StatusCodes = (int)HttpStatusCode.Created,
-            Response = new DataResultModel<ProductResponseDto> { Data = createdProduct }
-        };
     }
 
     public async Task<ResultModel<DataResultModel<ProductResponseDto>>> UpdateProduct(ProductUpdateDto productDto)
     {
-        var product = await _productRepository.GetByIdAsync(productDto.Id);
-        if (product == null)
+        try
         {
+            var product = await _productRepository.GetByIdAsync(productDto.Id);
+            if (product == null)
+            {
+                return new ResultModel<DataResultModel<ProductResponseDto>>
+                {
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = null
+                };
+            }
+
+            _mapper.Map(productDto, product);
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await _productRepository.Update(product);
+
+            var updatedProduct = _mapper.Map<ProductResponseDto>(product);
+
             return new ResultModel<DataResultModel<ProductResponseDto>>
             {
-                StatusCodes = (int)HttpStatusCode.NotFound,
-                Response = null
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<ProductResponseDto> { Data = updatedProduct }
             };
         }
-
-        _mapper.Map(productDto, product);
-        product.UpdatedAt = DateTime.UtcNow;
-
-        await _productRepository.Update(product);
-
-        var updatedProduct = _mapper.Map<ProductResponseDto>(product);
-
-        return new ResultModel<DataResultModel<ProductResponseDto>>
+        catch (Exception e)
         {
-            StatusCodes = (int)HttpStatusCode.OK,
-            Response = new DataResultModel<ProductResponseDto> { Data = updatedProduct }
-        };
+            throw new CustomException(e.Message);
+        }
     }
 
     public async Task<ResultModel<MessageResultModel>> DeleteProduct(Guid id)
     {
-        var product = await _productRepository.GetByIdAsync(id);
-        if (product == null)
+        try
         {
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null)
+            {
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = new MessageResultModel { Message = "Product not found" }
+                };
+            }
+
+            await _productRepository.Delete(product);
+
             return new ResultModel<MessageResultModel>
             {
-                StatusCodes = (int)HttpStatusCode.NotFound,
-                Response = new MessageResultModel { Message = "Product not found" }
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel { Message = "Product deleted successfully" }
             };
         }
-
-        await _productRepository.Delete(product);
-
-        return new ResultModel<MessageResultModel>
+        catch (Exception e)
         {
-            StatusCodes = (int)HttpStatusCode.OK,
-            Response = new MessageResultModel { Message = "Product deleted successfully" }
-        };
+            throw new CustomException(e.Message);
+        }
     }
 }
