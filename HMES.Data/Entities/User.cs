@@ -37,5 +37,7 @@ public partial class User
 
     public virtual ICollection<Ticket> TicketTeachnicians { get; set; } = new List<Ticket>();
 
+    public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
+
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
 }
