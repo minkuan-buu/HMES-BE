@@ -85,15 +85,17 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 0)");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
+            entity.HasOne(d => d.Cart)
+                .WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.CartId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__CartItems__CartI__60A75C0F");
 
-            entity.HasOne(d => d.IdNavigation).WithOne(p => p.CartItem)
-                .HasForeignKey<CartItem>(d => d.Id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__CartItems__Id__628FA481");
+            entity.HasOne(d => d.Product)
+                .WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__CartItems__ProductId__628FA481");
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -106,8 +108,12 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Attachment)
                 .HasMaxLength(2000)
                 .IsUnicode(false);
-            entity.Property(e => e.Description).HasColumnType("text");
-            entity.Property(e => e.Name).HasColumnType("text");
+            entity.Property(e => e.Description)
+                .HasMaxLength(300) 
+                .IsUnicode(true); 
+            entity.Property(e => e.Name)
+                .HasMaxLength(100) 
+                .IsUnicode(true);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -116,6 +122,7 @@ public partial class HmesContext : DbContext
                 .HasForeignKey(d => d.ParentCategoryId)
                 .HasConstraintName("FK__Category__Parent__6754599E");
         });
+
 
         modelBuilder.Entity<Device>(entity =>
         {
@@ -250,7 +257,7 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.Name)
                 .HasMaxLength(500)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 0)");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
