@@ -11,6 +11,10 @@ public partial class HmesContext : DbContext
     {
     }
 
+    public HmesContext()
+    {
+    }
+
     public virtual DbSet<Cart> Carts { get; set; }
 
     public virtual DbSet<CartItem> CartItems { get; set; }
