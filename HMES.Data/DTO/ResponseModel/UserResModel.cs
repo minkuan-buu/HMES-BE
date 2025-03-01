@@ -45,4 +45,9 @@ namespace HMES.Data.DTO.ResponseModel
         public string Token { get; set; } = null!;
         public string RefeshToken { get; set; } = null!;
     }
+
+    public class UserTemp
+    {
+        public string TempToken { get; set; } = null!;
+    }
 }
