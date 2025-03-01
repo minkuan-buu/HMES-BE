@@ -18,8 +18,8 @@ namespace HMES.Business.Ultilities.Email
         {
             try
             {
-                string from = "minhquandoanngoc@gmail.com";
-                string pass = "vfyy deqv xiaj mils";
+                string from = Environment.GetEnvironmentVariable("EMAIL_LOGIN") ?? "";
+                string pass = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") ?? "";
 
                 using MailKit.Net.Smtp.SmtpClient smtp = new();
                 await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
