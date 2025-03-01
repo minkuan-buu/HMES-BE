@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HMES.Business.Utilities.Authentication;
 using HMES.Business.Utilities.Converter;
+using HMES.Business.Utilities.TimeZoneHelper;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
@@ -60,7 +61,8 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.ParentCategory, opt => opt.MapFrom(src => src.ParentCategory));
         
             CreateMap<CategoryCreateReqModel, Category>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()));
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => CategoryStatusEnums.Active.ToString()));
 
             CreateMap<CategoryUpdateReqModel, Category>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -70,6 +72,25 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.ParentCategoryId, opt => opt.MapFrom(src => src.ParentCategoryId));
             CreateMap<Category, CategoryResModel>();
+            // Product
+            CreateMap<Product, ProductResponseDto>()
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name));
+            CreateMap<ProductCreateDto, Product>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ProductStatusEnums.Active.ToString()));
+            CreateMap<ProductUpdateDto, Product>()
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()));
+            
+            // Cart
+            CreateMap<CartItem, CartItemResponseDto>();
+            CreateMap<Cart, CartResponseDto>();
+            CreateMap<CartItemCreateDto, CartItem>();
+          
+
+
+
+
         }
     }
 }
