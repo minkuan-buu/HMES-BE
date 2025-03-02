@@ -200,4 +200,18 @@ public class UserServices : IUserServices
             throw new CustomException(ex.Message);
         }
     }
+
+    public async Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetTechnicians()
+    {
+        var TechniciansList = await _userRepositories.GetList(x => x.Role.Equals(RoleEnums.Technician.ToString()) && x.Status.Equals(GeneralStatusEnums.Active.ToString()));
+        var Result = _mapper.Map<List<UserProfileResModel>>(TechniciansList);
+        return new ResultModel<ListDataResultModel<UserProfileResModel>>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new ListDataResultModel<UserProfileResModel>()
+            {
+                Data = Result
+            }
+        };
+    }
 }

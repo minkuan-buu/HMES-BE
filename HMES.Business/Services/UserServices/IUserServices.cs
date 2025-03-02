@@ -6,7 +6,7 @@ namespace HMES.Business.Services.UserServices;
 
 public interface IUserServices
 {
-    Task<User> GetUser();
+    Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetTechnicians();
     Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel);
     Task<ResultModel<MessageResultModel>> Register(UserRegisterReqModel UserReqModel);
     Task<ResultModel<MessageResultModel>> Logout(Guid DeviceId);
