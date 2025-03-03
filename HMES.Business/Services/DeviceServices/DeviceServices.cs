@@ -88,13 +88,12 @@ namespace HMES.Business.Services.DeviceServices
                 Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
                 includeProperties: "NutritionReports");
-                if (!deviceDetail.UserId.Equals(userId))
-                {
-                    throw new Exception("Access denied");
-                }
-                else if (deviceDetail == null)
+                if (deviceDetail == null)
                 {
                     throw new Exception("Device not found!");
+                } else if (!deviceDetail.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
                 }
 
                 var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);

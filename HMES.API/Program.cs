@@ -13,7 +13,9 @@ using HMES.Data.Repositories.CategoryRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.OrderDetailRepositories;
 using HMES.Data.Repositories.OrderRepositories;
+using HMES.Data.Repositories.ProductRepositories;
 using HMES.Data.Repositories.TransactionRepositories;
+using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
 using Microsoft.AspNetCore.Authentication;
@@ -128,6 +130,8 @@ builder.Services.AddScoped<IOrderRepositories, OrderRepositories>();
 builder.Services.AddScoped<IOrderDetailRepositories, OrderDetailRepositories>();
 builder.Services.AddScoped<ITransactionRepositories, TransactionRepositories>();
 builder.Services.AddScoped<ICartRepositories, CartRepositories>();
+builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
+builder.Services.AddScoped<IProductRepositories, ProductRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
