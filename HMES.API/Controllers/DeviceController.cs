@@ -19,7 +19,7 @@ namespace HMES.API.Controllers
             _deviceServices = deviceServices;
         }
 
-        [HttpPost("create-device")]
+        [HttpPost]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreateDevice([FromForm] DeviceCreateReqModel device)
         {

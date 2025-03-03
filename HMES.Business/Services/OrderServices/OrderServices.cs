@@ -54,7 +54,7 @@ namespace HMES.Business.Services.OrderServices
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
         {
             var userId = new Guid(Authentication.DecodeToken(Token, "userid"));
-            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()), includeProperties: "Transactions,OrderDetails.Product,Device");
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()), includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device");
             // Kiểm tra xem có giao dịch PENDING hay không
             var pendingTransaction = order.Transactions.Any(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
 
