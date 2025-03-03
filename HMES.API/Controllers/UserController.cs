@@ -19,11 +19,29 @@ namespace HMES.API.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> Profile()
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
             var result = await _userServices.Profile(token);
+            return Ok(result);
+        }
+
+        [HttpGet("technicians")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+        public async Task<IActionResult> GetTechnicians()
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _userServices.GetTechnicians();
+            return Ok(result);
+        }
+
+        [HttpPut("me")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UserUpdateReqModel UserReqModel)
+        {
+            var Token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _userServices.Update(UserReqModel, Token);
             return Ok(result);
         }
 

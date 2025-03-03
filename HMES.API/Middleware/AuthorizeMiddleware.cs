@@ -69,35 +69,9 @@ namespace HMES.API.Middleware
                     ValidAudience = "TestingJWTIssuerSigningPTEducationMS@123",
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
-                var DeviceId = Context.Request.Cookies["DeviceId"];
                 
-                var RefreshToken = Context.Request.Cookies["RefreshToken"];
-                
-                if (string.IsNullOrEmpty(RefreshToken))
-                    return AuthenticateResult.Fail("RefreshToken is missing.");
-                
-                if (string.IsNullOrEmpty(DeviceId))
-                    return AuthenticateResult.Fail("DeviceId is missing.");
-
-                if (!Guid.TryParse(DeviceId, out var deviceGuid))
-                    return AuthenticateResult.Fail("Invalid DeviceId format.");
-
-                var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
-                
-                if (UserToken == null || UserToken.RefreshToken != RefreshToken)
-                    return AuthenticateResult.Fail("RefreshToken is invalid.");
-
-                if(token != UserToken.AccesToken)
-                    return AuthenticateResult.Fail("AccessToken is invalid.");
-
                 // Giải mã token, không kiểm tra thời gian sống
                 var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-                
-                // Kiểm tra nếu token đã hết hạn (tự handle)
-                if (validatedToken.ValidTo < DateTime.UtcNow)
-                {
-                    return await HandleExpiredTokenAsync(UserToken);
-                }
 
                 var identity = claimsPrincipal.Identity as ClaimsIdentity;
                 if (identity == null || !identity.IsAuthenticated)
@@ -107,41 +81,70 @@ namespace HMES.API.Middleware
 
                 // Kiểm tra yêu cầu đặt lại mật khẩu
                 var typeClaim = identity.FindFirst("type")?.Value;
-                if (requestPath.StartsWithSegments("/api/auth/reset-password"))
+                if (requestPath.StartsWithSegments("/api/auth/me/reset-password"))
                 {
                     if (typeClaim != "reset")
                     {
                         return AuthenticateResult.Fail("Invalid token for reset-password.");
+                    } else if (validatedToken.ValidTo < DateTime.UtcNow)
+                    {
+                        return AuthenticateResult.Fail("Token is expired.");
                     }
                 }
                 else if (typeClaim == "reset")
                 {
                     return AuthenticateResult.Fail("Invalid token for reset-password.");
-                }
+                } else {
+                    var DeviceId = Context.Request.Cookies["DeviceId"];
+                
+                    var RefreshToken = Context.Request.Cookies["RefreshToken"];
+                    
+                    if (string.IsNullOrEmpty(RefreshToken))
+                        throw new CustomException("RefreshToken is missing.");
+                    
+                    if (string.IsNullOrEmpty(DeviceId))
+                        throw new CustomException("DeviceId is missing.");
 
-                // Kiểm tra user trong DB
-                var userIdClaim = identity.FindFirst("userid")?.Value;
-                if (Guid.TryParse(userIdClaim, out var userId))
-                {
-                    var user = await _userRepositories.GetSingle(u => u.Id == userId);
-                    if (user == null || user.Status.Equals(AccountStatusEnums.Inactive.ToString()))
+                    if (!Guid.TryParse(DeviceId, out var deviceGuid))
+                        throw new CustomException("Invalid DeviceId format.");
+
+                    var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
+                    
+                    if (UserToken == null || UserToken.RefreshToken != RefreshToken)
+                        throw new CustomException("RefreshToken is invalid.");
+
+                    if(token != UserToken.AccesToken)
+                        return AuthenticateResult.Fail("AccessToken is invalid.");
+                    
+                    // Kiểm tra nếu token đã hết hạn (tự handle)
+                    if (validatedToken.ValidTo < DateTime.UtcNow)
                     {
-                        return AuthenticateResult.Fail("User is inactive or not found.");
+                        return await HandleExpiredTokenAsync(UserToken);
+                    }
+
+                    // Kiểm tra user trong DB
+                    var userIdClaim = identity.FindFirst("userid")?.Value;
+                    if (Guid.TryParse(userIdClaim, out var userId))
+                    {
+                        var user = await _userRepositories.GetSingle(u => u.Id == userId);
+                        if (user == null || user.Status.Equals(AccountStatusEnums.Inactive.ToString()))
+                        {
+                            return AuthenticateResult.Fail("User is inactive or not found.");
+                        }
+                    }
+
+                    // Kiểm tra vai trò
+                    var endpointRoles = GetEndpointRoles();
+                    var userRoles = identity.Claims
+                        .Where(c => c.Type == ClaimTypes.Role)
+                        .Select(c => c.Value)
+                        .ToList();
+
+                    if (endpointRoles.Any() && !userRoles.Any(ur => endpointRoles.Contains(ur)))
+                    {
+                        throw new CustomException("Access denied"); // Dùng đúng thông báo để middleware xử lý 403
                     }
                 }
-
-                // Kiểm tra vai trò
-                var endpointRoles = GetEndpointRoles();
-                var userRoles = identity.Claims
-                    .Where(c => c.Type == ClaimTypes.Role)
-                    .Select(c => c.Value)
-                    .ToList();
-
-                if (endpointRoles.Any() && !userRoles.Any(ur => endpointRoles.Contains(ur)))
-                {
-                    throw new CustomException("Access denied"); // Dùng đúng thông báo để middleware xử lý 403
-                }
-
                 var ticket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
                 return AuthenticateResult.Success(ticket);
             }

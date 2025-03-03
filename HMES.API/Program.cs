@@ -1,12 +1,32 @@
+using Google.Cloud.Storage.V1;
 using HMES.API.Middleware;
 using HMES.Business.MapperProfiles;
+using HMES.Business.Services.CartServices;
+using HMES.Business.Services.CategoryServices;
+using HMES.Business.Services.CloudServices;
+using HMES.Business.Services.DeviceServices;
+using HMES.Business.Services.OTPServices;
+using HMES.Business.Services.ProductServices;
+using HMES.Business.Services.OrderServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
+using HMES.Business.Ultilities.Email;
 using HMES.Data.Entities;
+using HMES.Data.Enums;
+using HMES.Data.Repositories.CartRepositories;
+using HMES.Data.Repositories.CategoryRepositories;
+using HMES.Data.Repositories.DeviceRepositories;
+using HMES.Data.Repositories.OTPRepositories;
+using HMES.Data.Repositories.ProductRepositories;
+using HMES.Data.Repositories.OrderDetailRepositories;
+using HMES.Data.Repositories.OrderRepositories;
+using HMES.Data.Repositories.TransactionRepositories;
+using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 DotNetEnv.Env.Load();
 
@@ -42,6 +62,12 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Title = "HMES.API",
         Description = "Hydroponic Monitoring Equipment System"
+    });
+    
+    c.MapType<ProductStatusEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(ProductStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
 
     // 🟢 Cấu hình Bearer Token
@@ -98,6 +124,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthentication("HMESAuthentication")
     .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null);
 
+//=========================================== FIREBASE ============================================
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"meowwoofsocial.json");
+builder.Services.AddSingleton<ICloudServices>(s => new CloudServices(StorageClient.Create()));
+
 //========================================== MIDDLEWARE ===========================================
 builder.Services.AddSingleton<GlobalExceptionMiddleware>();
 
@@ -107,10 +137,27 @@ builder.Services.AddAutoMapper(typeof(MapperProfileConfiguration).Assembly);
 //========================================== REPOSITORY ===========================================
 builder.Services.AddScoped<IUserRepositories, UserRepositories>();
 builder.Services.AddScoped<IUserTokenRepositories, UserTokenRepositories>();
+builder.Services.AddScoped<IDeviceRepositories, DeviceRepositories>();
+builder.Services.AddScoped<ICategoryRepositories, CategoryRepositories>();
+builder.Services.AddScoped<IProductRepositories, ProductRepositories>();
+builder.Services.AddScoped<ICartRepositories, CartRepositories>();
+builder.Services.AddScoped<ICartItemsRepositories, CartItemsRepositories>();
+builder.Services.AddScoped<IOTPRepositories, OTPRepositories>();
+builder.Services.AddScoped<IOrderRepositories, OrderRepositories>();
+builder.Services.AddScoped<IOrderDetailRepositories, OrderDetailRepositories>();
+builder.Services.AddScoped<ITransactionRepositories, TransactionRepositories>();
+builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
+builder.Services.AddScoped<IDeviceServices, DeviceServices>();
+builder.Services.AddScoped<ICategoryServices,CategoryServices>();
+builder.Services.AddScoped<IProductServices, ProductServices>();
+builder.Services.AddScoped<ICartServices, CartServices>();
+builder.Services.AddScoped<IOTPServices, OTPServices>();
+builder.Services.AddScoped<IOrderServices, OrderServices>();
+builder.Services.AddScoped<IEmail, Email>();
 
 var app = builder.Build();
 
