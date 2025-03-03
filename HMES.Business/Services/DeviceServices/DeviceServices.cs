@@ -88,13 +88,12 @@ namespace HMES.Business.Services.DeviceServices
                 Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
                 includeProperties: "NutritionReports");
-                if (!deviceDetail.UserId.Equals(userId))
-                {
-                    throw new Exception("Access denied");
-                }
-                else if (deviceDetail == null)
+                if (deviceDetail == null)
                 {
                     throw new Exception("Device not found!");
+                } else if (!deviceDetail.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
                 }
 
                 var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
@@ -111,5 +110,42 @@ namespace HMES.Business.Services.DeviceServices
                 throw new CustomException(ex.Message);
             }
         }
+
+        public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
+        {
+            try
+            {
+                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var getDevice = await _deviceRepositories.GetSingle(x => x.Id == DeviceId);
+                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceStatusEnum.Active.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true) 
+                {
+                    throw new Exception("Cann't Delete Device!");
+                }
+                else if (!getDevice.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
+                }
+                else if (getDevice == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+
+                await _deviceRepositories.Delete(getDevice);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is deleted!"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+        
     }
 }

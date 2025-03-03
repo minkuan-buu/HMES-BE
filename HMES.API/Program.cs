@@ -7,6 +7,7 @@ using HMES.Business.Services.CloudServices;
 using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.OTPServices;
 using HMES.Business.Services.ProductServices;
+using HMES.Business.Services.OrderServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Business.Ultilities.Email;
@@ -17,6 +18,10 @@ using HMES.Data.Repositories.CategoryRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.OTPRepositories;
 using HMES.Data.Repositories.ProductRepositories;
+using HMES.Data.Repositories.OrderDetailRepositories;
+using HMES.Data.Repositories.OrderRepositories;
+using HMES.Data.Repositories.TransactionRepositories;
+using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
 using Microsoft.AspNetCore.Authentication;
@@ -138,6 +143,10 @@ builder.Services.AddScoped<IProductRepositories, ProductRepositories>();
 builder.Services.AddScoped<ICartRepositories, CartRepositories>();
 builder.Services.AddScoped<ICartItemsRepositories, CartItemsRepositories>();
 builder.Services.AddScoped<IOTPRepositories, OTPRepositories>();
+builder.Services.AddScoped<IOrderRepositories, OrderRepositories>();
+builder.Services.AddScoped<IOrderDetailRepositories, OrderDetailRepositories>();
+builder.Services.AddScoped<ITransactionRepositories, TransactionRepositories>();
+builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -147,6 +156,7 @@ builder.Services.AddScoped<ICategoryServices,CategoryServices>();
 builder.Services.AddScoped<IProductServices, ProductServices>();
 builder.Services.AddScoped<ICartServices, CartServices>();
 builder.Services.AddScoped<IOTPServices, OTPServices>();
+builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IEmail, Email>();
 
 var app = builder.Build();

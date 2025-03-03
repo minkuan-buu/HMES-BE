@@ -13,5 +13,7 @@ namespace HMES.Business.Services.DeviceServices
         Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token);
 
         Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token);
+
+        Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token);
     }
 }
