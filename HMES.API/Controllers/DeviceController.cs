@@ -19,7 +19,7 @@ namespace HMES.API.Controllers
             _deviceServices = deviceServices;
         }
 
-        [HttpPost("create-device")]
+        [HttpPost]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreateDevice([FromForm] DeviceCreateReqModel device)
         {
@@ -34,6 +34,15 @@ namespace HMES.API.Controllers
         {
                 var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
                 var result = await _deviceServices.GetDeviceDetailById(Id, token);
+                return Ok(result);
+        }
+
+        [HttpDelete("{Id}")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> DeleteDeviceById(Guid Id)
+        {
+                var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                var result = await _deviceServices.DeleteDeviceById(Id, token);
                 return Ok(result);
         }
     }
