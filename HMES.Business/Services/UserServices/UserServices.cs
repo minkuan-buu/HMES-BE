@@ -7,6 +7,7 @@ using HMES.Data.DTO.RequestModel;
 using AutoMapper;
 using System.Net;
 using HMES.Data.Repositories.UserTokenRepositories;
+using HMES.Data.Enums;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
@@ -159,6 +160,57 @@ public class UserServices : IUserServices
             Response = new MessageResultModel()
             {
                 Message = "User is updated!"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> ResetPassword(UserResetPasswordReqModel ReqModel, string token)
+    {
+        try
+        {
+            var email = Authentication.DecodeToken(token, "email");
+            var user = await _userRepositories.GetSingle(x => x.Email.Equals(email));
+            if (user == null)
+            {
+                throw new CustomException("User not found!");
+            }
+            if (ReqModel.NewPassword != ReqModel.ConfirmPassword)
+            {
+                throw new CustomException("New password and confirm password is not match!");
+            }
+            if (ReqModel.NewPassword.Length < 6)
+            {
+                throw new CustomException("Password must be at least 6 characters!");
+            }
+            var Auth = Authentication.CreateHashPassword(ReqModel.NewPassword);
+            user.Password = Auth.HashedPassword;
+            user.Salt = Auth.Salt;
+            user.Status = GeneralStatusEnums.Active.ToString();
+            await _userRepositories.Update(user);
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel(){
+                    Message = "Ok"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ex.Message);
+        }
+    }
+
+    public async Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetTechnicians()
+    {
+        var TechniciansList = await _userRepositories.GetList(x => x.Role.Equals(RoleEnums.Technician.ToString()) && x.Status.Equals(GeneralStatusEnums.Active.ToString()));
+        var Result = _mapper.Map<List<UserProfileResModel>>(TechniciansList);
+        return new ResultModel<ListDataResultModel<UserProfileResModel>>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new ListDataResultModel<UserProfileResModel>()
+            {
+                Data = Result
             }
         };
     }

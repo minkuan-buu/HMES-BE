@@ -49,7 +49,6 @@ public class CategoryController:ControllerBase
         var result = await _categoryServices.GetChildCategories(parentId);
         return StatusCode(result.StatusCodes, result.Response);
     }
-
     
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromBody] CategoryCreateReqModel category)
@@ -70,5 +69,7 @@ public class CategoryController:ControllerBase
         var result = await _categoryServices.DeleteCategory(id);
         return Ok(result);
     }
+    
+    
 
 }

@@ -3,15 +3,19 @@ using System.Collections.Generic;
 
 namespace HMES.Data.Entities;
 
-public partial class Cart
+public partial class Otp
 {
     public Guid Id { get; set; }
 
     public Guid UserId { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public string Code { get; set; } = null!;
 
-    public DateTime? UpdatedAt { get; set; }
+    public bool IsUsed { get; set; }
+
+    public DateTime? ExpiredDate { get; set; }
+
+    public string Status { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }
