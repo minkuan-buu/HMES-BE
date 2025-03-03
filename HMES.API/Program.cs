@@ -20,7 +20,6 @@ using HMES.Data.Repositories.OTPRepositories;
 using HMES.Data.Repositories.ProductRepositories;
 using HMES.Data.Repositories.OrderDetailRepositories;
 using HMES.Data.Repositories.OrderRepositories;
-using HMES.Data.Repositories.ProductRepositories;
 using HMES.Data.Repositories.TransactionRepositories;
 using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
@@ -154,6 +153,11 @@ builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
 builder.Services.AddScoped<IDeviceServices, DeviceServices>();
 builder.Services.AddScoped<ICategoryServices,CategoryServices>();
+builder.Services.AddScoped<IProductServices, ProductServices>();
+builder.Services.AddScoped<ICartServices, CartServices>();
+builder.Services.AddScoped<IOTPServices, OTPServices>();
+builder.Services.AddScoped<IOrderServices, OrderServices>();
+builder.Services.AddScoped<IEmail, Email>();
 
 var app = builder.Build();
 

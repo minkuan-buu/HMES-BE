@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace HMES.Data.DTO.RequestModel
 {
-    class TransactionReqModel
+    public class TransactionReqModel
     {
     }
 
@@ -18,12 +18,12 @@ namespace HMES.Data.DTO.RequestModel
 
     public class CreateOrderDetailReqModel
     {
-        public List<ProductReqModel> Products { get; set; } = new();
+        public List<OrderProductReqModel> Products { get; set; } = new();
         public int DeviceQuantity { get; set; }
 
     }
      
-    public class ProductReqModel
+    public class OrderProductReqModel
     {
         public Guid Id { get; set; } 
         public decimal UnitPrice { get; set; }
