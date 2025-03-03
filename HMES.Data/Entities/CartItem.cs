@@ -19,7 +19,5 @@ public partial class CartItem
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Product IdNavigation { get; set; } = null!;
-
     public virtual Product Product { get; set; } = null!;
 }
