@@ -23,11 +23,11 @@ public partial class Ticket
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual User IdNavigation { get; set; } = null!;
-
     public virtual User? Teachnician { get; set; }
 
     public virtual ICollection<TicketAttachment> TicketAttachments { get; set; } = new List<TicketAttachment>();
 
     public virtual ICollection<TicketResponse> TicketResponses { get; set; } = new List<TicketResponse>();
+
+    public virtual User User { get; set; } = null!;
 }

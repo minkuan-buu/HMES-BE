@@ -15,7 +15,7 @@ public partial class OrderDetail
 
     public decimal UnitPrice { get; set; }
 
-    public decimal Quantity { get; set; }
+    public int Quantity { get; set; }
 
     public string Status { get; set; } = null!;
 

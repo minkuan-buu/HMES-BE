@@ -54,20 +54,13 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        // [HttpPost("reset-password")]
-        // [Authorize(AuthenticationSchemes = "MeowWoofAuthentication")]
-        // public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordReqModel User)
-        // {
-        //     try
-        //     {
-        //         string token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-        //         var Result = await _userServices.ResetPassword(User, token);
-        //         return Ok(Result);
-        //     }
-        //     catch (CustomException ex)
-        //     {
-        //         return BadRequest(new { message = ex.Message });
-        //     }
-        // }
+        [HttpPost("me/reset-password")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordReqModel User)
+        {
+            string token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var Result = await _userServices.ResetPassword(User, token);
+            return Ok(Result);
+        }
     }
 }
