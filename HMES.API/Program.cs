@@ -158,15 +158,31 @@ builder.Services.AddScoped<ICartServices, CartServices>();
 builder.Services.AddScoped<IOTPServices, OTPServices>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IEmail, Email>();
+//=========================================== CORS ================================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowAllOrigin", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+            //.AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
+
+app.UseSwagger();
+
+app.UseSwaggerUI();
+
+app.UseCors("AllowAllOrigin");
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
