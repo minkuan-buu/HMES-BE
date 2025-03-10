@@ -8,6 +8,7 @@ using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.OTPServices;
 using HMES.Business.Services.ProductServices;
 using HMES.Business.Services.OrderServices;
+using HMES.Business.Services.TicketServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Business.Ultilities.Email;
@@ -20,6 +21,8 @@ using HMES.Data.Repositories.OTPRepositories;
 using HMES.Data.Repositories.ProductRepositories;
 using HMES.Data.Repositories.OrderDetailRepositories;
 using HMES.Data.Repositories.OrderRepositories;
+using HMES.Data.Repositories.TicketRepositories;
+using HMES.Data.Repositories.TicketResponseRepositories;
 using HMES.Data.Repositories.TransactionRepositories;
 using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
@@ -68,6 +71,12 @@ builder.Services.AddSwaggerGen(c =>
     {
         Type = "string",
         Enum = Enum.GetNames(typeof(ProductStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
+    
+    c.MapType<TicketStatusEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(TicketStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
 
     // 🟢 Cấu hình Bearer Token
@@ -147,6 +156,8 @@ builder.Services.AddScoped<IOrderRepositories, OrderRepositories>();
 builder.Services.AddScoped<IOrderDetailRepositories, OrderDetailRepositories>();
 builder.Services.AddScoped<ITransactionRepositories, TransactionRepositories>();
 builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
+builder.Services.AddScoped<ITicketRepositories, TicketRepositories>();
+builder.Services.AddScoped<ITicketResponseRepositories, TicketResponseRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -158,6 +169,7 @@ builder.Services.AddScoped<ICartServices, CartServices>();
 builder.Services.AddScoped<IOTPServices, OTPServices>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IEmail, Email>();
+builder.Services.AddScoped<ITicketServices, TicketServices>();
 
 var app = builder.Build();
 
