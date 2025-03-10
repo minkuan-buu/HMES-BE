@@ -18,7 +18,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<User, UserLoginResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForPath(dest => dest.Auth.DeviceId, opt => opt.Ignore())
-                .ForPath(dest => dest.Auth.RefeshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
+                .ForPath(dest => dest.Auth.RefreshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
                 .ForPath(dest => dest.Auth.Token, opt => opt.MapFrom(src => Authentication.GenerateJWT(src)));
 
             //Register
