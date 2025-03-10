@@ -49,8 +49,7 @@ var connectionString = rawConnectionString
     .Replace("${DB_SERVER}", Environment.GetEnvironmentVariable("DB_SERVER") ?? "")
     .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
     .Replace("${DB_PASSWORD}", Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "")
-    .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "")
-    .Replace("${DB_PORT}", Environment.GetEnvironmentVariable("DB_PORT") ?? "");
+    .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "");
 
 builder.Services.AddDbContext<HmesContext>(options =>
     options.UseSqlServer(connectionString));
@@ -160,15 +159,16 @@ builder.Services.AddScoped<IOTPServices, OTPServices>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IEmail, Email>();
 //=========================================== CORS ================================================
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowAllOrigin", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins(allowedOrigins!)
             .AllowAnyHeader()
-            .AllowAnyMethod();
-        //.AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
+            .AllowAnyMethod()
+            .AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
     });
 });
 
