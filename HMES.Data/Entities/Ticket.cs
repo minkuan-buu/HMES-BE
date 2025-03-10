@@ -9,7 +9,7 @@ public partial class Ticket
 
     public Guid UserId { get; set; }
 
-    public Guid? TeachnicianId { get; set; }
+    public Guid? TechnicianId { get; set; }
 
     public string? Type { get; set; }
 
@@ -23,7 +23,7 @@ public partial class Ticket
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual User? Teachnician { get; set; }
+    public virtual User? Technician { get; set; }
 
     public virtual ICollection<TicketAttachment> TicketAttachments { get; set; } = new List<TicketAttachment>();
 
