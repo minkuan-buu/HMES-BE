@@ -91,7 +91,8 @@ namespace HMES.Business.Services.DeviceServices
                 if (deviceDetail == null)
                 {
                     throw new Exception("Device not found!");
-                } else if (!deviceDetail.UserId.Equals(userId))
+                }
+                else if (!deviceDetail.UserId.Equals(userId))
                 {
                     throw new Exception("Access denied");
                 }
@@ -117,7 +118,7 @@ namespace HMES.Business.Services.DeviceServices
             {
                 Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var getDevice = await _deviceRepositories.GetSingle(x => x.Id == DeviceId);
-                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceStatusEnum.Active.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true) 
+                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceStatusEnum.Active.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
                 {
                     throw new Exception("Cann't Delete Device!");
                 }
@@ -146,6 +147,38 @@ namespace HMES.Business.Services.DeviceServices
                 throw new CustomException(ex.Message);
             }
         }
-        
+
+        public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDeviceByUserId(Guid UserId, string token)
+        {
+            var result = new ListDataResultModel<ListDeviceDetailResModel>();
+
+            try
+            {
+                Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var deviceDetails = await _deviceRepositories.GetList(x => x.UserId.Equals(UserId),
+                    includeProperties: "NutritionReports");
+                if (deviceDetails == null || !deviceDetails.Any())
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (!deviceDetails.All(d => d.UserId.Equals(userId)))
+                {
+                    throw new Exception("Access denied");
+                }
+
+                var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
+                result.Data = deviceResModels;
+
+                return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
