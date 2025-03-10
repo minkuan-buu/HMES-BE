@@ -31,6 +31,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using HMES.Business.Services.UserAddressServices;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,7 +44,7 @@ builder.Services.AddSwaggerGen();
 
 var rawConnectionString = builder.Configuration.GetSection("Database:ConnectionString").Value;
 
-if(rawConnectionString == null)
+if (rawConnectionString == null)
 {
     throw new Exception("Connection string is not found");
 }
@@ -52,7 +53,8 @@ var connectionString = rawConnectionString
     .Replace("${DB_SERVER}", Environment.GetEnvironmentVariable("DB_SERVER") ?? "")
     .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
     .Replace("${DB_PASSWORD}", Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "")
-    .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "");
+    .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "")
+    .Replace("${DB_PORT}", Environment.GetEnvironmentVariable("DB_PORT") ?? "");
 
 builder.Services.AddDbContext<HmesContext>(options =>
     options.UseSqlServer(connectionString));
@@ -66,7 +68,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "HMES.API",
         Description = "Hydroponic Monitoring Equipment System"
     });
-    
+
     c.MapType<ProductStatusEnums>(() => new OpenApiSchema
     {
         Type = "string",
@@ -163,22 +165,40 @@ builder.Services.AddScoped<ITicketResponseRepositories, TicketResponseRepositori
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
 builder.Services.AddScoped<IDeviceServices, DeviceServices>();
-builder.Services.AddScoped<ICategoryServices,CategoryServices>();
+builder.Services.AddScoped<ICategoryServices, CategoryServices>();
 builder.Services.AddScoped<IProductServices, ProductServices>();
 builder.Services.AddScoped<ICartServices, CartServices>();
 builder.Services.AddScoped<IOTPServices, OTPServices>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
+builder.Services.AddScoped<IUserAddressServices, UserAddressServices>();
 builder.Services.AddScoped<IEmail, Email>();
 builder.Services.AddScoped<ITicketServices, TicketServices>();
+//=========================================== CORS ================================================
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowAllOrigin", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins!)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
+
+app.UseSwagger();
+
+app.UseSwaggerUI();
+
+app.UseCors("AllowAllOrigin");
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 

@@ -18,7 +18,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<User, UserLoginResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForPath(dest => dest.Auth.DeviceId, opt => opt.Ignore())
-                .ForPath(dest => dest.Auth.RefeshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
+                .ForPath(dest => dest.Auth.RefreshToken, opt => opt.MapFrom(src => Authentication.GenerateRefreshToken()))
                 .ForPath(dest => dest.Auth.Token, opt => opt.MapFrom(src => Authentication.GenerateJWT(src)));
 
             //Register
@@ -33,7 +33,7 @@ namespace HMES.Business.MapperProfiles
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
-                
+
             //UpdateUser
             CreateMap<UserUpdateReqModel, User>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)));
@@ -43,7 +43,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
-                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));        
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
 
             CreateMap<Device, DeviceDetailResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -56,12 +56,25 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
                 .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+
+            CreateMap<Device, ListDeviceDetailResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
+                .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
+                .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+
             // Category
             CreateMap<Category, CategoryRecursiveResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.ParentCategory, opt => opt.MapFrom(src => src.ParentCategory));
-        
+
             CreateMap<CategoryCreateReqModel, Category>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
@@ -84,18 +97,26 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Category.Name)));
             CreateMap<ProductCreateDto, Product>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
-                
+
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ProductStatusEnums.Active.ToString()));
             CreateMap<ProductUpdateDto, Product>()
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()));
-            
+
             // Cart
             CreateMap<CartItem, CartItemResponseDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product.Name)));
-            
+
             CreateMap<Cart, CartResponseDto>();
             CreateMap<CartItemCreateDto, CartItem>();
+
+            // UserAddress
+            CreateMap<UserAddressCreateReqModel, UserAddress>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)));
+
+
+
             // Ticket
             CreateMap<Ticket, TicketBriefDto>()
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
