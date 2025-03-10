@@ -43,7 +43,7 @@ namespace HMES.Data.DTO.ResponseModel
     {
         public Guid DeviceId { get; set; }
         public string Token { get; set; } = null!;
-        public string RefeshToken { get; set; } = null!;
+        public string RefreshToken { get; set; } = null!;
     }
 
     public class UserTemp
