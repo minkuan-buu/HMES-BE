@@ -40,7 +40,7 @@ builder.Services.AddSwaggerGen();
 
 var rawConnectionString = builder.Configuration.GetSection("Database:ConnectionString").Value;
 
-if(rawConnectionString == null)
+if (rawConnectionString == null)
 {
     throw new Exception("Connection string is not found");
 }
@@ -63,7 +63,7 @@ builder.Services.AddSwaggerGen(c =>
         Title = "HMES.API",
         Description = "Hydroponic Monitoring Equipment System"
     });
-    
+
     c.MapType<ProductStatusEnums>(() => new OpenApiSchema
     {
         Type = "string",
@@ -152,22 +152,23 @@ builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
 builder.Services.AddScoped<IUserServices, UserServices>();
 builder.Services.AddScoped<IUserTokenServices, UserTokenServices>();
 builder.Services.AddScoped<IDeviceServices, DeviceServices>();
-builder.Services.AddScoped<ICategoryServices,CategoryServices>();
+builder.Services.AddScoped<ICategoryServices, CategoryServices>();
 builder.Services.AddScoped<IProductServices, ProductServices>();
 builder.Services.AddScoped<ICartServices, CartServices>();
 builder.Services.AddScoped<IOTPServices, OTPServices>();
 builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IEmail, Email>();
 //=========================================== CORS ================================================
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowAllOrigin", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins(allowedOrigins!)
             .AllowAnyHeader()
-            .AllowAnyMethod();
-            //.AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
+            .AllowAnyMethod()
+            .AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
     });
 });
 
