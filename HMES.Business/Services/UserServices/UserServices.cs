@@ -22,7 +22,7 @@ public class UserServices : IUserServices
         _mapper = mapper;
         _userTokenRepositories = userTokenRepositories;
     }
-    
+
     public async Task<User> GetUser()
     {
         var list = await _userRepositories.GetList();
@@ -32,12 +32,12 @@ public class UserServices : IUserServices
     public async Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel)
     {
         var user = await _userRepositories.GetUserByEmail(UserReqModel.Email);
-        if(user == null)
+        if (user == null)
         {
             throw new CustomException("User not found");
         }
         var checkPassword = Authentication.VerifyPasswordHashed(UserReqModel.Password, user.Salt, user.Password);
-        if(!checkPassword)
+        if (!checkPassword)
         {
             throw new CustomException("Password is incorrect");
         }
@@ -47,14 +47,16 @@ public class UserServices : IUserServices
             Id = Guid.NewGuid(),
             UserId = user.Id,
             AccesToken = Result.Auth.Token,
-            RefreshToken = Result.Auth.RefeshToken,
+            RefreshToken = Result.Auth.RefreshToken,
             CreatedAt = DateTime.Now
         };
         Result.Auth.DeviceId = NewUserToken.Id;
         await _userTokenRepositories.Insert(NewUserToken);
-        return new ResultModel<DataResultModel<UserLoginResModel>>(){
+        return new ResultModel<DataResultModel<UserLoginResModel>>()
+        {
             StatusCodes = (int)HttpStatusCode.OK,
-            Response = new DataResultModel<UserLoginResModel>(){
+            Response = new DataResultModel<UserLoginResModel>()
+            {
                 Data = Result
             }
         };
@@ -63,7 +65,8 @@ public class UserServices : IUserServices
     public async Task<ResultModel<MessageResultModel>> Register(UserRegisterReqModel UserReqModel)
     {
         var User = await _userRepositories.GetUserByEmail(UserReqModel.Email);
-        if(User != null) {
+        if (User != null)
+        {
             throw new CustomException("This email is existed!");
         }
         CreateHashPasswordModel PasswordSet = Authentication.CreateHashPassword(UserReqModel.Password);
@@ -81,16 +84,20 @@ public class UserServices : IUserServices
         };
     }
 
-    public async Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token){
-        var userId = Authentication.DecodeToken(Token,"userid");
+    public async Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token)
+    {
+        var userId = Authentication.DecodeToken(Token, "userid");
         var user = await _userRepositories.GetSingle(x => x.Id.Equals(Guid.Parse(userId)));
-        if(user == null){
+        if (user == null)
+        {
             throw new CustomException("User not found");
         }
         UserProfileResModel Result = _mapper.Map<UserProfileResModel>(user);
-        return new ResultModel<DataResultModel<UserProfileResModel>>(){
+        return new ResultModel<DataResultModel<UserProfileResModel>>()
+        {
             StatusCodes = (int)HttpStatusCode.OK,
-            Response = new DataResultModel<UserProfileResModel>(){
+            Response = new DataResultModel<UserProfileResModel>()
+            {
                 Data = Result
             }
         };
@@ -100,10 +107,11 @@ public class UserServices : IUserServices
     {
         var MessageReturn = "Logout success! ";
         var UserToken = await _userTokenRepositories.GetSingle(x => x.Id == DeviceId);
-        if(UserToken == null)
+        if (UserToken == null)
         {
             MessageReturn += "Warning: DeviceId is not found!";
-        } else await _userTokenRepositories.Delete(UserToken);
+        }
+        else await _userTokenRepositories.Delete(UserToken);
         return new ResultModel<MessageResultModel>()
         {
             StatusCodes = (int)HttpStatusCode.OK,
@@ -116,17 +124,18 @@ public class UserServices : IUserServices
 
     public async Task<ResultModel<MessageResultModel>> ChangePassword(UserChangePasswordReqModel UserReqModel, string Token)
     {
-        var UserId = Authentication.DecodeToken(Token,"userid");
+        var UserId = Authentication.DecodeToken(Token, "userid");
         var User = await _userRepositories.GetSingle(x => x.Id.Equals(Guid.Parse(UserId)));
-        if(User == null){
+        if (User == null)
+        {
             throw new CustomException("User not found");
         }
         var CheckPassword = Authentication.VerifyPasswordHashed(UserReqModel.OldPassword, User.Salt, User.Password);
-        if(!CheckPassword)
+        if (!CheckPassword)
         {
             throw new CustomException("Old password is incorrect");
         }
-        if(UserReqModel.NewPassword != UserReqModel.ConfirmPassword)
+        if (UserReqModel.NewPassword != UserReqModel.ConfirmPassword)
         {
             throw new CustomException("New password and confirm password are not matched");
         }
@@ -146,9 +155,9 @@ public class UserServices : IUserServices
 
     public async Task<ResultModel<MessageResultModel>> Update(UserUpdateReqModel UserReqModel, string Token)
     {
-        var UserId = Guid.Parse(Authentication.DecodeToken(Token,"userid"));
+        var UserId = Guid.Parse(Authentication.DecodeToken(Token, "userid"));
         var User = await _userRepositories.GetSingle(x => x.Id == UserId);
-        if(User == null)
+        if (User == null)
         {
             throw new CustomException("User not found");
         }
@@ -190,7 +199,8 @@ public class UserServices : IUserServices
             return new ResultModel<MessageResultModel>
             {
                 StatusCodes = (int)HttpStatusCode.OK,
-                Response = new MessageResultModel(){
+                Response = new MessageResultModel()
+                {
                     Message = "Ok"
                 }
             };
