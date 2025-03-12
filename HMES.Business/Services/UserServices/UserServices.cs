@@ -8,6 +8,7 @@ using AutoMapper;
 using System.Net;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Data.Enums;
+using HMES.Business.Utilities.Converter;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
@@ -161,7 +162,9 @@ public class UserServices : IUserServices
         {
             throw new CustomException("User not found");
         }
-        User = _mapper.Map<User>(UserReqModel);
+        User.Name = TextConvert.ConvertToUnicodeEscape(UserReqModel.Name);
+        User.Phone = UserReqModel.Phone;
+        User.UpdatedAt = DateTime.Now;
         await _userRepositories.Update(User);
         return new ResultModel<MessageResultModel>()
         {

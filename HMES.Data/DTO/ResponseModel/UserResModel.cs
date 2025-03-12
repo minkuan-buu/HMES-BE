@@ -50,4 +50,21 @@ namespace HMES.Data.DTO.ResponseModel
     {
         public string TempToken { get; set; } = null!;
     }
+
+    public class UserFinalLoginResModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        public string Role { get; set; } = null!;
+        public string Status { get; set; } = null!;
+        public string Attachment { get; set; } = null!;
+        public UserFinalAuthResModel Auth { get; set; } = null!;
+    }
+
+    public class UserFinalAuthResModel
+    {
+        public string Token { get; set; } = null!;
+    }
 }
