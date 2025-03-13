@@ -137,37 +137,31 @@ namespace HMES.Business.Services.DeviceServices
         //     }
         // }
 
-        // public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDeviceByUserId(Guid UserId, string token)
-        // {
-        //     var result = new ListDataResultModel<ListDeviceDetailResModel>();
+        public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDevice()
+        {
+            var result = new ListDataResultModel<ListDeviceDetailResModel>();
 
-        //     try
-        //     {
-        //         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        //         var deviceDetails = await _deviceRepositories.GetList(x => x.UserId.Equals(UserId),
-        //             includeProperties: "NutritionReports");
-        //         if (deviceDetails == null || !deviceDetails.Any())
-        //         {
-        //             throw new Exception("Device not found!");
-        //         }
-        //         else if (!deviceDetails.All(d => d.UserId.Equals(userId)))
-        //         {
-        //             throw new Exception("Access denied");
-        //         }
+            try
+            {     
+                var deviceDetails = await _deviceRepositories.GetList(x => x.Status.Equals(DeviceStatusEnum.Active.ToString()));
+                if (deviceDetails == null || !deviceDetails.Any())
+                {
+                    throw new Exception("Device not found!");
+                }
 
-        //         var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
-        //         result.Data = deviceResModels;
+                var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
+                result.Data = deviceResModels;
 
-        //         return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = result
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
