@@ -19,14 +19,14 @@ namespace HMES.API.Controllers
                         _deviceServices = deviceServices;
                 }
 
-                // [HttpPost]
-                // [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                // public async Task<IActionResult> CreateDevice([FromForm] DeviceCreateReqModel device)
-                // {
-                //         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                //         var result = await _deviceServices.CreateDevices(device, token);
-                //         return Ok(result);
-                // }
+                [HttpPost]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> CreateDevice([FromForm] DeviceCreateReqModel device)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceServices.CreateDevices(device, token);
+                        return Ok(result);
+                }
 
                 // [HttpGet("{Id}")]
                 // [Authorize(AuthenticationSchemes = "HMESAuthentication")]

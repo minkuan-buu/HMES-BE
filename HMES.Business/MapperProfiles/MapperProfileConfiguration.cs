@@ -38,7 +38,9 @@ namespace HMES.Business.MapperProfiles
             CreateMap<DeviceCreateReqModel, Device>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
 
             CreateMap<Device, DeviceDetailResModel>()
