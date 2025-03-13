@@ -9,6 +9,8 @@ public partial class Order
 
     public Guid UserId { get; set; }
 
+    public Guid UserAddressId { get; set; }
+
     public decimal TotalPrice { get; set; }
 
     public string Status { get; set; } = null!;
@@ -22,4 +24,6 @@ public partial class Order
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual User User { get; set; } = null!;
+
+    public virtual UserAddress UserAddress { get; set; } = null!;
 }

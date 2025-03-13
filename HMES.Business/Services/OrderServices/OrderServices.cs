@@ -121,141 +121,141 @@ namespace HMES.Business.Services.OrderServices
             return random.Next(10000000, 99999999).ToString();
         }
 
-        public async Task<ResultModel<DataResultModel<Guid>>> CreateOrder(CreateOrderDetailReqModel orderRequest, string token)
-        {
-            try
-            {
-                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+        // public async Task<ResultModel<DataResultModel<Guid>>> CreateOrder(CreateOrderDetailReqModel orderRequest, string token)
+        // {
+        //     try
+        //     {
+        //         var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-                // Lấy đơn hàng Pending hiện có của user (nếu có) kèm theo OrderDetails
-                var existingOrder = await _orderRepositories.GetSingle(
-                    o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
-                    includeProperties: "OrderDetails");
-                //clear toàn bộ orderdetail của order cũ
-                if (existingOrder != null)
-                {
-                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-                    existingOrder.OrderDetails.Clear();
-                }
+        //         // Lấy đơn hàng Pending hiện có của user (nếu có) kèm theo OrderDetails
+        //         var existingOrder = await _orderRepositories.GetSingle(
+        //             o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
+        //             includeProperties: "OrderDetails");
+        //         //clear toàn bộ orderdetail của order cũ
+        //         if (existingOrder != null)
+        //         {
+        //             await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
+        //             existingOrder.OrderDetails.Clear();
+        //         }
 
-                // Xác định orderId: nếu có đơn hàng pending rồi thì dùng orderId đó, nếu chưa có thì tạo mới
-                Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
+        //         // Xác định orderId: nếu có đơn hàng pending rồi thì dùng orderId đó, nếu chưa có thì tạo mới
+        //         Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
 
-                var productIds = orderRequest.Products.Select(p => p.Id).ToList();
-                var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
+        //         var productIds = orderRequest.Products.Select(p => p.Id).ToList();
+        //         var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
 
-                foreach (var prodReq in orderRequest.Products)
-                {
-                    var product = products.FirstOrDefault(p => p.Id == prodReq.Id);
-                    if (product == null || product.Amount < prodReq.Quantity)
-                    {
-                        throw new CustomException($"Sản phẩm {prodReq.Id} không đủ số lượng để đặt hàng.");
-                    }
-                }
+        //         foreach (var prodReq in orderRequest.Products)
+        //         {
+        //             var product = products.FirstOrDefault(p => p.Id == prodReq.Id);
+        //             if (product == null || product.Amount < prodReq.Quantity)
+        //             {
+        //                 throw new CustomException($"Sản phẩm {prodReq.Id} không đủ số lượng để đặt hàng.");
+        //             }
+        //         }
 
-                // Kiểm tra Device
-                List<Device> availableDevices = new List<Device>();
-                if (orderRequest.DeviceQuantity > 0)
-                {
-                    var allDevices = await _deviceRepositories.GetList(d => d.UserId == null);
+        //         // Kiểm tra Device
+        //         List<Device> availableDevices = new List<Device>();
+        //         if (orderRequest.DeviceQuantity > 0)
+        //         {
+        //             var allDevices = await _deviceRepositories.GetList(d => d.UserId == null);
 
-                    var allocatedOrderDetails = await _orderDetailRepositories.GetList(
-                        od => od.DeviceId != null && od.Status == OrderEnums.Pending.ToString());
-                    var allocatedDeviceIds = allocatedOrderDetails.Select(od => od.DeviceId.Value).ToList();
+        //             var allocatedOrderDetails = await _orderDetailRepositories.GetList(
+        //                 od => od.DeviceId != null && od.Status == OrderEnums.Pending.ToString());
+        //             var allocatedDeviceIds = allocatedOrderDetails.Select(od => od.DeviceId.Value).ToList();
 
-                    // Tìm các Device thực sự còn trống
-                    availableDevices = allDevices.Where(d => !allocatedDeviceIds.Contains(d.Id)).ToList();
+        //             // Tìm các Device thực sự còn trống
+        //             availableDevices = allDevices.Where(d => !allocatedDeviceIds.Contains(d.Id)).ToList();
 
-                    if (availableDevices.Count < orderRequest.DeviceQuantity)
-                    {
-                        throw new CustomException("Không đủ thiết bị trống để thực hiện đơn hàng.");
-                    }
-                }
+        //             if (availableDevices.Count < orderRequest.DeviceQuantity)
+        //             {
+        //                 throw new CustomException("Không đủ thiết bị trống để thực hiện đơn hàng.");
+        //             }
+        //         }
 
-                // Tạo danh sách OrderDetail mới
-                List<OrderDetail> newOrderDetails = new List<OrderDetail>();
+        //         // Tạo danh sách OrderDetail mới
+        //         List<OrderDetail> newOrderDetails = new List<OrderDetail>();
 
-                // Thêm OrderDetail cho sản phẩm
-                foreach (var prodReq in orderRequest.Products)
-                {
-                    var orderDetail = new OrderDetail
-                    {
-                        Id = Guid.NewGuid(),
-                        OrderId = orderId,
-                        ProductId = prodReq.Id,
-                        UnitPrice = prodReq.UnitPrice,
-                        Quantity = prodReq.Quantity,
-                        Status = OrderEnums.Pending.ToString(),
-                        CreatedAt = DateTime.Now
-                    };
-                    newOrderDetails.Add(orderDetail);
-                }
+        //         // Thêm OrderDetail cho sản phẩm
+        //         foreach (var prodReq in orderRequest.Products)
+        //         {
+        //             var orderDetail = new OrderDetail
+        //             {
+        //                 Id = Guid.NewGuid(),
+        //                 OrderId = orderId,
+        //                 ProductId = prodReq.Id,
+        //                 UnitPrice = prodReq.UnitPrice,
+        //                 Quantity = prodReq.Quantity,
+        //                 Status = OrderEnums.Pending.ToString(),
+        //                 CreatedAt = DateTime.Now
+        //             };
+        //             newOrderDetails.Add(orderDetail);
+        //         }
 
-                if (orderRequest.DeviceQuantity > 0)
-                {
-                    var selectedDevices = availableDevices.Take(orderRequest.DeviceQuantity).ToList();
-                    foreach (var device in selectedDevices)
-                    {
-                        var orderDetail = new OrderDetail
-                        {
-                            Id = Guid.NewGuid(),
-                            OrderId = orderId,
-                            DeviceId = device.Id,
-                            UnitPrice = device.Price,
-                            Quantity = 1, 
-                            Status = OrderEnums.Pending.ToString(),
-                            CreatedAt = DateTime.Now
-                        };
-                        newOrderDetails.Add(orderDetail);
-                    }
-                }
+        //         if (orderRequest.DeviceQuantity > 0)
+        //         {
+        //             var selectedDevices = availableDevices.Take(orderRequest.DeviceQuantity).ToList();
+        //             foreach (var device in selectedDevices)
+        //             {
+        //                 var orderDetail = new OrderDetail
+        //                 {
+        //                     Id = Guid.NewGuid(),
+        //                     OrderId = orderId,
+        //                     DeviceId = device.Id,
+        //                     UnitPrice = device.Price,
+        //                     Quantity = 1, 
+        //                     Status = OrderEnums.Pending.ToString(),
+        //                     CreatedAt = DateTime.Now
+        //                 };
+        //                 newOrderDetails.Add(orderDetail);
+        //             }
+        //         }
 
-                decimal totalPrice = newOrderDetails.Sum(od => od.UnitPrice * od.Quantity);
+        //         decimal totalPrice = newOrderDetails.Sum(od => od.UnitPrice * od.Quantity);
 
-                Order order;
-                if (existingOrder != null)
-                {
-                    // Nếu đã có đơn hàng Pending, xóa hết OrderDetail cũ và gán OrderDetail mới
-                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-                    existingOrder.OrderDetails.Clear();
+        //         Order order;
+        //         if (existingOrder != null)
+        //         {
+        //             // Nếu đã có đơn hàng Pending, xóa hết OrderDetail cũ và gán OrderDetail mới
+        //             await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
+        //             existingOrder.OrderDetails.Clear();
 
-                    foreach (var od in newOrderDetails)
-                    {
-                        existingOrder.OrderDetails.Add(od);
-                    }
-                    existingOrder.TotalPrice = totalPrice;
-                    existingOrder.UpdatedAt = DateTime.Now;
-                    await _orderRepositories.Update(existingOrder);
-                    order = existingOrder;
-                }
-                else
-                {
-                    // Nếu chưa có đơn hàng, tạo mới
-                    order = new Order
-                    {
-                        Id = orderId,
-                        UserId = userId,
-                        TotalPrice = totalPrice,
-                        Status = OrderEnums.Pending.ToString(),
-                        CreatedAt = DateTime.Now,
-                        OrderDetails = newOrderDetails
-                    };
-                    await _orderRepositories.Insert(order);
-                }
+        //             foreach (var od in newOrderDetails)
+        //             {
+        //                 existingOrder.OrderDetails.Add(od);
+        //             }
+        //             existingOrder.TotalPrice = totalPrice;
+        //             existingOrder.UpdatedAt = DateTime.Now;
+        //             await _orderRepositories.Update(existingOrder);
+        //             order = existingOrder;
+        //         }
+        //         else
+        //         {
+        //             // Nếu chưa có đơn hàng, tạo mới
+        //             order = new Order
+        //             {
+        //                 Id = orderId,
+        //                 UserId = userId,
+        //                 TotalPrice = totalPrice,
+        //                 Status = OrderEnums.Pending.ToString(),
+        //                 CreatedAt = DateTime.Now,
+        //                 OrderDetails = newOrderDetails
+        //             };
+        //             await _orderRepositories.Insert(order);
+        //         }
 
-                return new ResultModel<DataResultModel<Guid>>()
-                {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new DataResultModel<Guid>()
-                    {
-                        Data = order.Id
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ex.Message);
-            }
-        }
+        //         return new ResultModel<DataResultModel<Guid>>()
+        //         {
+        //             StatusCodes = (int)HttpStatusCode.OK,
+        //             Response = new DataResultModel<Guid>()
+        //             {
+        //                 Data = order.Id
+        //             }
+        //         };
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         throw new CustomException(ex.Message);
+        //     }
+        // }
     }
 }
