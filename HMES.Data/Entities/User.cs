@@ -29,7 +29,7 @@ public partial class User
 
     public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
 
-    public virtual ICollection<Device> Devices { get; set; } = new List<Device>();
+    public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 

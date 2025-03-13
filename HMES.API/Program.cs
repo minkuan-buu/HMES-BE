@@ -51,7 +51,8 @@ var connectionString = rawConnectionString
     .Replace("${DB_USER}", Environment.GetEnvironmentVariable("DB_USER") ?? "")
     .Replace("${DB_PASSWORD}", Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "")
     .Replace("${DB_NAME}", Environment.GetEnvironmentVariable("DB_NAME") ?? "")
-    .Replace("${DB_PORT}", Environment.GetEnvironmentVariable("DB_PORT") ?? "");
+    .Replace("${DB_PORT}", Environment.GetEnvironmentVariable("DB_PORT") ?? "")
+    .Replace("${HERE_MAP_API_KEY}", Environment.GetEnvironmentVariable("HERE_MAP_API_KEY") ?? "");
 
 builder.Services.AddDbContext<HmesContext>(options =>
     options.UseSqlServer(connectionString));
