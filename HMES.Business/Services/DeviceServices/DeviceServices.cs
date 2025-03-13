@@ -68,38 +68,35 @@ namespace HMES.Business.Services.DeviceServices
 
         }
 
-        // public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token)
-        // {
-        //     var result = new DataResultModel<DeviceDetailResModel>();
+        public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId)
+        {
+            var result = new DataResultModel<DeviceDetailResModel>();
 
-        //     try
-        //     {
-        //         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        //         var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
-        //         includeProperties: "NutritionReports");
-        //         if (deviceDetail == null)
-        //         {
-        //             throw new Exception("Device not found!");
-        //         }
-        //         else if (!deviceDetail.UserId.Equals(userId))
-        //         {
-        //             throw new Exception("Access denied");
-        //         }
+            try
+            {
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(DeviceId));
+                if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (deviceDetail.Status.Equals(DeviceStatusEnum.Deactive.ToString()))
+                {
+                    throw new Exception("Can't view detail of this device!");
+                }
+                var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
+                result.Data = deviceResModel;
 
-        //         var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
-        //         result.Data = deviceResModel;
-
-        //         return new ResultModel<DataResultModel<DeviceDetailResModel>>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = result
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                return new ResultModel<DataResultModel<DeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
 
         // public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
         // {
