@@ -66,7 +66,7 @@ namespace HMES.API.Controllers
 
         [HttpPost("logout")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> Logout([FromBody] UserLoginReqModel User)
+        public async Task<IActionResult> Logout()
         {
             var DeviceId = Request.Cookies["DeviceId"];
             if (DeviceId == null)
@@ -75,8 +75,18 @@ namespace HMES.API.Controllers
             }
             var result = await _userServices.Logout(Guid.Parse(DeviceId));
 
-            Response.Cookies.Delete("DeviceId");
-            Response.Cookies.Delete("RefreshToken");
+            Response.Cookies.Delete("DeviceId", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
+            Response.Cookies.Delete("RefreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
             return Ok(result);
         }
 

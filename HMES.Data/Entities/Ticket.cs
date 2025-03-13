@@ -9,6 +9,8 @@ public partial class Ticket
 
     public Guid UserId { get; set; }
 
+    public Guid? DeviceItemId { get; set; }
+
     public Guid? TechnicianId { get; set; }
 
     public string? Type { get; set; }
@@ -22,6 +24,8 @@ public partial class Ticket
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public virtual DeviceItem? DeviceItem { get; set; }
 
     public virtual User? Technician { get; set; }
 

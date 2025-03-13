@@ -7,11 +7,11 @@ public partial class NutritionReport
 {
     public Guid Id { get; set; }
 
-    public Guid DeviceId { get; set; }
+    public Guid DeviceItemId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual Device Device { get; set; } = null!;
+    public virtual DeviceItem DeviceItem { get; set; } = null!;
 
     public virtual ICollection<NutritionReportDetail> NutritionReportDetails { get; set; } = new List<NutritionReportDetail>();
 }
