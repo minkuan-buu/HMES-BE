@@ -54,53 +54,83 @@ namespace HMES.Business.Services.OrderServices
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
         {
             var userId = new Guid(Authentication.DecodeToken(Token, "userid"));
-            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()), includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device");
-            // Kiểm tra xem có giao dịch PENDING hay không
+            var order = await _orderRepositories.GetSingle(
+                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()),
+                includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device"
+            );
+
+            // Lấy danh sách sản phẩm và thiết bị trong đơn hàng
+            var productIds = order.OrderDetails.Where(od => od.ProductId != null).Select(od => od.ProductId).ToList();
+            var deviceIds = order.OrderDetails.Where(od => od.DeviceId != null).Select(od => od.DeviceId).ToList();
+
+            var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
+            var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
+
+            // Kiểm tra tổng số lượng đã đặt nhưng chưa thanh toán
+            foreach (var od in order.OrderDetails)
+            {
+                if (od.ProductId != null)
+                {
+                    var product = products.FirstOrDefault(p => p.Id == od.ProductId);
+                    if (product == null || product.Amount < od.Quantity)
+                    {
+                        throw new CustomException($"Sản phẩm {od.ProductId} không đủ số lượng để thanh toán.");
+                    }
+                }
+                else if (od.DeviceId != null)
+                {
+                    var device = devices.FirstOrDefault(d => d.Id == od.DeviceId);
+                    if (device == null || device.Quantity < od.Quantity)
+                    {
+                        throw new CustomException($"Thiết bị {od.DeviceId} không đủ số lượng để thanh toán.");
+                    }
+                }
+            }
+
+            // Trừ số lượng sản phẩm và thiết bị
+            foreach (var od in order.OrderDetails)
+            {
+                if (od.ProductId != null)
+                {
+                    var product = products.First(p => p.Id == od.ProductId);
+                    product.Amount -= od.Quantity;
+                    await _productRepositories.Update(product);
+                }
+                else if (od.DeviceId != null)
+                {
+                    var device = devices.First(d => d.Id == od.DeviceId);
+                    device.Quantity -= od.Quantity;
+                    await _deviceRepositories.Update(device);
+                }
+            }
+
+            // Kiểm tra giao dịch PENDING
             var pendingTransaction = order.Transactions.Any(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
 
-            if (pendingTransaction) // Chỉ cần kiểm tra nếu có giao dịch đang chờ xử lý
+            if (pendingTransaction)
             {
-                // Lấy PaymentLinkId của giao dịch đang chờ xử lý
                 var transaction = order.Transactions.FirstOrDefault(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
-                if (transaction != null)
-                {
-                    return $"https://pay.payos.vn/web/{transaction.PaymentLinkId}";
-                }
-                else
-                {
-                    // Trường hợp không có giao dịch PENDING thì trả về null hoặc thông báo lỗi
-                    return "No pending transaction found.";
-                }
+                return $"https://pay.payos.vn/web/{transaction.PaymentLinkId}";
             }
             else
             {
-                // Nếu không có giao dịch PENDING thì tạo link thanh toán mới
                 var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
                 List<ItemData> itemDatas = new();
+
                 foreach (var item in order.OrderDetails)
                 {
-                    if (item.DeviceId != null)
-                    {
-                        itemDatas.Add(new ItemData(
-                            $"{TextConvert.ConvertFromUnicodeEscape(item.Device.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Device.Name)})",
-                            item.Quantity,
-                            (int)item.UnitPrice
-                        ));
-                    }
-                    else
-                    {
-                        itemDatas.Add(new ItemData(
-                            $"{TextConvert.ConvertFromUnicodeEscape(item.Product.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Product.Name)})",
-                            item.Quantity,
-                            (int)item.UnitPrice
-                        ));
-                    }
+                    string itemName = item.DeviceId != null
+                        ? $"{TextConvert.ConvertFromUnicodeEscape(item.Device.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Device.Name)})"
+                        : $"{TextConvert.ConvertFromUnicodeEscape(item.Product.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Product.Name)})";
+
+                    itemDatas.Add(new ItemData(itemName, item.Quantity, (int)item.UnitPrice));
                 }
 
                 PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice, "",
                     itemDatas, cancelUrl: "https://hmes.buubuu.id.vn/payment", returnUrl: "https://hmes.buubuu.id.vn/payment");
 
                 CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
+
                 Transaction NewTransaction = new Transaction()
                 {
                     Id = Guid.NewGuid(),
@@ -110,6 +140,7 @@ namespace HMES.Business.Services.OrderServices
                     PaymentLinkId = createPayment.paymentLinkId,
                     CreatedAt = DateTime.Now,
                 };
+
                 await _transactionRepositories.Insert(NewTransaction);
                 return createPayment.checkoutUrl;
             }
@@ -121,141 +152,217 @@ namespace HMES.Business.Services.OrderServices
             return random.Next(10000000, 99999999).ToString();
         }
 
-        // public async Task<ResultModel<DataResultModel<Guid>>> CreateOrder(CreateOrderDetailReqModel orderRequest, string token)
-        // {
-        //     try
-        //     {
-        //         var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+        public async Task<ResultModel<DataResultModel<Guid>>> CreateOrder(CreateOrderDetailReqModel orderRequest, string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-        //         // Lấy đơn hàng Pending hiện có của user (nếu có) kèm theo OrderDetails
-        //         var existingOrder = await _orderRepositories.GetSingle(
-        //             o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
-        //             includeProperties: "OrderDetails");
-        //         //clear toàn bộ orderdetail của order cũ
-        //         if (existingOrder != null)
-        //         {
-        //             await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-        //             existingOrder.OrderDetails.Clear();
-        //         }
+                // Lấy địa chỉ mặc định của user
+                var userAddress = await _userAddressRepositories.GetSingle(
+                    ua => ua.UserId == userId && ua.Status == "Default");
 
-        //         // Xác định orderId: nếu có đơn hàng pending rồi thì dùng orderId đó, nếu chưa có thì tạo mới
-        //         Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
+                if (userAddress == null)
+                {
+                    throw new CustomException("Người dùng chưa có địa chỉ mặc định.");
+                }
 
-        //         var productIds = orderRequest.Products.Select(p => p.Id).ToList();
-        //         var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
+                // Lấy đơn hàng Pending hiện có của user (nếu có)
+                var existingOrder = await _orderRepositories.GetSingle(
+                    o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
+                    includeProperties: "OrderDetails");
 
-        //         foreach (var prodReq in orderRequest.Products)
-        //         {
-        //             var product = products.FirstOrDefault(p => p.Id == prodReq.Id);
-        //             if (product == null || product.Amount < prodReq.Quantity)
-        //             {
-        //                 throw new CustomException($"Sản phẩm {prodReq.Id} không đủ số lượng để đặt hàng.");
-        //             }
-        //         }
+                // Xóa OrderDetail của đơn hàng cũ nếu có
+                if (existingOrder != null)
+                {
+                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
+                    existingOrder.OrderDetails.Clear();
+                }
 
-        //         // Kiểm tra Device
-        //         List<Device> availableDevices = new List<Device>();
-        //         if (orderRequest.DeviceQuantity > 0)
-        //         {
-        //             var allDevices = await _deviceRepositories.GetList(d => d.UserId == null);
+                // Xác định orderId
+                Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
 
-        //             var allocatedOrderDetails = await _orderDetailRepositories.GetList(
-        //                 od => od.DeviceId != null && od.Status == OrderEnums.Pending.ToString());
-        //             var allocatedDeviceIds = allocatedOrderDetails.Select(od => od.DeviceId.Value).ToList();
+                // Tạo danh sách OrderDetail mới
+                List<OrderDetail> newOrderDetails = new List<OrderDetail>();
 
-        //             // Tìm các Device thực sự còn trống
-        //             availableDevices = allDevices.Where(d => !allocatedDeviceIds.Contains(d.Id)).ToList();
+                // Thêm OrderDetail cho sản phẩm
+                foreach (var prodReq in orderRequest.Products)
+                {
+                    var orderDetail = new OrderDetail
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = orderId,
+                        ProductId = prodReq.Id,
+                        UnitPrice = prodReq.UnitPrice,
+                        Quantity = prodReq.Quantity,
+                        Status = OrderEnums.Pending.ToString(),
+                        CreatedAt = DateTime.Now
+                    };
+                    newOrderDetails.Add(orderDetail);
+                }
 
-        //             if (availableDevices.Count < orderRequest.DeviceQuantity)
-        //             {
-        //                 throw new CustomException("Không đủ thiết bị trống để thực hiện đơn hàng.");
-        //             }
-        //         }
+                // Thêm OrderDetail cho thiết bị
+                foreach (var devReq in orderRequest.Devices)
+                {
+                    var orderDetail = new OrderDetail
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = orderId,
+                        DeviceId = devReq.Id,
+                        UnitPrice = devReq.UnitPrice,
+                        Quantity = devReq.Quantity,
+                        Status = OrderEnums.Pending.ToString(),
+                        CreatedAt = DateTime.Now
+                    };
+                    newOrderDetails.Add(orderDetail);
+                }
 
-        //         // Tạo danh sách OrderDetail mới
-        //         List<OrderDetail> newOrderDetails = new List<OrderDetail>();
+                // Tính tổng giá trị đơn hàng
+                decimal totalPrice = newOrderDetails.Sum(od => od.UnitPrice * od.Quantity);
 
-        //         // Thêm OrderDetail cho sản phẩm
-        //         foreach (var prodReq in orderRequest.Products)
-        //         {
-        //             var orderDetail = new OrderDetail
-        //             {
-        //                 Id = Guid.NewGuid(),
-        //                 OrderId = orderId,
-        //                 ProductId = prodReq.Id,
-        //                 UnitPrice = prodReq.UnitPrice,
-        //                 Quantity = prodReq.Quantity,
-        //                 Status = OrderEnums.Pending.ToString(),
-        //                 CreatedAt = DateTime.Now
-        //             };
-        //             newOrderDetails.Add(orderDetail);
-        //         }
+                Order order;
+                if (existingOrder != null)
+                {
+                    // Cập nhật đơn hàng Pending
+                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
+                    existingOrder.OrderDetails.Clear();
 
-        //         if (orderRequest.DeviceQuantity > 0)
-        //         {
-        //             var selectedDevices = availableDevices.Take(orderRequest.DeviceQuantity).ToList();
-        //             foreach (var device in selectedDevices)
-        //             {
-        //                 var orderDetail = new OrderDetail
-        //                 {
-        //                     Id = Guid.NewGuid(),
-        //                     OrderId = orderId,
-        //                     DeviceId = device.Id,
-        //                     UnitPrice = device.Price,
-        //                     Quantity = 1, 
-        //                     Status = OrderEnums.Pending.ToString(),
-        //                     CreatedAt = DateTime.Now
-        //                 };
-        //                 newOrderDetails.Add(orderDetail);
-        //             }
-        //         }
+                    foreach (var od in newOrderDetails)
+                    {
+                        existingOrder.OrderDetails.Add(od);
+                    }
 
-        //         decimal totalPrice = newOrderDetails.Sum(od => od.UnitPrice * od.Quantity);
+                    existingOrder.TotalPrice = totalPrice;
+                    existingOrder.UpdatedAt = DateTime.Now;
+                    existingOrder.UserAddressId = userAddress.Id; // Gán UserAddressId vào đơn hàng
+                    await _orderRepositories.Update(existingOrder);
+                    order = existingOrder;
+                }
+                else
+                {
+                    // Tạo mới đơn hàng
+                    order = new Order
+                    {
+                        Id = orderId,
+                        UserId = userId,
+                        UserAddressId = userAddress.Id, // Gán UserAddressId vào đơn hàng
+                        TotalPrice = totalPrice,
+                        Status = OrderEnums.Pending.ToString(),
+                        CreatedAt = DateTime.Now,
+                        OrderDetails = newOrderDetails
+                    };
+                    await _orderRepositories.Insert(order);
+                }
 
-        //         Order order;
-        //         if (existingOrder != null)
-        //         {
-        //             // Nếu đã có đơn hàng Pending, xóa hết OrderDetail cũ và gán OrderDetail mới
-        //             await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-        //             existingOrder.OrderDetails.Clear();
+                return new ResultModel<DataResultModel<Guid>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new DataResultModel<Guid>()
+                    {
+                        Data = order.Id
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
 
-        //             foreach (var od in newOrderDetails)
-        //             {
-        //                 existingOrder.OrderDetails.Add(od);
-        //             }
-        //             existingOrder.TotalPrice = totalPrice;
-        //             existingOrder.UpdatedAt = DateTime.Now;
-        //             await _orderRepositories.Update(existingOrder);
-        //             order = existingOrder;
-        //         }
-        //         else
-        //         {
-        //             // Nếu chưa có đơn hàng, tạo mới
-        //             order = new Order
-        //             {
-        //                 Id = orderId,
-        //                 UserId = userId,
-        //                 TotalPrice = totalPrice,
-        //                 Status = OrderEnums.Pending.ToString(),
-        //                 CreatedAt = DateTime.Now,
-        //                 OrderDetails = newOrderDetails
-        //             };
-        //             await _orderRepositories.Insert(order);
-        //         }
+        public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> HandleCheckTransaction(string id, string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-        //         return new ResultModel<DataResultModel<Guid>>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = new DataResultModel<Guid>()
-        //             {
-        //                 Data = order.Id
-        //             }
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                // Lấy giao dịch đang chờ xử lý theo PaymentLinkId
+                var transaction = await _transactionRepositories.GetSingle(
+                    x => x.PaymentLinkId.Equals(id) && x.Status.Equals(TransactionEnums.PENDING.ToString()),
+                    includeProperties: "Order.OrderDetails.Product,Order.OrderDetails.Device,Order.UserAddress"
+                );
+
+                if (transaction == null)
+                    throw new CustomException("Transaction not found");
+
+                if (transaction.Order == null)
+                    throw new CustomException("Order not found");
+
+                var orderResModel = new OrderPaymentResModel()
+                {
+                    Id = transaction.Order.Id,
+                    TotalPrice = transaction.Order.TotalPrice,
+                    StatusPayment = transaction.Status,
+                    UserAddress = transaction.Order.UserAddress != null ? new OrderUserAddress
+                    {
+                        Id = transaction.Order.UserAddress.Id,
+                        Name = TextConvert.ConvertFromUnicodeEscape(transaction.Order.UserAddress.Name),
+                        Phone = transaction.Order.UserAddress.Phone,
+                        Address = TextConvert.ConvertFromUnicodeEscape(transaction.Order.UserAddress.Address),
+                        IsDefault = transaction.Order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
+                    } : null,
+                    OrderProductItem = transaction.Order.OrderDetails.Select(detail => new OrderDetailResModel
+                    {
+                        Id = detail.Id,
+                        ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
+                        ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
+                        //chỉnh DB sửa lại tên cột Attachment
+                        Attachment = /* detail.Product?.Attachment  ?? */ detail.Device?.Attachment ?? "",
+                        Quantity = detail.Quantity,
+                        UnitPrice = detail.UnitPrice
+                    }).ToList()
+                };
+
+                // Lấy thông tin thanh toán từ cổng thanh toán
+                PaymentLinkInformation paymentLinkInformation = await _payOS.getPaymentLinkInformation(transaction.OrderPaymentRefId);
+
+                if (paymentLinkInformation == null)
+                    throw new CustomException("Transaction not found in payment system");
+
+                if (paymentLinkInformation.status.Equals(TransactionEnums.PAID.ToString()))
+                {
+                    var getTransaction = paymentLinkInformation.transactions.FirstOrDefault();
+                    transaction.TransactionReference = getTransaction.reference;
+                    transaction.FinishedTransactionAt = DateTime.Parse(getTransaction.transactionDateTime);
+                    orderResModel.StatusPayment = TransactionEnums.PAID.ToString();
+                    transaction.Status = TransactionEnums.PAID.ToString();
+                    transaction.Order.Status = OrderEnums.Delivering.ToString();
+                    transaction.Order.UpdatedAt = DateTime.Now;
+
+                    // Cập nhật số lượng sản phẩm & thiết bị
+                    foreach (var orderDetail in transaction.Order.OrderDetails)
+                    {
+                        if (orderDetail.Product != null)
+                            orderDetail.Product.Amount -= orderDetail.Quantity;
+
+                        if (orderDetail.Device != null)
+                            orderDetail.Device.Quantity -= orderDetail.Quantity;
+                    }
+
+                    // Xóa giỏ hàng sau khi thanh toán
+                    var userCart = await _cartRepositories.GetList(x => x.UserId.Equals(userId));
+                    if (userCart.Any())
+                        await _cartRepositories.DeleteRange(userCart.ToList());
+                }
+                else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
+                {
+                    transaction.Status = TransactionEnums.CANCELLED.ToString();
+                    transaction.Order.Status = OrderEnums.Cancelled.ToString();
+                    transaction.Order.UpdatedAt = DateTime.Now;
+                    orderResModel.StatusPayment = TransactionEnums.CANCELLED.ToString();
+                }
+
+                await _transactionRepositories.Update(transaction);
+
+                return new ResultModel<DataResultModel<OrderPaymentResModel>>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
