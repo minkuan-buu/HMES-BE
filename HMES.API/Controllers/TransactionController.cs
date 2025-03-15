@@ -1,4 +1,5 @@
 using HMES.Business.Services.OrderServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers
@@ -15,10 +16,20 @@ namespace HMES.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreatePayment([FromBody] Guid Id)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
             var result = await _orderServices.CreatePaymentUrl(token, Id);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> HandleCheckTransaction([FromBody] string PaymentLinkId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.HandleCheckTransaction(PaymentLinkId, token);
             return Ok(result);
         }
     }
