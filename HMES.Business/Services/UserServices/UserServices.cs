@@ -245,9 +245,10 @@ public class UserServices : IUserServices
         NewUser.Salt = PasswordSet.Salt;
         string FilePath = "./Information.html";
         string Html = File.ReadAllText(FilePath);
-        Html.Replace("{{Role}}", NewUser.Role);
-        Html.Replace("{{Email}}", NewUser.Email);
-        Html.Replace("{{Password}}", GeneratePassword);
+
+        Html = Html.Replace("[Role]", NewUser.Role)
+                   .Replace("[Email]", NewUser.Email)
+                   .Replace("[Password]", GeneratePassword);
         List<EmailReqModel> EmailList = new List<EmailReqModel>()
         {
             new EmailReqModel()

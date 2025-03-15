@@ -55,6 +55,7 @@ namespace HMES.Data.DTO.RequestModel
         [CustomEmailValidate]
         public string Email { get; set; } = null!;
         public string Phone { get; set; } = null!;
+        [CustomModRoleValidate]
         public string Role { get; set; } = null!;
     }
 }
