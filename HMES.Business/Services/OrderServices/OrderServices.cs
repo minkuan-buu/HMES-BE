@@ -59,6 +59,13 @@ namespace HMES.Business.Services.OrderServices
                 includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device"
             );
 
+            // Kiểm tra giao dịch PENDING trước
+            var pendingTransaction = order.Transactions.FirstOrDefault(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
+            if (pendingTransaction != null)
+            {
+                return $"https://pay.payos.vn/web/{pendingTransaction.PaymentLinkId}";
+            }
+
             // Lấy danh sách sản phẩm và thiết bị trong đơn hàng
             var productIds = order.OrderDetails.Where(od => od.ProductId != null).Select(od => od.ProductId).ToList();
             var deviceIds = order.OrderDetails.Where(od => od.DeviceId != null).Select(od => od.DeviceId).ToList();
@@ -87,7 +94,37 @@ namespace HMES.Business.Services.OrderServices
                 }
             }
 
-            // Trừ số lượng sản phẩm và thiết bị
+            // Tạo link thanh toán mới
+            var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
+            List<ItemData> itemDatas = new();
+
+            foreach (var item in order.OrderDetails)
+            {
+                string itemName = item.DeviceId != null
+                    ? $"{TextConvert.ConvertFromUnicodeEscape(item.Device.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Device.Name)})"
+                    : $"{TextConvert.ConvertFromUnicodeEscape(item.Product.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Product.Name)})";
+
+                itemDatas.Add(new ItemData(itemName, item.Quantity, (int)item.UnitPrice));
+            }
+
+            PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice, "",
+                itemDatas, cancelUrl: "https://hmes.buubuu.id.vn/payment", returnUrl: "https://hmes.buubuu.id.vn/payment");
+
+            CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
+
+            Transaction NewTransaction = new Transaction()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                OrderPaymentRefId = OrderPaymentRefId,
+                Status = TransactionEnums.PENDING.ToString(),
+                PaymentLinkId = createPayment.paymentLinkId,
+                CreatedAt = DateTime.Now,
+            };
+
+            await _transactionRepositories.Insert(NewTransaction);
+
+            // **Trừ số lượng sản phẩm sau khi đã tạo giao dịch thành công**
             foreach (var od in order.OrderDetails)
             {
                 if (od.ProductId != null)
@@ -104,47 +141,9 @@ namespace HMES.Business.Services.OrderServices
                 }
             }
 
-            // Kiểm tra giao dịch PENDING
-            var pendingTransaction = order.Transactions.Any(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
-
-            if (pendingTransaction)
-            {
-                var transaction = order.Transactions.FirstOrDefault(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
-                return $"https://pay.payos.vn/web/{transaction.PaymentLinkId}";
-            }
-            else
-            {
-                var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
-                List<ItemData> itemDatas = new();
-
-                foreach (var item in order.OrderDetails)
-                {
-                    string itemName = item.DeviceId != null
-                        ? $"{TextConvert.ConvertFromUnicodeEscape(item.Device.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Device.Name)})"
-                        : $"{TextConvert.ConvertFromUnicodeEscape(item.Product.Name)} ({TextConvert.ConvertFromUnicodeEscape(item.Product.Name)})";
-
-                    itemDatas.Add(new ItemData(itemName, item.Quantity, (int)item.UnitPrice));
-                }
-
-                PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice, "",
-                    itemDatas, cancelUrl: "https://hmes.buubuu.id.vn/payment", returnUrl: "https://hmes.buubuu.id.vn/payment");
-
-                CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
-
-                Transaction NewTransaction = new Transaction()
-                {
-                    Id = Guid.NewGuid(),
-                    OrderId = order.Id,
-                    OrderPaymentRefId = OrderPaymentRefId,
-                    Status = TransactionEnums.PENDING.ToString(),
-                    PaymentLinkId = createPayment.paymentLinkId,
-                    CreatedAt = DateTime.Now,
-                };
-
-                await _transactionRepositories.Insert(NewTransaction);
-                return createPayment.checkoutUrl;
-            }
+            return createPayment.checkoutUrl;
         }
+
 
         private string GenerateRandomRefId()
         {
@@ -305,8 +304,7 @@ namespace HMES.Business.Services.OrderServices
                         Id = detail.Id,
                         ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
                         ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
-                        //chỉnh DB sửa lại tên cột Attachment
-                        Attachment = /* detail.Product?.Attachment  ?? */ detail.Device?.Attachment ?? "",
+                        Attachment = detail.Device?.Attachment ?? "", // Khi nào Phúc thêm attachment vào Product thì sửa lại
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
                     }).ToList()
@@ -328,16 +326,6 @@ namespace HMES.Business.Services.OrderServices
                     transaction.Order.Status = OrderEnums.Delivering.ToString();
                     transaction.Order.UpdatedAt = DateTime.Now;
 
-                    // Cập nhật số lượng sản phẩm & thiết bị
-                    foreach (var orderDetail in transaction.Order.OrderDetails)
-                    {
-                        if (orderDetail.Product != null)
-                            orderDetail.Product.Amount -= orderDetail.Quantity;
-
-                        if (orderDetail.Device != null)
-                            orderDetail.Device.Quantity -= orderDetail.Quantity;
-                    }
-
                     // Xóa giỏ hàng sau khi thanh toán
                     var userCart = await _cartRepositories.GetList(x => x.UserId.Equals(userId));
                     if (userCart.Any())
@@ -349,6 +337,21 @@ namespace HMES.Business.Services.OrderServices
                     transaction.Order.Status = OrderEnums.Cancelled.ToString();
                     transaction.Order.UpdatedAt = DateTime.Now;
                     orderResModel.StatusPayment = TransactionEnums.CANCELLED.ToString();
+
+                    //Hoàn trả số lượng sản phẩm & thiết bị nếu đơn hàng bị hủy
+                    foreach (var orderDetail in transaction.Order.OrderDetails)
+                    {
+                        if (orderDetail.Product != null)
+                        {
+                            orderDetail.Product.Amount += orderDetail.Quantity;
+                            await _productRepositories.Update(orderDetail.Product);
+                        }
+                        if (orderDetail.Device != null)
+                        {
+                            orderDetail.Device.Quantity += orderDetail.Quantity;
+                            await _deviceRepositories.Update(orderDetail.Device);
+                        }
+                    }
                 }
 
                 await _transactionRepositories.Update(transaction);
@@ -364,5 +367,6 @@ namespace HMES.Business.Services.OrderServices
                 throw new CustomException(ex.Message);
             }
         }
+
     }
 }

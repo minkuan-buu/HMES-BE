@@ -24,7 +24,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpPost ("check")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> HandleCheckTransaction([FromBody] string PaymentLinkId)
         {
