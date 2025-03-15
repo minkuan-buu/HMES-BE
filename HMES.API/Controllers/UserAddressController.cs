@@ -19,7 +19,7 @@ namespace HMES.API.Controllers
 
         [HttpPost]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> CreateDevice([FromBody] UserAddressCreateReqModel userAddressReq)
+        public async Task<IActionResult> CreateUserAddress([FromBody] UserAddressCreateReqModel userAddressReq)
         {
                 var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
                 var result = await _userAddressServices.CreateUserAddress(userAddressReq, token);
