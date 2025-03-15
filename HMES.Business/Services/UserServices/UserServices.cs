@@ -9,16 +9,19 @@ using System.Net;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Data.Enums;
 using HMES.Business.Utilities.Converter;
+using HMES.Business.Ultilities.Email;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
 {
     private readonly IUserRepositories _userRepositories;
     private readonly IUserTokenRepositories _userTokenRepositories;
+    private readonly IEmail _email;
     private readonly IMapper _mapper;
 
-    public UserServices(IUserRepositories userRepositories, IMapper mapper, IUserTokenRepositories userTokenRepositories)
+    public UserServices(IUserRepositories userRepositories, IMapper mapper, IUserTokenRepositories userTokenRepositories, IEmail email)
     {
+        _email = email;
         _userRepositories = userRepositories;
         _mapper = mapper;
         _userTokenRepositories = userTokenRepositories;
@@ -224,6 +227,43 @@ public class UserServices : IUserServices
             Response = new ListDataResultModel<UserProfileResModel>()
             {
                 Data = Result
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> CreateModUser(CreateModUserModel ReqModel)
+    {
+        var User = await _userRepositories.GetUserByEmail(ReqModel.Email);
+        if (User != null)
+        {
+            throw new CustomException("This email is existed!");
+        }
+        var GeneratePassword = Authentication.GenerateRandomPassword();
+        CreateHashPasswordModel PasswordSet = Authentication.CreateHashPassword(GeneratePassword);
+        User NewUser = _mapper.Map<User>(ReqModel);
+        NewUser.Password = PasswordSet.HashedPassword;
+        NewUser.Salt = PasswordSet.Salt;
+        string FilePath = "./Information.html";
+        string Html = File.ReadAllText(FilePath);
+        Html.Replace("{{Role}}", NewUser.Role);
+        Html.Replace("{{Email}}", NewUser.Email);
+        Html.Replace("{{Password}}", GeneratePassword);
+        List<EmailReqModel> EmailList = new List<EmailReqModel>()
+        {
+            new EmailReqModel()
+            {
+                Email = ReqModel.Email,
+                HtmlContent = Html,
+            }
+        };
+        await _userRepositories.Insert(NewUser);
+        await _email.SendEmail("[Thông tin tài khoản]", EmailList);
+        return new ResultModel<MessageResultModel>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Account is created!"
             }
         };
     }
