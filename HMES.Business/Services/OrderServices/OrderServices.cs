@@ -329,7 +329,11 @@ namespace HMES.Business.Services.OrderServices
                     // Xóa giỏ hàng sau khi thanh toán
                     var userCart = await _cartRepositories.GetList(x => x.UserId.Equals(userId));
                     if (userCart.Any())
+                    {
                         await _cartRepositories.DeleteRange(userCart.ToList());
+                    }
+                    //kiểm tra nếu mua device thì tạo device item, không thì cút   
+
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
                 {
