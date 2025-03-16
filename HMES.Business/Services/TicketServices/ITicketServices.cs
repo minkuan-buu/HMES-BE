@@ -24,7 +24,7 @@ public interface ITicketServices
     
     Task<ResultModel<DataResultModel<TicketDetailsDto>>> AddTicket(TicketCreateDto ticketDto, string token);
     
-    Task<ResultModel<DataResultModel<TicketDetailsDto>>> ResponseTicket(TicketResponseDto ticketDto);
+    Task<ResultModel<DataResultModel<TicketDetailsDto>>> ResponseTicket(TicketResponseDto ticketDto, string token);
     
     Task<ResultModel<MessageResultModel>> AssignTicket(string ticketId, string token);
     

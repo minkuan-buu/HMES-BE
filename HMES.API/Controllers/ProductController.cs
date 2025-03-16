@@ -48,14 +48,14 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddProduct([FromBody] ProductCreateDto productDto)
+    public async Task<IActionResult> AddProduct([FromForm] ProductCreateDto productDto)
     {
         var result = await _productServices.AddProduct(productDto);
         return StatusCode(result.StatusCodes, result.Response);
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateProduct([FromBody] ProductUpdateDto productDto)
+    public async Task<IActionResult> UpdateProduct([FromForm] ProductUpdateDto productDto)
     {
         var result = await _productServices.UpdateProduct(productDto);
         return StatusCode(result.StatusCodes, result.Response);

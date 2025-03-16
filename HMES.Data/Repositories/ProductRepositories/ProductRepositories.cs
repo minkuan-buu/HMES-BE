@@ -13,14 +13,20 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
     
     public async Task<Product?> GetByIdAsync(Guid id)
     {
+        
         return await Context.Products
             .Include(p => p.Category)
+            .Include(p=>p.ProductAttachments)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<(List<Product> Products, int TotalItems)> GetListWithPagination(int pageIndex, int pageSize,ProductStatusEnums status)
     {
-        var query = Context.Products.Include(p => p.Category).Where(p => p.Status.Equals(status.ToString())).OrderByDescending(p => p.CreatedAt);
+        var query = Context.Products
+            .Include(p => p.Category)
+            .Include(p=>p.ProductAttachments)
+            .Where(p => p.Status.Equals(status.ToString()))
+            .OrderByDescending(p => p.CreatedAt);
         int totalItems = await query.CountAsync();
         var products = await query
             .Skip((pageIndex - 1) * pageSize)
@@ -40,10 +46,9 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
         int pageIndex, int pageSize)
     {
         var query = Context.Products.AsQueryable();
-
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            query = query.Where(p => p.Name.Contains(keyword));
+            query = query.Where(p => p.Description != null && (p.Name.Contains(keyword) || p.Description.Contains(keyword)));
         }
 
         if (categoryId.HasValue && categoryId != Guid.Empty)

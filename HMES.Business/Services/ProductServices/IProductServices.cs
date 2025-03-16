@@ -6,7 +6,7 @@ namespace HMES.Business.Services.ProductServices;
 
 public interface IProductServices
 {
-    Task<ResultModel<ListDataResultModel<ProductResponseDto>>> GetAllProducts(int pageIndex, int pageSize, ProductStatusEnums status);
+    Task<ResultModel<ListDataResultModel<ProductBriefResponseDto>>> GetAllProducts(int pageIndex, int pageSize, ProductStatusEnums status);
 
     Task<ResultModel<DataResultModel<ProductResponseDto>>> GetProductById(Guid id);
 

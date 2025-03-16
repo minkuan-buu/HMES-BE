@@ -20,8 +20,8 @@ public class TicketController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllTickets(
         [FromQuery] string? keyword,
-        [FromQuery] TicketTypeEnums type,
-        [FromQuery] TicketStatusEnums status,
+        [FromQuery] TicketTypeEnums? type,
+        [FromQuery] TicketStatusEnums? status,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10)
     {
@@ -33,8 +33,8 @@ public class TicketController : ControllerBase
     [HttpGet("assigned")]
     public async Task<IActionResult> GetTicketsByToken(
         [FromQuery] string? keyword,
-        [FromQuery] TicketTypeEnums type,
-        [FromQuery] TicketStatusEnums status,
+        [FromQuery] TicketTypeEnums? type,
+        [FromQuery] TicketStatusEnums? status,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10)
     {
@@ -53,18 +53,19 @@ public class TicketController : ControllerBase
 
     // POST: api/ticket
     [HttpPost]
-    public async Task<IActionResult> AddTicket([FromBody] TicketCreateDto ticketDto)
+    public async Task<IActionResult> AddTicket([FromForm] TicketCreateDto ticketDto)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.AddTicket(ticketDto, token);
         return StatusCode(result.StatusCodes, result.Response);
     }
 
-    // PUT: api/ticket/response
-    [HttpPut("response")]
-    public async Task<IActionResult> ResponseTicket([FromBody] TicketResponseDto ticketDto)
+    // POST: api/ticket/response
+    [HttpPost("response")]
+    public async Task<IActionResult> ResponseTicket([FromForm] TicketResponseDto ticketDto)
     {
-        var result = await _ticketServices.ResponseTicket(ticketDto);
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.ResponseTicket(ticketDto,token);
         return StatusCode(result.StatusCodes, result.Response);
     }
 
@@ -81,10 +82,10 @@ public class TicketController : ControllerBase
     [HttpPut("status/{ticketId}")]
     public async Task<IActionResult> ChangeTicketStatus(
         string ticketId,
-        [FromBody] string status)
+        [FromForm] TicketStatusEnums status)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
-        var result = await _ticketServices.ChangeTicketStatus(ticketId, token, status);
+        var result = await _ticketServices.ChangeTicketStatus(ticketId, token, status.ToString());
         return StatusCode(result.StatusCodes, result.Response);
     }
 }

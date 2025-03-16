@@ -41,6 +41,7 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     public async Task<Ticket?> GetByIdAsync(Guid id)
     {
         return await Context.Tickets
+            .Include(t=>t.User)
             .Include(t => t.TicketResponses)
             .Include(t => t.TicketAttachments)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -65,7 +66,7 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
             query = query.Where(t => t.Status == status);
         }
 
-        query = query.Where(t => t.TeachnicianId == userId);
+        query = query.Where(t => t.TechnicianId == userId);
         
         int totalItems = await query.CountAsync();
         var tickets = await query

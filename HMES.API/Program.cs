@@ -32,6 +32,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using HMES.Business.Services.UserAddressServices;
+using HMES.Data.Repositories.DeviceItemsRepositories;
+
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -80,6 +82,12 @@ builder.Services.AddSwaggerGen(c =>
     {
         Type = "string",
         Enum = Enum.GetNames(typeof(TicketStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
+    
+    c.MapType<TicketTypeEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(TicketTypeEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
 
     // 🟢 Cấu hình Bearer Token
@@ -161,6 +169,7 @@ builder.Services.AddScoped<ITransactionRepositories, TransactionRepositories>();
 builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
 builder.Services.AddScoped<ITicketRepositories, TicketRepositories>();
 builder.Services.AddScoped<ITicketResponseRepositories, TicketResponseRepositories>();
+builder.Services.AddScoped<IDeviceItemsRepositories, DeviceItemsRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
