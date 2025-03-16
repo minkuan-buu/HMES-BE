@@ -34,83 +34,69 @@ namespace HMES.Business.Services.DeviceServices
             _cloudServices = cloudServices;
         }
 
-        // public async Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token)
-        // {
-        //     var deviceEntities = new List<Device>();
-        //     try
-        //     {
-        //         for (int i = 0; i < DeviceReqModel.Quantity; i++)
-        //         {
-        //             var newDeviceId = Guid.NewGuid();
-        //             var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
-        //             DeviceEntity.Id = newDeviceId;
-        //             DeviceEntity.Name = TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name);
-        //             string filePath = $"device/{DeviceEntity.Id}/attachments";
-        //             if (DeviceReqModel.Attachment != null)
-        //             {
-        //                 var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
-        //                 DeviceEntity.Attachment = attachments;
-        //             }
-        //             DeviceEntity.Status = DeviceStatusEnum.Deactive.ToString();
-        //             DeviceEntity.IsActive = false;
-        //             DeviceEntity.IsOnline = false;
-        //             DeviceEntity.Serial = Authentication.GenerateRandomSerial(24);
-        //             DeviceEntity.Price = DeviceReqModel.Price;
+        public async Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token)
+        {
+            try
+            {
+                    var newDeviceId = Guid.NewGuid();
+                    var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
+                    DeviceEntity.Id = newDeviceId;
 
-        //             deviceEntities.Add(DeviceEntity);
-        //         }
+                    string filePath = $"device/{DeviceEntity.Id}/attachments";
+                    if (DeviceReqModel.Attachment != null)
+                    {
+                        var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
+                        DeviceEntity.Attachment = attachments;
+                    }
+                    DeviceEntity.Status = DeviceStatusEnum.Active.ToString();
 
+                await _deviceRepositories.Insert(DeviceEntity);
 
-        //         await _deviceRepositories.InsertRange(deviceEntities);
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is created!"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
 
-        //         return new ResultModel<MessageResultModel>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = new MessageResultModel()
-        //             {
-        //                 Message = "Device is created!"
-        //             }
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
+        }
 
-        // }
+        public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId)
+        {
+            var result = new DataResultModel<DeviceDetailResModel>();
 
-        // public async Task<ResultModel<DataResultModel<DeviceDetailResModel>>> GetDeviceDetailById(Guid DeviceId, string token)
-        // {
-        //     var result = new DataResultModel<DeviceDetailResModel>();
+            try
+            {
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(DeviceId));
+                if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (deviceDetail.Status.Equals(DeviceStatusEnum.Deactive.ToString()))
+                {
+                    throw new Exception("Can't view detail of this device!");
+                }
+                var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
+                result.Data = deviceResModel;
 
-        //     try
-        //     {
-        //         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        //         var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id == DeviceId,
-        //         includeProperties: "NutritionReports");
-        //         if (deviceDetail == null)
-        //         {
-        //             throw new Exception("Device not found!");
-        //         }
-        //         else if (!deviceDetail.UserId.Equals(userId))
-        //         {
-        //             throw new Exception("Access denied");
-        //         }
-
-        //         var deviceResModel = _mapper.Map<DeviceDetailResModel>(deviceDetail);
-        //         result.Data = deviceResModel;
-
-        //         return new ResultModel<DataResultModel<DeviceDetailResModel>>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = result
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                return new ResultModel<DataResultModel<DeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
 
         // public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
         // {
@@ -148,37 +134,31 @@ namespace HMES.Business.Services.DeviceServices
         //     }
         // }
 
-        // public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDeviceByUserId(Guid UserId, string token)
-        // {
-        //     var result = new ListDataResultModel<ListDeviceDetailResModel>();
+        public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDevice()
+        {
+            var result = new ListDataResultModel<ListDeviceDetailResModel>();
 
-        //     try
-        //     {
-        //         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        //         var deviceDetails = await _deviceRepositories.GetList(x => x.UserId.Equals(UserId),
-        //             includeProperties: "NutritionReports");
-        //         if (deviceDetails == null || !deviceDetails.Any())
-        //         {
-        //             throw new Exception("Device not found!");
-        //         }
-        //         else if (!deviceDetails.All(d => d.UserId.Equals(userId)))
-        //         {
-        //             throw new Exception("Access denied");
-        //         }
+            try
+            {     
+                var deviceDetails = await _deviceRepositories.GetList(x => x.Status.Equals(DeviceStatusEnum.Active.ToString()));
+                if (deviceDetails == null || !deviceDetails.Any())
+                {
+                    throw new Exception("Device not found!");
+                }
 
-        //         var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
-        //         result.Data = deviceResModels;
+                var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
+                result.Data = deviceResModels;
 
-        //         return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = result
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
