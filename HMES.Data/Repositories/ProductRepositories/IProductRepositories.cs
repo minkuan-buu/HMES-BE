@@ -7,7 +7,7 @@ namespace HMES.Data.Repositories.ProductRepositories;
 public interface IProductRepositories:IGenericRepositories<Product>
 {
     Task<Product?> GetByIdAsync(Guid id);
-    Task<(List<Product> Products, int TotalItems)> GetListWithPagination(int pageIndex, int pageSize,ProductStatusEnums status);
+    Task<(List<Product> Products, int TotalItems)> GetListWithPagination(int pageIndex, int pageSize,ProductStatusEnums? status);
 
     Task<(List<Product> Products, int TotalItems)> GetProductsWithPagination(
         string? keyword,

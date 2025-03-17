@@ -40,27 +40,27 @@ public class CategoryController:ControllerBase
     public async Task<IActionResult> GetAllRootCategories()
     {
         var result = await _categoryServices.GetAllRootCategories();
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     [HttpGet("{parentId}/children")]
     public async Task<IActionResult> GetChildCategories(Guid parentId)
     {
         var result = await _categoryServices.GetChildCategories(parentId);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
     
     [HttpPost]
-    public async Task<IActionResult> CreateCategory([FromBody] CategoryCreateReqModel category)
+    public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateReqModel category)
     {
         var result = await _categoryServices.CreateCategory(category);
         return Ok(result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryUpdateReqModel category)
+    [HttpPut]
+    public async Task<IActionResult> UpdateCategory([FromForm] CategoryUpdateReqModel category)
     {
-        var result = await _categoryServices.UpdateCategory(id, category);
+        var result = await _categoryServices.UpdateCategory(category);
         return Ok(result);
     }
     [HttpDelete("{id}")]
