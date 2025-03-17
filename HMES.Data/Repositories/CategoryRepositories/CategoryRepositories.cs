@@ -25,7 +25,9 @@ public class CategoryRepositories : GenericRepositories<Category>, ICategoryRepo
 
     public async Task<Category?> GetCategoryByName(string name)
     {
-        return await Context.Categories.FirstOrDefaultAsync(c => c.Name == name);
+        return await Context.Categories
+            .FirstOrDefaultAsync(c => EF.Functions.Like(c.Name!, $"%{name}%"));
+
     }
 
     public async Task<Category?> GetCategoryByIdWithParent(Guid id)
@@ -49,5 +51,10 @@ public class CategoryRepositories : GenericRepositories<Category>, ICategoryRepo
             .AnyAsync(c => c.Id == category && c.ParentCategoryId == null);
 
         return isParentRoot;
+    }
+
+    public async Task<bool> IsCategoryInUse(Guid categoryId)
+    {
+        return await Context.Products.AnyAsync(p => p.CategoryId == categoryId);
     }
 }

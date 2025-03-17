@@ -35,6 +35,8 @@ public partial class User
 
     public virtual ICollection<Otp> Otps { get; set; } = new List<Otp>();
 
+    public virtual ICollection<TicketResponse> TicketResponses { get; set; } = new List<TicketResponse>();
+
     public virtual ICollection<Ticket> TicketTechnicians { get; set; } = new List<Ticket>();
 
     public virtual ICollection<Ticket> TicketUsers { get; set; } = new List<Ticket>();

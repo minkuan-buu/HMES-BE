@@ -1,5 +1,7 @@
 using System.Net;
 using AutoMapper;
+using HMES.Business.Services.CloudServices;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
@@ -14,32 +16,49 @@ public class CategoryServices : ICategoryServices
     
     private readonly ICategoryRepositories _categoryRepository;
     private readonly IMapper _mapper;
+    private readonly ICloudServices _cloudServices;
     
-    public CategoryServices(ICategoryRepositories categoryRepository, IMapper mapper)
+    public CategoryServices(ICategoryRepositories categoryRepository, IMapper mapper, ICloudServices cloudServices)
     {
         _categoryRepository = categoryRepository;
         _mapper = mapper;
+        _cloudServices = cloudServices;
     }
     
     
-    public async Task<ResultModel<ListDataResultModel<CategoryResModel>>> GetCategories()
+    public async Task<ResultModel<ListDataResultModel<CategoryFamiliesResModel>>> GetCategories()
     {
         var categories = await _categoryRepository.GetList();
-
-        List<CategoryResModel> resultList = new List<CategoryResModel>();
         
+        var categoryMap = categories.ToDictionary(c => c.Id, c => _mapper.Map<CategoryFamiliesResModel>(c));
+        
+        var rootCategories = new List<CategoryFamiliesResModel>();
+
         foreach (var category in categories)
         {
-            var result = _mapper.Map<CategoryResModel>(category);
-            resultList.Add(result);
+            if (category.ParentCategoryId != null)
+            {
+                if (categoryMap.TryGetValue(category.ParentCategoryId.Value, out var parent))
+                {
+                    parent.Children.Add(categoryMap[category.Id]);
+                }
+            }
+            else
+            {
+                rootCategories.Add(categoryMap[category.Id]);
+            }
         }
-        
-        return new ResultModel<ListDataResultModel<CategoryResModel>>
+
+        return new ResultModel<ListDataResultModel<CategoryFamiliesResModel>>
         {
-            StatusCodes = (int) HttpStatusCode.OK,
-            Response = new ListDataResultModel<CategoryResModel> { Data = resultList.ToList() }
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new ListDataResultModel<CategoryFamiliesResModel>
+            {
+                Data = rootCategories
+            }
         };
     }
+
     
     
     private async Task<Category?> GetCategoryWithAllParents(Guid categoryId)
@@ -102,7 +121,9 @@ public class CategoryServices : ICategoryServices
                 throw new CustomException("The category parent is at second level!");
             }
         }
-        var checkName = await _categoryRepository.GetCategoryByName(category.Name);
+
+        var nameConverted = TextConvert.ConvertToUnicodeEscape(category.Name);
+        var checkName = await _categoryRepository.GetCategoryByName(nameConverted);
         if (checkName != null)
         { 
             throw new CustomException("Name duplicated!");
@@ -113,7 +134,14 @@ public class CategoryServices : ICategoryServices
             var newCategory = _mapper.Map<Category>(category);
 
             newCategory.Status = CategoryStatusEnums.Active.ToString();
-
+            
+            if(category.Attachment != null)
+            {
+                var filePath = $"category/{newCategory.Id}/attachments";
+                var mainImage = await _cloudServices.UploadSingleFile(category.Attachment, filePath);
+                newCategory.Attachment = mainImage;
+            }
+            
             await _categoryRepository.Insert(newCategory);
 
             var resCategory = _mapper.Map<CategoryResModel>(newCategory);
@@ -132,22 +160,30 @@ public class CategoryServices : ICategoryServices
         
     }
 
-    public async Task<ResultModel<DataResultModel<CategoryResModel>>> UpdateCategory(Guid id, CategoryUpdateReqModel category)
+    public async Task<ResultModel<DataResultModel<CategoryResModel>>> UpdateCategory(CategoryUpdateReqModel category)
     {
-        if (id != category.Id)
-            return new ResultModel<DataResultModel<CategoryResModel>>
-            {
-                StatusCodes = (int) HttpStatusCode.BadRequest,
-                Response = null
-            };
         try
         {
+            
+            var oldCategory = await _categoryRepository.GetCategoryById(category.Id);
+            if(oldCategory == null)
+            {
+                throw new CustomException("Category not found!");
+            }
+            
             var updatingCategory = _mapper.Map<Category>(category);
+            updatingCategory.Attachment = oldCategory.Attachment;
+            
+            if(category.Attachment != null)
+            {
+                var filePath = $"category/{category.Id}/attachments";
+                var mainImage = await _cloudServices.UploadSingleFile(category.Attachment, filePath);
+                updatingCategory.Attachment = mainImage;
+            }
+            
             await _categoryRepository.Update(updatingCategory);
-
-            var updatedCategory = await _categoryRepository.GetSingle(c => c.Id == id);
-
-            var updatedCategoryRes = _mapper.Map<CategoryResModel>(updatedCategory);
+            
+            var updatedCategoryRes = _mapper.Map<CategoryResModel>(updatingCategory);
 
             return new ResultModel<DataResultModel<CategoryResModel>>
             {
@@ -170,14 +206,23 @@ public class CategoryServices : ICategoryServices
             if (category == null)
                 return new ResultModel<MessageResultModel>
                 {
-                    StatusCodes = (int) HttpStatusCode.NotFound, Response = new MessageResultModel { Message = "Category not found" }
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = new MessageResultModel { Message = "Category not found" }
                 };
 
+            var isCategoryInUse = await _categoryRepository.IsCategoryInUse(id);
+            if (isCategoryInUse)
+                throw new CustomException("Cannot delete (in use)!");
+            
+            var filePath = $"category/{category.Id}/attachments";
+            await _cloudServices.DeleteFilesInPathAsync(filePath);
+            
             await _categoryRepository.Delete(category);
 
             return new ResultModel<MessageResultModel>
             {
-                StatusCodes = (int) HttpStatusCode.OK, Response = new MessageResultModel { Message = "Category deleted successfully" }
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel { Message = "Category deleted successfully" }
             };
         }
         catch (Exception e)

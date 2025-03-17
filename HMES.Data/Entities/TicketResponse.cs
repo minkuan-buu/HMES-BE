@@ -18,4 +18,6 @@ public partial class TicketResponse
     public virtual Ticket Ticket { get; set; } = null!;
 
     public virtual ICollection<TicketResponseAttachment> TicketResponseAttachments { get; set; } = new List<TicketResponseAttachment>();
+
+    public virtual User User { get; set; } = null!;
 }

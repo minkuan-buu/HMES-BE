@@ -7,5 +7,6 @@ namespace HMES.Business.Services.OrderServices
     {
         Task<String> CreatePaymentUrl(string Token, Guid Id);
         Task<ResultModel<DataResultModel<Guid>>> CreateOrder(CreateOrderDetailReqModel orderRequest, string token);
+        Task<ResultModel<DataResultModel<OrderPaymentResModel>>> HandleCheckTransaction(string id, string token);
     }
 }

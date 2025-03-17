@@ -1,5 +1,6 @@
 using HMES.Business.Services.OrderServices;
 using HMES.Data.DTO.RequestModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers
@@ -14,8 +15,9 @@ namespace HMES.API.Controllers
         {
             _orderServices = orderServices;
         }
-        
+
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDetailReqModel orderRequest)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
