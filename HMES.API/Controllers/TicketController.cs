@@ -27,7 +27,7 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.GetAllTickets(keyword, type.ToString(), status.ToString(), pageIndex, pageSize, token);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // GET: api/ticket/assigned
@@ -41,7 +41,7 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.GetTicketsWasAssignedByMe(keyword, type.ToString(), status.ToString(), token, pageIndex, pageSize);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // GET: api/ticket/{id}
@@ -49,7 +49,7 @@ public class TicketController : ControllerBase
     public async Task<IActionResult> GetTicketById(string id)
     {
         var result = await _ticketServices.GetTicketById(id);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // POST: api/ticket
@@ -58,7 +58,7 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.AddTicket(ticketDto, token);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // POST: api/ticket/response
@@ -67,7 +67,7 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.ResponseTicket(ticketDto,token);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // PUT: api/ticket/assign/{ticketId}
@@ -76,7 +76,7 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.AssignTicket(ticketId, token);
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 
     // PUT: api/ticket/status/{ticketId}
@@ -87,6 +87,6 @@ public class TicketController : ControllerBase
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.ChangeTicketStatus(ticketId, token, status.ToString());
-        return StatusCode(result.StatusCodes, result.Response);
+        return Ok(result);
     }
 }

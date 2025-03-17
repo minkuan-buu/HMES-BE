@@ -66,6 +66,10 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.ParentCategory, opt => opt.MapFrom(src => src.ParentCategory));
 
+            CreateMap<Category, CategoryFamiliesResModel>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)));
+
             CreateMap<CategoryCreateReqModel, Category>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
@@ -108,7 +112,8 @@ namespace HMES.Business.MapperProfiles
 
             // Cart
             CreateMap<CartItem, CartItemResponseDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product.Name)));
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product.Name)))
+                .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product.MainImage?? "")));
 
             CreateMap<Cart, CartResponseDto>();
             CreateMap<CartItemCreateDto, CartItem>();

@@ -235,6 +235,13 @@ public class ProductServices : IProductServices
                     Response = new MessageResultModel { Message = "Product not found" }
                 };
             }
+            
+            var filePath = $"product/{product.Id}/attachments";
+            if(product.MainImage != null || product.ProductAttachments.Count != 0)
+            {
+                await _cloudServices.DeleteFilesInPathAsync(filePath);
+            }
+            
 
             product.ProductAttachments.Clear();
             await _productRepository.Delete(product);
