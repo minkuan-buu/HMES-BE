@@ -15,7 +15,7 @@ namespace HMES.API.Controllers
             _orderServices = orderServices;
         }
 
-        [HttpPost("check")]
+        [HttpPost]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreatePayment([FromBody] Guid Id)
         {
