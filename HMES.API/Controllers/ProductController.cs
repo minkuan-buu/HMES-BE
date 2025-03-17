@@ -17,7 +17,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllProducts([FromQuery] ProductStatusEnums status, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAllProducts([FromQuery] ProductStatusEnums? status, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
     {
         var result = await _productServices.GetAllProducts(pageIndex, pageSize,status);
         return StatusCode(result.StatusCodes, result.Response);
@@ -37,7 +37,7 @@ public class ProductController : ControllerBase
         [FromQuery] int? maxAmount,
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
-        [FromQuery] ProductStatusEnums status,
+        [FromQuery] ProductStatusEnums? status,
         [FromQuery] DateTime? createdAfter,
         [FromQuery] DateTime? createdBefore,
         [FromQuery] int pageIndex = 1,

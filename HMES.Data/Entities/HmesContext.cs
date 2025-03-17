@@ -339,7 +339,7 @@ public partial class HmesContext : DbContext
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductAttachments)
                 .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__ProductAt__Produ__02FC7413");
         });
 

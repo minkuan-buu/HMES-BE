@@ -99,8 +99,11 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ProductStatusEnums.Active.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
             CreateMap<ProductUpdateDto, Product>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Description)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()));
 
             // Cart

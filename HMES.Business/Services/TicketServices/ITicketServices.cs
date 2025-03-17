@@ -10,7 +10,8 @@ public interface ITicketServices
         string? type,
         string? status,
         int pageIndex, 
-        int pageSize);
+        int pageSize,
+        string token);
     
     Task<ResultModel<ListDataResultModel<TicketBriefDto>>> GetTicketsWasAssignedByMe(
         string? keyword,

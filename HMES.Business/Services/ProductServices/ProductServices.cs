@@ -30,7 +30,7 @@ public class ProductServices : IProductServices
     }
 
     public async Task<ResultModel<ListDataResultModel<ProductBriefResponseDto>>> GetAllProducts(int pageIndex, int pageSize,
-        ProductStatusEnums status)
+        ProductStatusEnums? status)
     {
         try
         {
@@ -83,7 +83,7 @@ public class ProductServices : IProductServices
         }
     }
 
-    public async Task<ResultModel<ListDataResultModel<ProductResponseDto>>> SearchProducts(string? keyword,
+    public async Task<ResultModel<ListDataResultModel<ProductBriefResponseDto>>> SearchProducts(string? keyword,
         Guid? categoryId, int? minAmount, int? maxAmount, decimal? minPrice, decimal? maxPrice,
         ProductStatusEnums? status, DateTime? createdAfter, DateTime? createdBefore, int pageIndex, int pageSize)
     {
@@ -93,15 +93,17 @@ public class ProductServices : IProductServices
             var (products, totalItems) = await _productRepository.GetProductsWithPagination(encodedKeyword, categoryId,
                 minAmount, maxAmount, minPrice, maxPrice, status, createdAfter, createdBefore, pageIndex, pageSize);
             int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-            var result = new ListDataResultModel<ProductResponseDto>
+            
+            var result = new ListDataResultModel<ProductBriefResponseDto>
             {
-                Data = _mapper.Map<List<ProductResponseDto>>(products),
+                Data = _mapper.Map<List<ProductBriefResponseDto>>(products),
                 CurrentPage = pageIndex,
                 TotalPages = totalPages,
                 TotalItems = totalItems,
                 PageSize = pageSize
             };
-            return new ResultModel<ListDataResultModel<ProductResponseDto>>
+            
+            return new ResultModel<ListDataResultModel<ProductBriefResponseDto>>
             {
                 StatusCodes = (int)HttpStatusCode.OK, Response = result
             };
@@ -165,9 +167,16 @@ public class ProductServices : IProductServices
                     StatusCodes = (int)HttpStatusCode.NotFound, Response = null
                 };
             }
+            
 
             // Update product details
             _mapper.Map(productDto, product);
+            if(productDto.MainImage != null)
+            {
+                var filePath = $"product/{product.Id}/attachments";
+                var mainImage = await _cloudServices.UploadSingleFile(productDto.MainImage, filePath);
+                product.MainImage = mainImage;
+            }
             product.UpdatedAt = DateTime.UtcNow;
 
             // Handle attachments

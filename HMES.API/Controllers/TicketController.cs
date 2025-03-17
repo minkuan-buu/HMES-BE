@@ -25,7 +25,8 @@ public class TicketController : ControllerBase
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _ticketServices.GetAllTickets(keyword, type.ToString(), status.ToString(), pageIndex, pageSize);
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.GetAllTickets(keyword, type.ToString(), status.ToString(), pageIndex, pageSize, token);
         return StatusCode(result.StatusCodes, result.Response);
     }
 

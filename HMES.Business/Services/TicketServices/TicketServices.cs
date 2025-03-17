@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using AutoMapper;
 using HMES.Business.Services.CloudServices;
 using HMES.Business.Utilities.Authentication;
@@ -36,8 +37,14 @@ public class TicketServices : ITicketServices
     }
 
 
-    public async Task<ResultModel<ListDataResultModel<TicketBriefDto>>> GetAllTickets(string? keyword, string? type, string? status, int pageIndex, int pageSize)
+    public async Task<ResultModel<ListDataResultModel<TicketBriefDto>>> GetAllTickets(string? keyword, string? type, string? status, int pageIndex, int pageSize, string token)
     {
+        
+        var role = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
+        if (role.Equals(RoleEnums.Technician.ToString()))
+        {
+            status = TicketStatusEnums.Pending.ToString();
+        }
         var (tickets, totalItems) = await _ticketRepositories.GetAllTicketsAsync(keyword, type, status, pageIndex, pageSize);
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
