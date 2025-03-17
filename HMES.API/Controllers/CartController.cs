@@ -28,7 +28,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-        [HttpPost("add-to-cart")]
+        [HttpPost]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> AddToCart([FromBody] CartItemCreateDto item)
         {
@@ -37,7 +37,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-        [HttpPut("update-quantity")]
+        [HttpPut]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateQuantity([FromBody] CartItemUpdateDto item)
         {
@@ -46,7 +46,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-        [HttpDelete("clear")]
+        [HttpDelete]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> DeleteItem()
         {
@@ -55,7 +55,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-        [HttpGet("get-total-items")]
+        [HttpGet("details")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetTotalItemsInCart(
             [FromQuery] int pageIndex = 1,
