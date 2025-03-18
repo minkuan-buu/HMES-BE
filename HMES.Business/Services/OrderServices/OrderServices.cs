@@ -8,6 +8,7 @@ using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.CartRepositories;
+using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.OrderDetailRepositories;
 using HMES.Data.Repositories.OrderRepositories;
@@ -33,10 +34,11 @@ namespace HMES.Business.Services.OrderServices
         private readonly ICartRepositories _cartRepositories;
         private readonly IUserAddressRepositories _userAddressRepositories;
         private readonly IDeviceRepositories _deviceRepositories;
+        private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
         private PayOS _payOS;
 
-        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories)
+        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories)
         {
             _payOS = new PayOS("421fdf87-bbe1-4694-a76c-17627d705a85", "7a2f58da-4003-4349-9e4b-f6bbfc556c9b", "da759facf68f863e0ed11385d3bf9cf24f35e2b171d1fa8bae8d91ce1db9ff0c");
             _logger = logger;
@@ -49,6 +51,7 @@ namespace HMES.Business.Services.OrderServices
             _userAddressRepositories = userAddressRepositories;
             _deviceRepositories = deviceRepositories;
             _productRepositories = productRepositories;
+            _deviceItemsRepositories = deviceItemsRepositories;
         }
 
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
@@ -304,7 +307,7 @@ namespace HMES.Business.Services.OrderServices
                         Id = detail.Id,
                         ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
                         ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
-                        Attachment = detail.Device?.Attachment ?? "", // Khi nào Phúc thêm attachment vào Product thì sửa lại
+                        Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? "",
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
                     }).ToList()
@@ -332,7 +335,7 @@ namespace HMES.Business.Services.OrderServices
                     {
                         await _cartRepositories.DeleteRange(userCart.ToList());
                     }
-                    //kiểm tra nếu mua device thì tạo device item, không thì cút   
+                    await CreateDeviceItem(); 
 
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
@@ -372,5 +375,34 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
+        private async Task CreateDeviceItem()
+        {
+        var devices = await _deviceRepositories.GetList(d => d.Status.Equals(DeviceStatusEnum.Active.ToString()));
+        var userId = await _userRepositories.GetSingle(u => u.Status.Equals(GeneralStatusEnums.Active.ToString()));
+
+        foreach (var device in devices)
+        {
+            var deviceItems = new List<DeviceItem>();
+            for (int i = 0; i < device.Quantity; i++)
+            {
+            var deviceItem = new DeviceItem
+            {
+                Id = Guid.NewGuid(),
+                DeviceId = device.Id,
+                UserId = userId.Id,
+                Name = TextConvert.ConvertToUnicodeEscape(device.Name),
+                IsActive = false,
+                IsOnline = false,
+                Serial = Authentication.GenerateRandomSerial(16),
+                WarrantyExpiryDate = DateTime.Now.AddYears(2),
+                Status = DeviceItemStatusEnum.Available.ToString(),
+                CreatedAt = DateTime.Now
+            };
+            deviceItems.Add(deviceItem);
+            }
+
+            await _deviceItemsRepositories.InsertRange(deviceItems);
+        }
+        }
+        }
     }
-}
