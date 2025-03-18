@@ -21,9 +21,15 @@ public partial class Product
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string? MainImage { get; set; }
+
+    public string? Description { get; set; }
+
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
     public virtual Category Category { get; set; } = null!;
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+
+    public virtual ICollection<ProductAttachment> ProductAttachments { get; set; } = new List<ProductAttachment>();
 }

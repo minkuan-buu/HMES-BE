@@ -10,6 +10,7 @@ namespace HMES.Data.Repositories.CategoryRepositories
         Task<Category?> GetCategoryByName(string name);
         Task<Category?> GetCategoryByIdWithParent(Guid id);
         Task<bool> IsSecondLevelCategory(Guid categoryId);
+        Task<bool> IsCategoryInUse(Guid categoryId);
 
     }
 }

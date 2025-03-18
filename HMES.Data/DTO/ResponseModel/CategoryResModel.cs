@@ -24,3 +24,15 @@ public class CategoryRecursiveResModel
     public CategoryRecursiveResModel? ParentCategory { get; set; }
 }
 
+public class CategoryFamiliesResModel
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public Guid? ParentCategoryId { get; set; }
+    public string? Attachment { get; set; }
+    public string Status { get; set; } = null!;
+    public List<CategoryFamiliesResModel> Children { get; set; } = new List<CategoryFamiliesResModel>();
+
+}
+

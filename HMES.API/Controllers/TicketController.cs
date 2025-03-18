@@ -1,0 +1,92 @@
+using HMES.Business.Services.TicketServices;
+using HMES.Data.DTO.RequestModel;
+using HMES.Data.Enums;
+using Microsoft.AspNetCore.Mvc;
+
+namespace HMES.API.Controllers;
+
+[Route("api/ticket")]
+[ApiController]
+public class TicketController : ControllerBase
+{
+    private readonly ITicketServices _ticketServices;
+
+    public TicketController(ITicketServices ticketServices)
+    {
+        _ticketServices = ticketServices;
+    }
+
+    // GET: api/ticket
+    [HttpGet]
+    public async Task<IActionResult> GetAllTickets(
+        [FromQuery] string? keyword,
+        [FromQuery] TicketTypeEnums? type,
+        [FromQuery] TicketStatusEnums? status,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.GetAllTickets(keyword, type.ToString(), status.ToString(), pageIndex, pageSize, token);
+        return Ok(result);
+    }
+
+    // GET: api/ticket/assigned
+    [HttpGet("assigned")]
+    public async Task<IActionResult> GetTicketsByToken(
+        [FromQuery] string? keyword,
+        [FromQuery] TicketTypeEnums? type,
+        [FromQuery] TicketStatusEnums? status,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.GetTicketsWasAssignedByMe(keyword, type.ToString(), status.ToString(), token, pageIndex, pageSize);
+        return Ok(result);
+    }
+
+    // GET: api/ticket/{id}
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTicketById(string id)
+    {
+        var result = await _ticketServices.GetTicketById(id);
+        return Ok(result);
+    }
+
+    // POST: api/ticket
+    [HttpPost]
+    public async Task<IActionResult> AddTicket([FromForm] TicketCreateDto ticketDto)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.AddTicket(ticketDto, token);
+        return Ok(result);
+    }
+
+    // POST: api/ticket/response
+    [HttpPost("response")]
+    public async Task<IActionResult> ResponseTicket([FromForm] TicketResponseDto ticketDto)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.ResponseTicket(ticketDto,token);
+        return Ok(result);
+    }
+
+    // PUT: api/ticket/assign/{ticketId}
+    [HttpPut("assign/{ticketId}")]
+    public async Task<IActionResult> AssignTicket(string ticketId)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.AssignTicket(ticketId, token);
+        return Ok(result);
+    }
+
+    // PUT: api/ticket/status/{ticketId}
+    [HttpPut("status/{ticketId}")]
+    public async Task<IActionResult> ChangeTicketStatus(
+        string ticketId,
+        [FromForm] TicketStatusEnums status)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.ChangeTicketStatus(ticketId, token, status.ToString());
+        return Ok(result);
+    }
+}

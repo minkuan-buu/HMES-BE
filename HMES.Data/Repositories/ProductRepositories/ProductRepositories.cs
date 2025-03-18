@@ -13,15 +13,27 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
     
     public async Task<Product?> GetByIdAsync(Guid id)
     {
+        
         return await Context.Products
             .Include(p => p.Category)
+            .Include(p=>p.ProductAttachments)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<(List<Product> Products, int TotalItems)> GetListWithPagination(int pageIndex, int pageSize,ProductStatusEnums status)
+    public async Task<(List<Product> Products, int TotalItems)> GetListWithPagination(int pageIndex, int pageSize,ProductStatusEnums? status)
     {
-        var query = Context.Products.Include(p => p.Category).Where(p => p.Status.Equals(status.ToString())).OrderByDescending(p => p.CreatedAt);
-        int totalItems = await query.CountAsync();
+        var query = Context.Products
+            .Include(p => p.Category)
+            .Include(p => p.ProductAttachments)
+            .AsQueryable();
+        if (status.HasValue)
+        {
+            query = query.Where(p => p.Status.Equals(status.ToString()));
+        }
+        query = query.OrderByDescending(p => p.CreatedAt);
+        
+        
+        var totalItems = await query.CountAsync();
         var products = await query
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
@@ -39,11 +51,12 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
         DateTime? createdAfter, DateTime? createdBefore,
         int pageIndex, int pageSize)
     {
-        var query = Context.Products.AsQueryable();
-
+        var query = Context.Products
+            .Include(p => p.Category)
+            .AsQueryable();
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            query = query.Where(p => p.Name.Contains(keyword));
+            query = query.Where(p => p.Description != null && (p.Name.Contains(keyword) || p.Description.Contains(keyword)));
         }
 
         if (categoryId.HasValue && categoryId != Guid.Empty)
