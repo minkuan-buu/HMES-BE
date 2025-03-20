@@ -335,7 +335,7 @@ namespace HMES.Business.Services.OrderServices
                     {
                         await _cartRepositories.DeleteRange(userCart.ToList());
                     }
-                    await CreateDeviceItem(userId); 
+                    await CreateDeviceItem(transaction.Order);
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
                 {
@@ -374,65 +374,40 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
-        private async Task CreateDeviceItem(Guid userId)
+        private async Task CreateDeviceItem(Order order)
         {
             try
             {
-                // Lấy danh sách các đơn hàng của người dùng
-                var orders = await _orderRepositories.GetList(x => x.UserId.Equals(userId));
-
-                // Lấy danh sách DeviceId từ OrderDetails
-                var deviceIds = orders.SelectMany(o => o.OrderDetails)
-                                      .Where(od => od.DeviceId != null)
-                                      .Select(od => od.DeviceId.Value)
-                                      .Distinct()
-                                      .ToList();
-
-                // Lấy danh sách thiết bị theo ID
-                var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
-
-
-                var deviceItems = new List<DeviceItem>();
-
-                foreach (var order in orders)
+                foreach (var orderDetail in order.OrderDetails)
                 {
-                    foreach (var orderDetail in order.OrderDetails)
+                    if (orderDetail.Device != null)
                     {
-                        if (orderDetail.DeviceId != null)
+                        for (int i = 0; i < orderDetail.Quantity; i++)
                         {
-                            var device = devices.FirstOrDefault(d => d.Id == orderDetail.DeviceId);
-
-                            for (int i = 0; i < orderDetail.Quantity; i++)
+                            var deviceItem = new DeviceItem
                             {
-                                var deviceItem = new DeviceItem
-                                {
-                                    Id = Guid.NewGuid(),
-                                    DeviceId = device.Id,
-                                    UserId = userId,
-                                    Name = device.Name,
-                                    IsActive = false,
-                                    IsOnline = false,
-                                    Serial = Authentication.GenerateRandomSerial(16),
-                                    WarrantyExpiryDate = DateTime.Now.AddYears(2),
-                                    Status = DeviceItemStatusEnum.Available.ToString(),
-                                    CreatedAt = DateTime.Now,
-                                    UpdatedAt = DateTime.Now
-                                };
+                                Id = Guid.NewGuid(),
+                                DeviceId = orderDetail.Device.Id,
+                                UserId = order.UserId,
+                                Name = orderDetail.Device.Name,
+                                IsActive = false,
+                                IsOnline = false,
+                                Serial = Authentication.GenerateRandomSerial(16),
+                                WarrantyExpiryDate = DateTime.Now.AddYears(2),
+                                Status = DeviceItemStatusEnum.Available.ToString(),
+                                CreatedAt = DateTime.Now,
+                                UpdatedAt = DateTime.Now
+                            };
 
-                                deviceItems.Add(deviceItem);
-                            }
+                            await _deviceItemsRepositories.Insert(deviceItem);
                         }
                     }
                 }
-                    await _deviceItemsRepositories.InsertRange(deviceItems);
-                    
-                
             }
             catch (Exception ex)
             {
-                throw new Exception("Lỗi trong CreateDeviceItem: " + ex.Message, ex);
+                throw new CustomException($"Error creating DeviceItem: {ex.Message}");
             }
         }
-
     }
 }
