@@ -13,3 +13,11 @@ public class  UserAddressCreateReqModel
 
     public string Address { get; set; } = null!;
 }
+public class UserAddressUpdateReqModel
+{
+    public string Name { get; set; } = null!;
+
+    public string Phone { get; set; } = null!;
+
+    public string Address { get; set; } = null!;
+}

@@ -7,6 +7,7 @@ using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using HMES.Data.Repositories.UserTokenRepositories;
@@ -25,13 +26,15 @@ namespace HMES.Business.Services.DeviceServices
         private readonly IMapper _mapper;
         private readonly IDeviceRepositories _deviceRepositories;
         private readonly ICloudServices _cloudServices;
+        private readonly IDeviceItemsRepositories _deviceItemsRepositories;
 
-        public DeviceServices(IUserRepositories userRepositories, IMapper mapper, IDeviceRepositories deviceRepositories, ICloudServices cloudServices)
+        public DeviceServices(IUserRepositories userRepositories, IMapper mapper, IDeviceRepositories deviceRepositories, ICloudServices cloudServices, IDeviceItemsRepositories deviceItemsRepositories)
         {
             _userRepositories = userRepositories;
             _mapper = mapper;
             _deviceRepositories = deviceRepositories;
             _cloudServices = cloudServices;
+            _deviceItemsRepositories = deviceItemsRepositories;
         }
 
         public async Task<ResultModel<MessageResultModel>> CreateDevices(DeviceCreateReqModel DeviceReqModel, string token)
@@ -143,6 +146,34 @@ namespace HMES.Business.Services.DeviceServices
                 var deviceDetails = await _deviceRepositories.GetList(x => x.Status.Equals(DeviceStatusEnum.Active.ToString()));
                 if (deviceDetails == null || !deviceDetails.Any())
                 {
+                    throw new Exception("Device not found!");
+                }
+
+                var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
+                result.Data = deviceResModels;
+
+                return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListActiveDeviceByUserId(string token)
+        {
+            var result = new ListDataResultModel<ListDeviceDetailResModel>();
+
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var deviceDetails = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId) && x.Status.Equals(DeviceStatusEnum.Active.ToString()));
+                if (deviceDetails == null || !deviceDetails.Any())
+                {   
                     throw new Exception("Device not found!");
                 }
 
