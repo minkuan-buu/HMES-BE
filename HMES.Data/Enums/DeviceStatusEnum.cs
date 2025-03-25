@@ -11,4 +11,10 @@ namespace HMES.Data.Enums
         Active,
         Deactive,
     }
+
+    public enum DeviceItemStatusEnum
+    {
+        Available,
+        NotAvailable,
+    }
 }

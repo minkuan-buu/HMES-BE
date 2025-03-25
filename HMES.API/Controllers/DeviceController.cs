@@ -51,5 +51,14 @@ namespace HMES.API.Controllers
                         var result = await _deviceServices.GetListDevice();
                         return Ok(result);
                 }
-        }
+
+                [HttpGet("deviceitem")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> GetListActiveDeviceByUserId()
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceServices.GetListActiveDeviceByUserId(token);
+                        return Ok(result);
+                }
+    }
 }

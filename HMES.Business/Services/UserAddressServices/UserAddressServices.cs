@@ -1,6 +1,7 @@
 using System.Net;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
@@ -104,5 +105,164 @@ public class UserAddressServices : IUserAddressServices
         }
 
         return (null, null);
+    }
+
+    public async Task<ResultModel<MessageResultModel>> UpdateUserAddress(Guid id, UserAddressUpdateReqModel userAddressReq, string token)
+    {
+        try
+        {
+            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var user = await _userRepo.GetSingle(x => x.Id == userId);
+
+            if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
+            {
+                throw new CustomException("You are banned from updating address due to violation of terms!");
+            }
+
+            var userAddress = await _userAddressRepo.GetSingle(x => x.Id == id && x.UserId == userId);
+            if (userAddress == null)
+            {
+                throw new CustomException("Address not found!");
+            }
+
+            var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
+
+            userAddress = _mapper.Map(userAddressReq, userAddress);
+            userAddress.Name = userAddressReq.Name;
+            userAddress.Phone = userAddressReq.Phone;
+            userAddress.UpdatedAt = DateTime.Now;
+
+            if (latitude.HasValue && longitude.HasValue)
+            {
+                userAddress.Latitude = (decimal)latitude.Value;
+                userAddress.Longitude = (decimal)longitude.Value;
+            }
+
+            await _userAddressRepo.Update(userAddress);
+
+            return new ResultModel<MessageResultModel>()
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel()
+                {
+                    Message = "Address is updated!"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ResultModel<MessageResultModel>> SetDefaultUserAddress(Guid id, string token)
+    {
+        try
+        {
+            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var user = await _userRepo.GetSingle(x => x.Id == userId);
+
+            if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
+            {
+                throw new CustomException("You are banned from setting default address due to violation of terms!");
+            }
+
+            var userAddresses = await _userAddressRepo.GetList(x => x.UserId.Equals(userId));
+            var userAddress = await _userAddressRepo.GetSingle(x => x.Id == id && x.UserId == userId);
+            if (userAddress == null)
+            {
+                throw new CustomException("Address not found!");
+            }
+
+            foreach (var address in userAddresses)
+            {
+                address.Status = address.Id == id ? UserAddressEnums.Default.ToString() : UserAddressEnums.Active.ToString();
+                await _userAddressRepo.Update(address);
+            }
+
+            return new ResultModel<MessageResultModel>()
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel()
+                {
+                    Message = "Default address is set!"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ResultModel<MessageResultModel>> DeleteUserAddress(Guid id, string token)
+    {
+        try
+        {
+            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var user = await _userRepo.GetSingle(x => x.Id == userId);
+
+            if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
+            {
+                throw new CustomException("You are banned from deleting address due to violation of terms!");
+            }
+
+            var userAddress = await _userAddressRepo.GetSingle(x => x.Id == id && x.UserId == userId);
+            if (userAddress == null)
+            {
+                throw new CustomException("Address not found!");
+            }
+
+            await _userAddressRepo.Delete(userAddress);
+
+            return new ResultModel<MessageResultModel>()
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new MessageResultModel()
+                {
+                    Message = "Address is deleted!"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task<ResultModel<ListDataResultModel<ListUserAddressResModel>>> GetUserAddress(string token)
+    {
+        try
+        {
+            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var user = await _userRepo.GetSingle(x => x.Id == userId);
+
+            if (user == null || user.Status.Equals(AccountStatusEnums.Inactive))
+            {
+                throw new CustomException("You are banned from getting address due to violation of terms!");
+            }
+
+            var userAddresses = await _userAddressRepo.GetList(x => x.UserId.Equals(userId));
+
+            var result = new ListDataResultModel<ListUserAddressResModel>();
+            result.Data = userAddresses.Select(x => new ListUserAddressResModel
+            {
+                Id = x.Id,
+                Name = TextConvert.ConvertFromUnicodeEscape(x.Name),
+                Phone = x.Phone,
+                Address = TextConvert.ConvertFromUnicodeEscape(x.Address),
+                IsDefault = x.Status.Equals(UserAddressEnums.Default.ToString())
+            }).ToList();
+
+            return new ResultModel<ListDataResultModel<ListUserAddressResModel>>()
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException($"An error occurred: {ex.Message}");
+        }
     }
 }
