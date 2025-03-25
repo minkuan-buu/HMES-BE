@@ -24,7 +24,7 @@ jobs:
 
           # Cập nhật mã nguồn
           sudo git reset --hard
-          sudo git pull origin main
+          sudo git pull origin master
 
           # Xóa thư mục publish cũ
           sudo rm -rf /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
