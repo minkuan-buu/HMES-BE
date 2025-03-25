@@ -38,8 +38,8 @@ jobs:
           # Copy file meowwoofsocial.json vào thư mục publish
           cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/meowwoofsocial.json /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
           cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/.env /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/MeowWoofLogo.webp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/ResetPassword.html /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/MeowWoofLogo.webp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/ResetPassword.html /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
 
           # Cấp quyền cho thư mục publish
           sudo chown -R www:www /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
