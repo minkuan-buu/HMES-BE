@@ -35,7 +35,7 @@ jobs:
           dotnet publish -c Release -r linux-x64 -o ./publish
 
           # Cấp quyền cho thư mục publish
-          sudo chown -R www:www /var/www/myapp/publish
+          sudo chown -R www:www /www/wwwroot/api.hmes.buubuu.id.vn/HMES.API/publish
 
           # Restart service
           sudo systemctl restart hmes
