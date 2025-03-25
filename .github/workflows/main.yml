@@ -1,0 +1,41 @@
+name: Deploy .NET App to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: SSH Deploy
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /www/wwwroot/api.hmes.buubuu.id.vn/
+
+          # Cập nhật mã nguồn
+          sudo git reset --hard
+          sudo git pull origin main
+
+          # Xóa thư mục publish cũ
+          sudo rm -rf /www/wwwroot/api.hmes.buubuu.id.vn/HMES.API/publish
+
+          # Build & Publish ứng dụng
+          dotnet restore
+          dotnet build -c Release
+          dotnet publish -c Release -r linux-x64 -o ./publish
+
+          # Cấp quyền cho thư mục publish
+          sudo chown -R www:www /var/www/myapp/publish
+
+          # Restart service
+          sudo systemctl restart hmes
