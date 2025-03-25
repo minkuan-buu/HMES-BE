@@ -3,7 +3,7 @@ name: Deploy .NET App to Server
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
