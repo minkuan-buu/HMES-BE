@@ -60,6 +60,15 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
 
+            //DeviceItems
+            CreateMap<DeviceItem, ListActiveDeviceResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate));
+                
             // Category
             CreateMap<Category, CategoryRecursiveResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
