@@ -164,9 +164,9 @@ namespace HMES.Business.Services.DeviceServices
             }
         }
 
-        public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListActiveDeviceByUserId(string token)
+        public async Task<ResultModel<ListDataResultModel<ListActiveDeviceResModel>>> GetListActiveDeviceByUserId(string token)
         {
-            var result = new ListDataResultModel<ListDeviceDetailResModel>();
+            var result = new ListDataResultModel<ListActiveDeviceResModel>();
 
             try
             {
@@ -177,10 +177,10 @@ namespace HMES.Business.Services.DeviceServices
                     throw new Exception("Device not found!");
                 }
 
-                var deviceResModels = _mapper.Map<List<ListDeviceDetailResModel>>(deviceDetails);
+                var deviceResModels = _mapper.Map<List<ListActiveDeviceResModel>>(deviceDetails);
                 result.Data = deviceResModels;
 
-                return new ResultModel<ListDataResultModel<ListDeviceDetailResModel>>()
+                return new ResultModel<ListDataResultModel<ListActiveDeviceResModel>>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = result
