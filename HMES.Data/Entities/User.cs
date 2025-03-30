@@ -39,6 +39,8 @@ public partial class User
 
     public virtual ICollection<Ticket> TicketTechnicians { get; set; } = new List<Ticket>();
 
+    public virtual ICollection<Ticket> TicketTransferToNavigations { get; set; } = new List<Ticket>();
+
     public virtual ICollection<Ticket> TicketUsers { get; set; } = new List<Ticket>();
 
     public virtual ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();

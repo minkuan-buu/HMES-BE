@@ -8,11 +8,16 @@ public class DeviceItemsRepositories : GenericRepositories<DeviceItem>, IDeviceI
 {
     public DeviceItemsRepositories(HmesContext context) : base(context)
     {
-        
+
     }
 
     public async Task<DeviceItem?> GetDeviceItemByDeviceItemIdAndUserId(Guid deviceItemId, Guid userId)
     {
         return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == deviceItemId && x.UserId == userId);
+    }
+
+    public async Task<List<DeviceItem>> GetOnlineDevicesAsync()
+    {
+        return await Context.DeviceItems.Where(x => x.IsOnline).ToListAsync();
     }
 }

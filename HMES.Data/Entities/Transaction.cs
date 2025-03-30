@@ -21,5 +21,7 @@ public partial class Transaction
 
     public string? TransactionReference { get; set; }
 
+    public string? PaymentMethod { get; set; }
+
     public virtual Order Order { get; set; } = null!;
 }

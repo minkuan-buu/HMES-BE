@@ -30,6 +30,14 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
 
+            CreateMap<CreateModUserModel, User>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.Password, opt => opt.Ignore());
+
             //Profile
             CreateMap<User, UserProfileResModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
@@ -148,6 +156,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<Ticket, TicketBriefDto>()
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
+                .ForMember(dest => dest.HandledBy, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Technician.Name ?? "")))
                 .ForMember(dest => dest.BriefDescription, opt => opt.MapFrom(src => src.Description.Length > 100 ? TextConvert.ConvertFromUnicodeEscape(src.Description.Substring(0, 100)) : TextConvert.ConvertFromUnicodeEscape(src.Description)));
                 
             CreateMap<Ticket, TicketDetailsDto>()
