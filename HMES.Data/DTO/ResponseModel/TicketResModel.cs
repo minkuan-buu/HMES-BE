@@ -13,6 +13,7 @@ public class TicketBriefDto
     public string Type { get; set; } = null!;
     public string Status { get; set; } = null!;
     public string CreatedBy { get; set; } = null!;
+    public string? HandledBy { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

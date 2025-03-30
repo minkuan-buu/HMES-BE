@@ -77,13 +77,13 @@ builder.Services.AddSwaggerGen(c =>
         Type = "string",
         Enum = Enum.GetNames(typeof(ProductStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
-    
+
     c.MapType<TicketStatusEnums>(() => new OpenApiSchema
     {
         Type = "string",
         Enum = Enum.GetNames(typeof(TicketStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
-    
+
     c.MapType<TicketTypeEnums>(() => new OpenApiSchema
     {
         Type = "string",
@@ -183,6 +183,7 @@ builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IUserAddressServices, UserAddressServices>();
 builder.Services.AddScoped<IEmail, Email>();
 builder.Services.AddScoped<ITicketServices, TicketServices>();
+builder.Services.AddHostedService<DeviceStatusChecker>();
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
