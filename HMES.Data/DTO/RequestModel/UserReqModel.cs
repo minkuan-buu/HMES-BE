@@ -48,4 +48,14 @@ namespace HMES.Data.DTO.RequestModel
         public string Email { get; set; } = null!;
         public string OTPCode { get; set; } = null!;
     }
+
+    public class CreateModUserModel
+    {
+        public string Name { get; set; } = null!;
+        [CustomEmailValidate]
+        public string Email { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        [CustomModRoleValidate]
+        public string Role { get; set; } = null!;
+    }
 }
