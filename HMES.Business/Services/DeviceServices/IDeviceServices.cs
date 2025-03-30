@@ -17,6 +17,6 @@ namespace HMES.Business.Services.DeviceServices
         // Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token);
         Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDevice();
 
-        Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListActiveDeviceByUserId(string token);
+        Task<ResultModel<ListDataResultModel<ListActiveDeviceResModel>>> GetListActiveDeviceByUserId(string token);
     }
 }
