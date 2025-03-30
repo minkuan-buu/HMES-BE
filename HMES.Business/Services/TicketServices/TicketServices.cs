@@ -192,7 +192,7 @@ public class TicketServices : ITicketServices
                 Response = null
             };
         }
-        if(ticket.Status != TicketStatusEnums.InProgress.ToString() || ticket.Status != TicketStatusEnums.TransferRejected.ToString())
+        if(ticket.Status != TicketStatusEnums.InProgress.ToString() && ticket.Status != TicketStatusEnums.TransferRejected.ToString())
         {
             return new ResultModel<DataResultModel<TicketDetailsDto>>
             {

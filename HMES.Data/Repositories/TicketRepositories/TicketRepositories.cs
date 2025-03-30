@@ -40,8 +40,10 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
 
     public async Task<(List<Ticket> tickets, int TotalItems)> GetAllOwnTicketsAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize)
     {
-        var query = Context.Tickets.Include(t => t.User).Include(t => t.Technician)
-            .Include(t => t.Technician).AsQueryable();
+        var query = Context.Tickets
+            .Include(t => t.User)
+            .Include(t => t.Technician)
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
