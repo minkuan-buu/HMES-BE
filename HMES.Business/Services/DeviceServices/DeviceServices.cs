@@ -200,7 +200,7 @@ namespace HMES.Business.Services.DeviceServices
                 var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
                 if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
                 {
-                    throw new Exception("Cann't Active Device!");
+                    throw new Exception("Can't Active Device!");
                 }
                 else if (!getDevice.UserId.Equals(userId))
                 {
