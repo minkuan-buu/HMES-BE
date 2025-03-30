@@ -64,6 +64,8 @@ namespace HMES.Data.DTO.ResponseModel
 
         public string Name { get; set; } = null!;
 
+        public string PlantName { get; set; }
+
         public bool IsActive { get; set; }
 
         public bool IsOnline { get; set; }

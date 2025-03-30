@@ -27,7 +27,7 @@ public partial class DeviceItem
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Device Device { get; set; } = null!;
 

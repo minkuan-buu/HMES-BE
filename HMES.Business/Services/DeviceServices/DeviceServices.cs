@@ -171,7 +171,7 @@ namespace HMES.Business.Services.DeviceServices
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var deviceDetails = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId) && x.Status.Equals(DeviceStatusEnum.Active.ToString()));
+                var deviceDetails = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId) && x.Status.Equals(DeviceStatusEnum.Active.ToString()), includeProperties: "Plant");
                 if (deviceDetails == null || !deviceDetails.Any())
                 {   
                     throw new Exception("Device not found!");

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using HMES.Data.DTO.Custom;
 using Microsoft.AspNetCore.Authorization;
+using HMES.Business.Services.DeviceServices;
 
 namespace HMES.API.Controllers
 {
@@ -12,10 +13,12 @@ namespace HMES.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserServices _userServices;
+        private readonly IDeviceServices _deviceServices;
 
-        public UserController(IUserServices userServices)
+        public UserController(IUserServices userServices, IDeviceServices deviceServices)
         {
             _userServices = userServices;
+            _deviceServices = deviceServices;
         }
 
         [HttpGet("me")]
@@ -60,5 +63,14 @@ namespace HMES.API.Controllers
         //         return BadRequest(new { message = ex.Message });
         //     }
         // }
+
+        [HttpGet("me/devices")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetListActiveDeviceByUserId()
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceServices.GetListActiveDeviceByUserId(token);
+            return Ok(result);
+        }
     }
 }
