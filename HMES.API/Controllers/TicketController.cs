@@ -89,4 +89,39 @@ public class TicketController : ControllerBase
         var result = await _ticketServices.ChangeTicketStatus(ticketId, token, status.ToString());
         return Ok(result);
     }
+    
+    // PUT: api/ticket/transfer/{ticketId}
+    [HttpPut("transfer/{ticketId}")]
+    public async Task<IActionResult> TransferTicket(
+        Guid ticketId,
+        [FromForm] Guid transferTo)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.TransferTicket(ticketId, token, transferTo);
+        return Ok(result);
+    }
+    
+    // GET: api/ticket/transfer
+    [HttpGet("transfer")]
+    public async Task<IActionResult> LoadListRequestTransferTicket(
+        [FromQuery] string? keyword,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.LoadListRequestTransferTicket(keyword, token, pageIndex, pageSize);
+        return Ok(result);
+    }
+    
+    // PUT: api/ticket/transfer/{ticketId}
+    [HttpPut("transfer/{ticketId}/decision")]
+    public async Task<IActionResult> ManageTransferTicket(
+        Guid ticketId,
+        [FromForm] bool decision)
+    {
+        var token = Request.Headers.Authorization.ToString().Split(" ")[1];
+        var result = await _ticketServices.ManageTransferTicket(ticketId, decision, token);
+        return Ok(result);
+    }
+    
 }
