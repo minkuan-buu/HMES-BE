@@ -10,7 +10,7 @@ namespace HMES.Data.Enums
 
     public enum PaymentMethodEnums
     {
-        BankTransfer,
-        CreditCard
+        BANK,
+        COD
     }
 }
