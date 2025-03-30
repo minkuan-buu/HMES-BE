@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Entities;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public class DeviceStatusChecker : BackgroundService
 {
@@ -79,8 +80,11 @@ public class DeviceStatusChecker : BackgroundService
     // Định nghĩa model để parse JSON
     public class DeviceStatusPayload
     {
-        public string DeviceId { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        [JsonPropertyName("deviceId")]
+        public string DeviceId { get; set; }
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
