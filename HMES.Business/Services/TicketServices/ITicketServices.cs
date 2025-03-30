@@ -30,4 +30,14 @@ public interface ITicketServices
     Task<ResultModel<MessageResultModel>> AssignTicket(string ticketId, string token);
     
     Task<ResultModel<MessageResultModel>> ChangeTicketStatus(string ticketId, string token, string status);
+    
+    Task<ResultModel<MessageResultModel>> TransferTicket(Guid ticketId, string token, Guid transferTo);
+    
+    Task<ResultModel<ListDataResultModel<TicketBriefDto>>> LoadListRequestTransferTicket(
+        string? keyword,
+        string token,
+        int pageIndex, 
+        int pageSize);
+    Task<ResultModel<MessageResultModel>> ManageTransferTicket(Guid ticketId, bool decision, string token);
+    
 }

@@ -156,6 +156,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<Ticket, TicketBriefDto>()
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
+                .ForMember(dest => dest.HandledBy, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Technician.Name ?? "")))
                 .ForMember(dest => dest.BriefDescription, opt => opt.MapFrom(src => src.Description.Length > 100 ? TextConvert.ConvertFromUnicodeEscape(src.Description.Substring(0, 100)) : TextConvert.ConvertFromUnicodeEscape(src.Description)));
                 
             CreateMap<Ticket, TicketDetailsDto>()

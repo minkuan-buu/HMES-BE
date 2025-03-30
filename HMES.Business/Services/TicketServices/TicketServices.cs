@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using AutoMapper;
 using HMES.Business.Services.CloudServices;
+using HMES.Business.Services.UserServices;
 using HMES.Business.Utilities.Authentication;
 using HMES.Business.Utilities.TimeZoneHelper;
 using HMES.Data.DTO.RequestModel;
@@ -12,6 +13,7 @@ using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.DeviceRepositories;
 using HMES.Data.Repositories.TicketRepositories;
 using HMES.Data.Repositories.TicketResponseRepositories;
+using HMES.Data.Repositories.UserRepositories;
 using Microsoft.IdentityModel.Tokens;
 
 namespace HMES.Business.Services.TicketServices;
@@ -23,11 +25,13 @@ public class TicketServices : ITicketServices
     private readonly IDeviceItemsRepositories _deviceItemsRepositories;
     private readonly ITicketRepositories _ticketRepositories;
     private readonly ICloudServices _cloudServices;
+    private readonly IUserRepositories _userRepositories;
     private readonly IMapper _mapper;
 
     
-    public TicketServices(ITicketResponseRepositories ticketResponseRepositories, ICloudServices iCloudServices, ITicketRepositories ticketRepositories, IMapper mapper, IDeviceItemsRepositories deviceItemsRepositories)
+    public TicketServices(IUserRepositories userRepositories, ITicketResponseRepositories ticketResponseRepositories, ICloudServices iCloudServices, ITicketRepositories ticketRepositories, IMapper mapper, IDeviceItemsRepositories deviceItemsRepositories)
     {
+        _userRepositories = userRepositories;
         _ticketResponseRepositories = ticketResponseRepositories;
         _ticketRepositories = ticketRepositories;
         _mapper = mapper;
@@ -44,8 +48,28 @@ public class TicketServices : ITicketServices
         if (role.Equals(RoleEnums.Technician.ToString()))
         {
             status = TicketStatusEnums.Pending.ToString();
+            type = TicketTypeEnums.Technical.ToString();
         }
-        var (tickets, totalItems) = await _ticketRepositories.GetAllTicketsAsync(keyword, type, status, pageIndex, pageSize);
+        if(role.Equals(RoleEnums.Consultant.ToString()))
+        {
+            status = TicketStatusEnums.Pending.ToString();
+            type = TicketTypeEnums.Shopping.ToString();
+        }
+
+        List<Ticket> tickets;
+        var totalItems = 0;
+        
+        if(!role.Equals(RoleEnums.Customer.ToString()))
+        {       
+            (tickets, totalItems) = await _ticketRepositories.GetAllTicketsAsync(keyword, type, status, pageIndex, pageSize);
+
+        }
+        else
+        {
+            var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            (tickets, totalItems) = await _ticketRepositories.GetAllOwnTicketsAsync(keyword, type, status,userId, pageIndex, pageSize);
+        }
+
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
         var result = new ListDataResultModel<TicketBriefDto>
@@ -168,6 +192,14 @@ public class TicketServices : ITicketServices
                 Response = null
             };
         }
+        if(ticket.Status != TicketStatusEnums.InProgress.ToString() || ticket.Status != TicketStatusEnums.TransferRejected.ToString())
+        {
+            return new ResultModel<DataResultModel<TicketDetailsDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = null
+            };
+        }
         var ticketResponse = _mapper.Map<TicketResponse>(ticketDto);
         var filePath = $"ticket/{ticketResponse.Id}/attachments";
         if (!ticketDto.Attachments.IsNullOrEmpty())
@@ -182,6 +214,7 @@ public class TicketServices : ITicketServices
         ticketResponse.UserId = userId;
         ticket.TicketResponses.Add(ticketResponse);
         ticket.UpdatedAt = TimeZoneHelper.GetCurrentHoChiMinhTime();
+        ticket.Status = TicketStatusEnums.InProgress.ToString();
         await _ticketRepositories.Update(ticket);
         var result = new DataResultModel<TicketDetailsDto>
         {
@@ -206,6 +239,16 @@ public class TicketServices : ITicketServices
                 Response = new MessageResultModel
                 {
                     Message = "Ticket not found"
+                }
+            };
+        }else if (ticket.Status != TicketStatusEnums.Pending.ToString())
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Ticket is not in pending status"
                 }
             };
         }
@@ -248,6 +291,147 @@ public class TicketServices : ITicketServices
             Response = new MessageResultModel
             {
                 Message = "Ticket status changed"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> TransferTicket(Guid ticketId, string token, Guid transferTo)
+    {
+        var technicianId = new Guid(Authentication.DecodeToken(token, "userid"));
+        if(technicianId == transferTo)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Cannot transfer to yourself"
+                }
+            };
+        }
+        
+        var role = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
+        bool checkRequestAndTransferRole = await _userRepositories.CheckUserByIdAndRole(transferTo, role);
+        
+        if (!checkRequestAndTransferRole)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "User not found or invalid role (requester and transfer role is not match)!"
+                }
+            };
+        }
+        
+        var ticket = await _ticketRepositories.GetByIdAsync(ticketId);
+        if (ticket == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Ticket not found"
+                }
+            };
+        }
+        if(ticket.Status != TicketStatusEnums.InProgress.ToString() && ticket.Status != TicketStatusEnums.TransferRejected.ToString())
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Ticket is not in progress status"
+                }
+            };
+        }
+        
+        ticket.TransferTo = transferTo;
+        ticket.Status = TicketStatusEnums.IsTransferring.ToString();
+        ticket.UpdatedAt = TimeZoneHelper.GetCurrentHoChiMinhTime();
+        await _ticketRepositories.Update(ticket);
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Ticket is requesting transfer"
+            }
+        };
+    }
+
+    public async Task<ResultModel<ListDataResultModel<TicketBriefDto>>> LoadListRequestTransferTicket( string? keyword,string token, int pageIndex, int pageSize)
+    {
+        var technicianId = new Guid(Authentication.DecodeToken(token, "userid"));
+        
+        var (tickets, totalItems) = await _ticketRepositories.GetTicketsRequestTransferByTokenAsync(keyword, null, TicketStatusEnums.IsTransferring.ToString(), technicianId, pageIndex, pageSize);
+        var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+        
+        var result = new ListDataResultModel<TicketBriefDto>
+        {
+            Data = _mapper.Map<List<TicketBriefDto>>(tickets),
+            CurrentPage = pageIndex,
+            TotalPages = totalPages,
+            TotalItems = totalItems,
+            PageSize = pageSize
+        };
+        return new ResultModel<ListDataResultModel<TicketBriefDto>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = result
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> ManageTransferTicket(Guid ticketId, bool decision, string token)
+    {
+        var staffId = new Guid(Authentication.DecodeToken(token, "userid"));
+        var ticket = await _ticketRepositories.GetByIdAsync(ticketId);
+        if (ticket == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Ticket not found"
+                }
+            };
+        }
+        if(ticket.Status != TicketStatusEnums.IsTransferring.ToString())
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Ticket is not in transferring status"
+                }
+            };
+        }
+
+        if (decision)
+        {
+            ticket.TechnicianId = staffId;
+            ticket.TransferTo = null;
+            ticket.Status = TicketStatusEnums.InProgress.ToString();
+            ticket.UpdatedAt = TimeZoneHelper.GetCurrentHoChiMinhTime();
+        }else
+        {
+            ticket.TransferTo = null;
+            ticket.Status = TicketStatusEnums.TransferRejected.ToString();
+            ticket.UpdatedAt = TimeZoneHelper.GetCurrentHoChiMinhTime();
+        }
+        
+        await _ticketRepositories.Update(ticket);
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Ticket transferred"
             }
         };
     }
