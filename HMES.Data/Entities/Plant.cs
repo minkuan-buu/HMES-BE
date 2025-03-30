@@ -7,7 +7,7 @@ public partial class Plant
 {
     public Guid Id { get; set; }
 
-    public Guid Name { get; set; }
+    public string Name { get; set; } = null!;
 
     public string Status { get; set; } = null!;
 
