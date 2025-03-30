@@ -41,17 +41,17 @@ namespace HMES.Business.Services.DeviceServices
         {
             try
             {
-                    var newDeviceId = Guid.NewGuid();
-                    var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
-                    DeviceEntity.Id = newDeviceId;
+                var newDeviceId = Guid.NewGuid();
+                var DeviceEntity = _mapper.Map<Device>(DeviceReqModel);
+                DeviceEntity.Id = newDeviceId;
 
-                    string filePath = $"device/{DeviceEntity.Id}/attachments";
-                    if (DeviceReqModel.Attachment != null)
-                    {
-                        var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
-                        DeviceEntity.Attachment = attachments;
-                    }
-                    DeviceEntity.Status = DeviceStatusEnum.Active.ToString();
+                string filePath = $"device/{DeviceEntity.Id}/attachments";
+                if (DeviceReqModel.Attachment != null)
+                {
+                    var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
+                    DeviceEntity.Attachment = attachments;
+                }
+                DeviceEntity.Status = DeviceStatusEnum.Active.ToString();
 
                 await _deviceRepositories.Insert(DeviceEntity);
 
@@ -142,7 +142,7 @@ namespace HMES.Business.Services.DeviceServices
             var result = new ListDataResultModel<ListDeviceDetailResModel>();
 
             try
-            {     
+            {
                 var deviceDetails = await _deviceRepositories.GetList(x => x.Status.Equals(DeviceStatusEnum.Active.ToString()));
                 if (deviceDetails == null || !deviceDetails.Any())
                 {
@@ -171,9 +171,9 @@ namespace HMES.Business.Services.DeviceServices
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var deviceDetails = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId) && x.Status.Equals(DeviceStatusEnum.Active.ToString()), includeProperties: "Plant");
+                var deviceDetails = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId) && x.IsActive, includeProperties: "Plant");
                 if (deviceDetails == null || !deviceDetails.Any())
-                {   
+                {
                     throw new Exception("Device not found!");
                 }
 
@@ -184,6 +184,44 @@ namespace HMES.Business.Services.DeviceServices
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> ActiveDevice(string token, Guid DeviceId)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                {
+                    throw new Exception("Cann't Active Device!");
+                }
+                else if (!getDevice.UserId.Equals(userId))
+                {
+                    throw new Exception("Access denied");
+                }
+                else if (getDevice == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                getDevice.IsActive = true;
+                getDevice.IsOnline = true;
+                getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
+                await _deviceItemsRepositories.Update(getDevice);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is activated!"
+                    }
                 };
             }
             catch (Exception ex)

@@ -52,5 +52,14 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-    }
+                [HttpPost]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceServices.ActiveDevice(token, Id);
+                        return Ok(result);
+                }
+
+        }
 }

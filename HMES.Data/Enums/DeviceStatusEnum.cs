@@ -15,6 +15,7 @@ namespace HMES.Data.Enums
     public enum DeviceItemStatusEnum
     {
         Available,
+        ReadyForPlanting,
         NotAvailable,
     }
 }
