@@ -123,6 +123,7 @@ namespace HMES.Business.Services.OrderServices
                 Status = TransactionEnums.PENDING.ToString(),
                 PaymentLinkId = createPayment.paymentLinkId,
                 CreatedAt = DateTime.Now,
+                PaymentMethod = PaymentMethodEnums.BANK.ToString(),
             };
 
             await _transactionRepositories.Insert(NewTransaction);
