@@ -29,6 +29,8 @@ public partial class DeviceItem
 
     public DateTime? UpdatedAt { get; set; }
 
+    public DateTime? LastSeen { get; set; }
+
     public virtual Device Device { get; set; } = null!;
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
