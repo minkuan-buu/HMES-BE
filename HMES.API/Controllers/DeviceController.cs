@@ -52,7 +52,7 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-                [HttpPost]
+                [HttpPost("active")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
                 {
