@@ -5,5 +5,7 @@ public enum TicketStatusEnums
     Pending,
     InProgress,
     Closed,
-    Done
+    Done,
+    IsTransferring,
+    TransferRejected,
 }

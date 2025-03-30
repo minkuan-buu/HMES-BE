@@ -25,6 +25,8 @@ public partial class Ticket
 
     public DateTime? UpdatedAt { get; set; }
 
+    public Guid? TransferTo { get; set; }
+
     public virtual DeviceItem? DeviceItem { get; set; }
 
     public virtual User? Technician { get; set; }
@@ -32,6 +34,8 @@ public partial class Ticket
     public virtual ICollection<TicketAttachment> TicketAttachments { get; set; } = new List<TicketAttachment>();
 
     public virtual ICollection<TicketResponse> TicketResponses { get; set; } = new List<TicketResponse>();
+
+    public virtual User? TransferToNavigation { get; set; }
 
     public virtual User User { get; set; } = null!;
 }
