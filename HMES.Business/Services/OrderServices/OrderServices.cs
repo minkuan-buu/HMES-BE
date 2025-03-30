@@ -396,7 +396,6 @@ namespace HMES.Business.Services.OrderServices
                                 WarrantyExpiryDate = DateTime.Now.AddYears(2),
                                 Status = DeviceItemStatusEnum.Available.ToString(),
                                 CreatedAt = DateTime.Now,
-                                UpdatedAt = DateTime.Now
                             };
 
                             await _deviceItemsRepositories.Insert(deviceItem);
