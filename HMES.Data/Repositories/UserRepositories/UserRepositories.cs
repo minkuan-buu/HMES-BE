@@ -19,5 +19,10 @@ namespace HMES.Data.Repositories.UserRepositories
         public async Task<User?> GetUserByEmail(string email){
             return await Context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
+
+        public async Task<bool> CheckUserByIdAndRole(Guid id, string role)
+        {
+            return await Context.Users.AnyAsync(u => u.Id == id && u.Role == role);
+        }
     }
 }
