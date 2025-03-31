@@ -190,6 +190,44 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Message)))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()));
+            
+            // Plant
+            
+            CreateMap<Plant, PlantResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+            
+            CreateMap<PlantReqModel, Plant>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+            
+            CreateMap<Plant, PlantResModelWithTarget>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => src.TargetOfPlants.Select(top => top.TargetValue)));            
+            // Target value
+            CreateMap<TargetValue, TargetResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+                .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
+                .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue));
+            
+            CreateMap<TargetReqModel, TargetValue>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
+                .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
+                .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue));
+            
+            CreateMap<TargetValue, TargetResModelWithPlants>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+                .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
+                .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
+                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => src.TargetOfPlants.Select(t => t.Plant)));
+            
         }
     }
 }
