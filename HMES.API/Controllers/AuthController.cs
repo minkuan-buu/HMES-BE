@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using HMES.Data.DTO.Custom;
 using Microsoft.AspNetCore.Authorization;
 using HMES.Data.DTO.ResponseModel;
+using System.Net;
 
 namespace HMES.API.Controllers
 {
@@ -39,18 +40,25 @@ namespace HMES.API.Controllers
                 Expires = DateTime.UtcNow.AddMonths(6)
             });
 
-            var FinalReturn = new UserFinalLoginResModel
+            var FinalReturn = new ResultModel<DataResultModel<UserFinalLoginResModel>>
             {
-                Id = result.Response.Data.Id,
-                Name = result.Response.Data.Name,
-                Email = result.Response.Data.Email,
-                Phone = result.Response.Data.Phone,
-                Role = result.Response.Data.Role,
-                Status = result.Response.Data.Status,
-                Attachment = result.Response.Data.Attachment,
-                Auth = new UserFinalAuthResModel
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<UserFinalLoginResModel>
                 {
-                    Token = result.Response.Data.Auth.Token,
+                    Data = new UserFinalLoginResModel
+                    {
+                        Id = result.Response.Data.Id,
+                        Name = result.Response.Data.Name,
+                        Email = result.Response.Data.Email,
+                        Phone = result.Response.Data.Phone,
+                        Role = result.Response.Data.Role,
+                        Status = result.Response.Data.Status,
+                        Attachment = result.Response.Data.Attachment,
+                        Auth = new UserFinalAuthResModel
+                        {
+                            Token = result.Response.Data.Auth.Token,
+                        }
+                    }
                 }
             };
 
