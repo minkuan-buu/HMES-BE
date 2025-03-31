@@ -183,6 +183,7 @@ builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IUserAddressServices, UserAddressServices>();
 builder.Services.AddScoped<IEmail, Email>();
 builder.Services.AddScoped<ITicketServices, TicketServices>();
+builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
