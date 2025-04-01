@@ -6,6 +6,7 @@ using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.RequestModel;
 using AutoMapper;
 using System.Net;
+using System.Security.Claims;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Data.Enums;
 using HMES.Business.Utilities.Converter;
@@ -31,6 +32,33 @@ public class UserServices : IUserServices
     {
         var list = await _userRepositories.GetList();
         return list.FirstOrDefault();
+    }
+
+    public async Task<ResultModel<ListDataResultModel<StaffBriefInfoModel>>> GetStaffsBaseOnRole( string token ,string role)
+    {
+        var userRole = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
+        Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+
+        IEnumerable<User> staffList;
+        
+        if (userRole == RoleEnums.Admin.ToString())
+        {
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(role) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+        }
+        else
+        {
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(userRole) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+        }
+        
+        var result = _mapper.Map<List<StaffBriefInfoModel>>(staffList);
+        return new ResultModel<ListDataResultModel<StaffBriefInfoModel>>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new ListDataResultModel<StaffBriefInfoModel>()
+            {
+                Data = result
+            }
+        };
     }
 
     public async Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel)

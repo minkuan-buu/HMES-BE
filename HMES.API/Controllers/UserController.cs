@@ -41,6 +41,17 @@ namespace HMES.API.Controllers
             var result = await _userServices.GetTechnicians();
             return Ok(result);
         }
+        
+        [HttpGet("staffs/{role}")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetStaffs(
+            string role
+            )
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _userServices.GetStaffsBaseOnRole(token, role);
+            return Ok(result);
+        }
 
         [HttpPut("me")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
