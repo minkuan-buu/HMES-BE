@@ -27,9 +27,10 @@ public class TicketServices : ITicketServices
     private readonly ICloudServices _cloudServices;
     private readonly IUserRepositories _userRepositories;
     private readonly IMapper _mapper;
+    private readonly IMqttService _mqttService;
 
     
-    public TicketServices(IUserRepositories userRepositories, ITicketResponseRepositories ticketResponseRepositories, ICloudServices iCloudServices, ITicketRepositories ticketRepositories, IMapper mapper, IDeviceItemsRepositories deviceItemsRepositories)
+    public TicketServices(IMqttService mqttService,IUserRepositories userRepositories, ITicketResponseRepositories ticketResponseRepositories, ICloudServices iCloudServices, ITicketRepositories ticketRepositories, IMapper mapper, IDeviceItemsRepositories deviceItemsRepositories)
     {
         _userRepositories = userRepositories;
         _ticketResponseRepositories = ticketResponseRepositories;
@@ -37,6 +38,7 @@ public class TicketServices : ITicketServices
         _mapper = mapper;
         _cloudServices = iCloudServices;
         _deviceItemsRepositories = deviceItemsRepositories;
+        _mqttService = mqttService;
 
     }
 
@@ -216,6 +218,9 @@ public class TicketServices : ITicketServices
         ticket.UpdatedAt = TimeZoneHelper.GetCurrentHoChiMinhTime();
         ticket.Status = TicketStatusEnums.InProgress.ToString();
         await _ticketRepositories.Update(ticket);
+        
+//await _mqttService.PublishAsync($"ticket/{}", "response", ticket.Id.ToString());
+        
         var result = new DataResultModel<TicketDetailsDto>
         {
             Data = _mapper.Map<TicketDetailsDto>(ticket)

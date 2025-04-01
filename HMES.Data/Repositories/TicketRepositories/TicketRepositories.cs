@@ -73,8 +73,11 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     public async Task<Ticket?> GetByIdAsync(Guid id)
     {
         return await Context.Tickets
-            .Include(t=>t.User)
+            .Include(t => t.User)
             .Include(t => t.TicketResponses)
+                .ThenInclude(tr => tr.TicketResponseAttachments)
+            .Include(t => t.TicketResponses)
+                .ThenInclude(tr => tr.User) // Include User in TicketResponse
             .Include(t => t.TicketAttachments)
             .FirstOrDefaultAsync(t => t.Id == id);
     }

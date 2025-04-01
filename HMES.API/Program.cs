@@ -8,6 +8,8 @@ using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.OTPServices;
 using HMES.Business.Services.ProductServices;
 using HMES.Business.Services.OrderServices;
+using HMES.Business.Services.PlantServices;
+using HMES.Business.Services.TargetValueServices;
 using HMES.Business.Services.TicketServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
@@ -34,6 +36,9 @@ using Microsoft.OpenApi.Models;
 using HMES.Business.Services.UserAddressServices;
 using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Business.Services.DeviceItemServices;
+using HMES.Data.Repositories.PlantRepositories;
+using HMES.Data.Repositories.TargetOfPlantRepositories;
+using HMES.Data.Repositories.TargetValueRepositories;
 
 DotNetEnv.Env.Load();
 
@@ -89,6 +94,16 @@ builder.Services.AddSwaggerGen(c =>
     {
         Type = "string",
         Enum = Enum.GetNames(typeof(TicketTypeEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
+    c.MapType<PlantStatusEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(PlantStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
+    c.MapType<ValueTypeEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(ValueTypeEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
 
     // 🟢 Cấu hình Bearer Token
@@ -171,6 +186,9 @@ builder.Services.AddScoped<IUserAddressRepositories, UserAddressRepositories>();
 builder.Services.AddScoped<ITicketRepositories, TicketRepositories>();
 builder.Services.AddScoped<ITicketResponseRepositories, TicketResponseRepositories>();
 builder.Services.AddScoped<IDeviceItemsRepositories, DeviceItemsRepositories>();
+builder.Services.AddScoped<IPlantRepositories, PlantRepositories>();
+builder.Services.AddScoped<ITargetValueRepositories, TargetValueRepositories>();
+builder.Services.AddScoped<ITargetOfPlantRepository, TargetOfPlantRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -187,6 +205,10 @@ builder.Services.AddScoped<ITicketServices, TicketServices>();
 builder.Services.AddScoped<IDeviceItemServices, DeviceItemServices>();
 builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
+builder.Services.AddScoped<IPlantServices, PlantServices>();
+builder.Services.AddScoped<ITargetValueServices, TargetValueServices>();
+
+
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
