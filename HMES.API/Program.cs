@@ -33,6 +33,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using HMES.Business.Services.UserAddressServices;
 using HMES.Data.Repositories.DeviceItemsRepositories;
+using HMES.Business.Services.DeviceItemServices;
 
 DotNetEnv.Env.Load();
 
@@ -183,6 +184,7 @@ builder.Services.AddScoped<IOrderServices, OrderServices>();
 builder.Services.AddScoped<IUserAddressServices, UserAddressServices>();
 builder.Services.AddScoped<IEmail, Email>();
 builder.Services.AddScoped<ITicketServices, TicketServices>();
+builder.Services.AddScoped<IDeviceItemServices, DeviceItemServices>();
 builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
 //=========================================== CORS ================================================
