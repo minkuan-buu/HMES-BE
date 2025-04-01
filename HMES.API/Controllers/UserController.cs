@@ -76,12 +76,12 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("me/devices/{Id}")]
+        [HttpGet("me/devices/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> GetDeviceItem([FromQuery] Guid Id)
+        public async Task<IActionResult> GetDeviceItem(Guid id)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _deviceItemServices.GetDeviceItemDetailById(Id, token);
+            var result = await _deviceItemServices.GetDeviceItemDetailById(id, token);
             return Ok(result);
         }
     }
