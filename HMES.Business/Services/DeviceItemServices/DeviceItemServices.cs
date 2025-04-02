@@ -44,5 +44,33 @@ namespace HMES.Business.Services.DeviceItemServices
                 throw new CustomException(ex.Message);
             }
         }
+
+        public async Task<ResultModel<MessageResultModel>> SetPlantForDevice(Guid deviceItemId, Guid plantId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetDeviceItemByDeviceItemIdAndUserId(deviceItemId, userId);
+                
+                if (deviceItem is not { IsActive: true })
+                {
+                    throw new Exception("Device item not found or not active");
+                }
+                deviceItem.PlantId = plantId;
+                await _deviceItemsRepositories.Update(deviceItem);
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Plant set successfully"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
