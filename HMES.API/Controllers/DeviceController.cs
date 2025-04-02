@@ -1,4 +1,5 @@
-﻿using HMES.Business.Services.DeviceServices;
+﻿using HMES.Business.Services.DeviceItemServices;
+using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.UserServices;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
@@ -13,10 +14,12 @@ namespace HMES.API.Controllers
         public class DeviceController : ControllerBase
         {
                 private readonly IDeviceServices _deviceServices;
+                private readonly IDeviceItemServices _deviceItemServices;
 
-                public DeviceController(IDeviceServices deviceServices)
+                public DeviceController(IDeviceServices deviceServices, IDeviceItemServices deviceItemServices)
                 {
                         _deviceServices = deviceServices;
+                        _deviceItemServices = deviceItemServices;
                 }
 
                 [HttpPost]
@@ -60,6 +63,15 @@ namespace HMES.API.Controllers
                         var result = await _deviceServices.ActiveDevice(token, Id);
                         return Ok(result);
                 }
+                [HttpPut("set-plant")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> ActiveDevice([FromBody] SetPlantReqModel model)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceItemServices.SetPlantForDevice(model.DeviceItemId, model.PlantId, token);
+                        return Ok(result);
+                }
+                
 
         }
 }
