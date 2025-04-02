@@ -44,7 +44,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<User, StaffBriefInfoModel>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)));
 
-            
+
             //Device
             CreateMap<DeviceCreateReqModel, Device>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
@@ -190,7 +190,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Message)))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()));
-                
+
             // Device Item for end-user
             CreateMap<DeviceItem, DeviceItemDetailResModel>()
                 .ForMember(dest => dest.DeviceItemId, opt => opt.MapFrom(src => src.Id))
@@ -201,7 +201,6 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate))
                 .ForMember(dest => dest.LastUpdatedDate, opt => opt.MapFrom(src => src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().CreatedAt : DateTime.Now))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.IoTData, opt => opt.MapFrom(src => new IoTResModel()
                 {
                     SoluteConcentration = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration").RecordValue : 0,
@@ -209,37 +208,37 @@ namespace HMES.Business.MapperProfiles
                     Ph = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph").RecordValue : 0,
                     WaterLevel = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel").RecordValue : 0
                 }));
-            
+
             // Plant
-            
+
             CreateMap<Plant, PlantResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
-            
+
             CreateMap<PlantReqModel, Plant>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-            
+
             CreateMap<Plant, PlantResModelWithTarget>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => src.TargetOfPlants.Select(top => top.TargetValue)));            
+                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => src.TargetOfPlants.Select(top => top.TargetValue)));
             // Target value
             CreateMap<TargetValue, TargetResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue));
-            
+
             CreateMap<TargetReqModel, TargetValue>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue));
-            
+
             CreateMap<TargetValue, TargetResModelWithPlants>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))

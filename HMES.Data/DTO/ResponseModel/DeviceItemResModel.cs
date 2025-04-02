@@ -11,7 +11,6 @@ public class DeviceItemDetailResModel
     public IoTResModel IoTData { get; set; } = new IoTResModel();
     public DateTime WarrantyExpiryDate { get; set; }
     public DateTime LastUpdatedDate { get; set; }
-    public string Status { get; set; } = null!;
 }
 
 public class IoTResModel
