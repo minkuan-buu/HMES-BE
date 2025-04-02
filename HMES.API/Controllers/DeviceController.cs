@@ -65,7 +65,7 @@ namespace HMES.API.Controllers
                 }
                 [HttpPut("set-plant")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> ActiveDevice([FromBody] SetPlantReqModel model)
+                public async Task<IActionResult> SetPlantForDeviceDevice([FromBody] SetPlantReqModel model)
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
                         var result = await _deviceItemServices.SetPlantForDevice(model.DeviceItemId, model.PlantId, token);
