@@ -20,15 +20,15 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE
+          cd /www/wwwroot/api.hmes.site/HMES-BE
 
           # Cập nhật mã nguồn
           sudo git reset --hard
           sudo git pull origin master
 
           # Xóa thư mục publish cũ
-          sudo rm -rf /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cd /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/
+          sudo rm -rf /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cd /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/
 
           # Build & Publish ứng dụng
           dotnet restore
@@ -36,13 +36,13 @@ jobs:
           dotnet publish -c Release -r linux-x64 -o ./publish
 
           # Copy file meowwoofsocial.json vào thư mục publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/meowwoofsocial.json /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/.env /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/MeowWoofLogo.webp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/ResetPassword.html /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/meowwoofsocial.json /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/.env /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/MeowWoofLogo.webp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/ResetPassword.html /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
 
           # Cấp quyền cho thư mục publish
-          sudo chown -R www:www /www/wwwroot/api.hmes.buubuu.id.vn/HMES-BE/HMES.API/publish
+          sudo chown -R www:www /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
 
           # Restart service
           sudo systemctl restart hmes
