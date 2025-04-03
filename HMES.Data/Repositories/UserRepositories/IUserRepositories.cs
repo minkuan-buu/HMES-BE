@@ -12,5 +12,8 @@ namespace HMES.Data.Repositories.UserRepositories
     {
        Task<User?> GetUserByEmail(string email);
        Task<bool> CheckUserByIdAndRole(Guid id, string role);
+       
+       Task<(List<User> Products, int TotalItems)> GetAllUsersAsync(string? keyword, Guid userId, string? role , string? status, int pageIndex, int pageSize);
+       
     }
 }

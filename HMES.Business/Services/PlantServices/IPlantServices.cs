@@ -21,6 +21,9 @@ public interface IPlantServices
     Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId);
     
     Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId);
+    
+    Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type);
+
 
     
     

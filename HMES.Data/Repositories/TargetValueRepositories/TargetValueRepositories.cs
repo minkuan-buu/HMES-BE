@@ -29,6 +29,13 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
         return targetValue;
     }
 
+    public async Task<bool> CheckTargetValueByTypeAndMinAndMax(string type, decimal minValue, decimal maxValue)
+    {
+        var targetValue = await Context.TargetValues
+            .AnyAsync(t => t.Type.Equals(type) && t.MinValue == minValue && t.MaxValue == maxValue);
+        return targetValue;
+    }
+
     public async Task<TargetValue?> GetTargetValueById(Guid id)
     {
         var targetValue = await Context.TargetValues
