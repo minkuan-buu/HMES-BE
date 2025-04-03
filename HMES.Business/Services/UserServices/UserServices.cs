@@ -296,4 +296,35 @@ public class UserServices : IUserServices
             }
         };
     }
+
+    public async Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetUsers(string token, string? keyword,
+        string? role, string? status , int pageIndex, int pageSize)
+    {
+        var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+        if (role == RoleEnums.Admin.ToString()) 
+        {
+            role = null;
+        }
+        
+        var (tickets, totalItems) =
+            await _userRepositories.GetAllUsersAsync(keyword, userId,role, status, pageIndex, pageSize);
+
+
+        var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+        var result = new ListDataResultModel<UserProfileResModel>
+        {
+            Data = _mapper.Map<List<UserProfileResModel>>(tickets),
+            CurrentPage = pageIndex,
+            TotalPages = totalPages,
+            TotalItems = totalItems,
+            PageSize = pageSize
+        };
+        
+        return new ResultModel<ListDataResultModel<UserProfileResModel>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = result
+        };
+    }
 }

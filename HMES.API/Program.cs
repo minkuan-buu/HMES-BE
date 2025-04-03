@@ -105,6 +105,16 @@ builder.Services.AddSwaggerGen(c =>
         Type = "string",
         Enum = Enum.GetNames(typeof(ValueTypeEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
     });
+    c.MapType<RoleEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(RoleEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
+    c.MapType<AccountStatusEnums>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(AccountStatusEnums)).Select(name => new OpenApiString(name)).ToList<IOpenApiAny>()
+    });
 
     // 🟢 Cấu hình Bearer Token
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

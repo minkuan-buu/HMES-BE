@@ -45,4 +45,11 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
             .Select(top => top.TargetValue)
             .AnyAsync(tv => tv.Type == targetType);
     }
+
+    public async Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type)
+    {
+        return await Context.Plants
+            .Where(p => p.TargetOfPlants.All(top => top.TargetValue.Type != type))
+            .ToListAsync();
+    }
 }
