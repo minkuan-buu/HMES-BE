@@ -1,5 +1,6 @@
 using System.Net;
 using AutoMapper;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
@@ -30,7 +31,10 @@ public class PlantServices : IPlantServices
     
     public async Task<ResultModel<ListDataResultModel<PlantResModel>>> GetAllPlantsAsync(string? keyword, string? status, int pageIndex, int pageSize)
     {
-        var (plants, totalItems) = await _plantRepositories.GetAllPlantsAsync(keyword,  status, pageIndex, pageSize);
+        
+        var encodeKeyword = TextConvert.ConvertToUnicodeEscape(keyword??string.Empty);
+        
+        var (plants, totalItems) = await _plantRepositories.GetAllPlantsAsync(encodeKeyword,  status, pageIndex, pageSize);
         
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
@@ -138,7 +142,7 @@ public class PlantServices : IPlantServices
         }
         if (plantReqModel.Name != null)
         {
-            plant.Name = plantReqModel.Name;
+            plant.Name = TextConvert.ConvertToUnicodeEscape(plantReqModel.Name);
         }
         
         
@@ -181,6 +185,13 @@ public class PlantServices : IPlantServices
         }
         try
         {
+            var targetsOfPlant = plant.TargetOfPlants.ToList();
+
+            if (targetsOfPlant.Count > 0)
+            {
+                await _targetOfPlantRepository.DeleteRange(targetsOfPlant);
+            }
+
             await _plantRepositories.Delete(plant);
         }
         catch (Exception e)
@@ -361,6 +372,16 @@ public class PlantServices : IPlantServices
             {
                 Message = "Set target value for plant successfully"
             }
+        };
+    }
+
+    public async Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type)
+    {
+        var plants = await _plantRepositories.GetPlantsWithoutTargetValueOfType(type);
+        return new ResultModel<List<PlantResModel>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = _mapper.Map<List<PlantResModel>>(plants)
         };
     }
 }

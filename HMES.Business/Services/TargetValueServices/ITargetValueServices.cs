@@ -15,7 +15,7 @@ public interface ITargetValueServices
     
     Task<ResultModel<DataResultModel<TargetResModel>>> CreateTargetValueAsync(TargetReqModel targetReqModel);
     
-    Task<ResultModel<DataResultModel<TargetResModel>>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel);
+    Task<ResultModel<MessageResultModel>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel);
     
     Task<ResultModel<MessageResultModel>> DeleteTargetValueAsync(Guid id);
     
