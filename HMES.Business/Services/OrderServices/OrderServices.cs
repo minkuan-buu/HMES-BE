@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
 using HMES.Business.Utilities.Converter;
@@ -19,6 +20,7 @@ using HMES.Data.Repositories.UserRepositories;
 using Microsoft.Extensions.Logging;
 using Net.payOS;
 using Net.payOS.Types;
+using Newtonsoft.Json;
 using Transaction = HMES.Data.Entities.Transaction;
 
 namespace HMES.Business.Services.OrderServices
@@ -37,6 +39,9 @@ namespace HMES.Business.Services.OrderServices
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
         private PayOS _payOS;
+        private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
+        private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
+        private readonly HttpClient _httpClient;
 
         public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories)
         {
@@ -52,6 +57,7 @@ namespace HMES.Business.Services.OrderServices
             _deviceRepositories = deviceRepositories;
             _productRepositories = productRepositories;
             _deviceItemsRepositories = deviceItemsRepositories;
+            _httpClient = new HttpClient();
         }
 
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
@@ -160,116 +166,155 @@ namespace HMES.Business.Services.OrderServices
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-
-                // Lấy địa chỉ mặc định của user
                 var userAddress = await _userAddressRepositories.GetSingle(
                     ua => ua.UserId == userId && ua.Status == "Default");
 
                 if (userAddress == null)
-                {
                     throw new CustomException("Người dùng chưa có địa chỉ mặc định.");
-                }
 
-                // Lấy đơn hàng Pending hiện có của user (nếu có)
-                var existingOrder = await _orderRepositories.GetSingle(
-                    o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
-                    includeProperties: "OrderDetails");
+                // Tách địa chỉ
+                var (ward, district, province) = ParseAddressComponents(userAddress.Address);
 
-                // Xóa OrderDetail của đơn hàng cũ nếu có
-                if (existingOrder != null)
+                int districtId = await GetDistrictId(province, district);
+                if (districtId == 0)
+                    throw new CustomException("Không tìm thấy mã quận/huyện phù hợp.");
+
+                string wardCode = await GetWardCode(districtId, ward);
+                if (string.IsNullOrEmpty(wardCode))
+                    throw new CustomException("Không tìm thấy mã phường/xã phù hợp.");
+
+
+                if (districtId == 0 || string.IsNullOrEmpty(wardCode))
+                    throw new CustomException("Không thể xác định khu vực giao hàng từ địa chỉ người dùng.");
+
+                int serviceId = await GetService(districtId);
+                if (serviceId == 0)
+                    throw new CustomException("Không có dịch vụ giao hàng khả dụng đến khu vực này.");
+
+                int codAmount = (int)orderRequest.Products.Sum(p => p.UnitPrice * p.Quantity);
+                int deviceAmount = (int)orderRequest.Devices.Sum(d => d.UnitPrice * d.Quantity);
+                int totalAmount = codAmount + deviceAmount;
+
+                int shippingFee = await CalculateShippingFee(districtId, wardCode, totalAmount);
+
+                var ghnOrder = new
                 {
-                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-                    existingOrder.OrderDetails.Clear();
-                }
+                    payment_type_id = 2,
+                    required_note = "KHONGCHOXEMHANG",
+                    from_name = "Shop Name",
+                    from_address = "Shop Address",
+                    from_province_name = "Shop Province",
+                    from_district_name = "Shop District",
+                    from_ward_name = "Shop Ward",
+                    to_name = userAddress.Name,
+                    to_phone = userAddress.Phone,
+                    to_address = userAddress.Address,
+                    to_ward_code = wardCode,
+                    to_district_id = districtId,
+                    cod_amount = totalAmount,
+                    weight = 500,
+                    length = 20,
+                    width = 20,
+                    height = 10,
+                    service_type_id = serviceId,
+                    items = orderRequest.Products
+                        .Select(p => new { name = p.Id, quantity = p.Quantity, price = p.UnitPrice })
+                        .Concat(orderRequest.Devices.Select(d => new { name = d.Id, quantity = d.Quantity, price = d.UnitPrice }))
+                        .ToArray()
+                };
 
-                // Xác định orderId
-                Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
+                string ghnResponse = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create", ghnOrder);
+                var responseObject = JsonConvert.DeserializeObject<dynamic>(ghnResponse);
 
-                // Tạo danh sách OrderDetail mới
-                List<OrderDetail> newOrderDetails = new List<OrderDetail>();
+                if (responseObject == null || responseObject.code != 200)
+                    throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
 
-                // Thêm OrderDetail cho sản phẩm
-                foreach (var prodReq in orderRequest.Products)
+
+                Guid orderId = Guid.NewGuid();
+                Order order = new Order
                 {
-                    var orderDetail = new OrderDetail
-                    {
-                        Id = Guid.NewGuid(),
-                        OrderId = orderId,
-                        ProductId = prodReq.Id,
-                        UnitPrice = prodReq.UnitPrice,
-                        Quantity = prodReq.Quantity,
-                        Status = OrderEnums.Pending.ToString(),
-                        CreatedAt = DateTime.Now
-                    };
-                    newOrderDetails.Add(orderDetail);
-                }
+                    Id = orderId,
+                    UserId = userId,
+                    UserAddressId = userAddress.Id,
+                    TotalPrice = totalAmount,
+                    Status = OrderEnums.Pending.ToString(),
+                    CreatedAt = DateTime.Now
+                };
+                await _orderRepositories.Insert(order);
 
-                // Thêm OrderDetail cho thiết bị
-                foreach (var devReq in orderRequest.Devices)
-                {
-                    var orderDetail = new OrderDetail
-                    {
-                        Id = Guid.NewGuid(),
-                        OrderId = orderId,
-                        DeviceId = devReq.Id,
-                        UnitPrice = devReq.UnitPrice,
-                        Quantity = devReq.Quantity,
-                        Status = OrderEnums.Pending.ToString(),
-                        CreatedAt = DateTime.Now
-                    };
-                    newOrderDetails.Add(orderDetail);
-                }
-
-                // Tính tổng giá trị đơn hàng
-                decimal totalPrice = newOrderDetails.Sum(od => od.UnitPrice * od.Quantity);
-
-                Order order;
-                if (existingOrder != null)
-                {
-                    // Cập nhật đơn hàng Pending
-                    await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
-                    existingOrder.OrderDetails.Clear();
-
-                    foreach (var od in newOrderDetails)
-                    {
-                        existingOrder.OrderDetails.Add(od);
-                    }
-
-                    existingOrder.TotalPrice = totalPrice;
-                    existingOrder.UpdatedAt = DateTime.Now;
-                    existingOrder.UserAddressId = userAddress.Id; // Gán UserAddressId vào đơn hàng
-                    await _orderRepositories.Update(existingOrder);
-                    order = existingOrder;
-                }
-                else
-                {
-                    // Tạo mới đơn hàng
-                    order = new Order
-                    {
-                        Id = orderId,
-                        UserId = userId,
-                        UserAddressId = userAddress.Id, // Gán UserAddressId vào đơn hàng
-                        TotalPrice = totalPrice,
-                        Status = OrderEnums.Pending.ToString(),
-                        CreatedAt = DateTime.Now,
-                        OrderDetails = newOrderDetails
-                    };
-                    await _orderRepositories.Insert(order);
-                }
-
-                return new ResultModel<DataResultModel<Guid>>()
+                return new ResultModel<DataResultModel<Guid>>
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new DataResultModel<Guid>()
-                    {
-                        Data = order.Id
-                    }
+                    Response = new DataResultModel<Guid> { Data = orderId }
                 };
             }
             catch (Exception ex)
             {
-                throw new CustomException(ex.Message);
+                throw new CustomException($"Lỗi khi tạo đơn hàng: {ex.Message}");
             }
+        }
+
+
+        private async Task<int> GetDistrictId(string province, string district)
+        {
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district", new { province });
+            var result = JsonConvert.DeserializeObject<dynamic>(response);
+
+            var matchedDistrict = ((IEnumerable<dynamic>)result.data).FirstOrDefault(d =>
+                string.Equals((string)d.DistrictName, district, StringComparison.OrdinalIgnoreCase));
+
+            return matchedDistrict?.DistrictID ?? 0;
+        }
+
+        private async Task<string> GetWardCode(int districtId, string ward)
+        {
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward", new { district_id = districtId });
+            var result = JsonConvert.DeserializeObject<dynamic>(response);
+
+            var matchedWard = ((IEnumerable<dynamic>)result.data).FirstOrDefault(w =>
+                string.Equals((string)w.WardName, ward, StringComparison.OrdinalIgnoreCase));
+
+            return matchedWard?.WardCode ?? string.Empty;
+        }
+
+        private (string Ward, string District, string Province) ParseAddressComponents(string fullAddress)
+        {
+            var parts = fullAddress.Split(',').Select(p => p.Trim()).ToList();
+
+            // Lấy phần cuối là phường, quận, tỉnh (địa chỉ thường viết từ nhỏ đến lớn)
+            string province = TextConvert.ConvertFromUnicodeEscape(parts.Count >= 3 ? parts[^1] : "");
+            string district = TextConvert.ConvertFromUnicodeEscape(parts.Count >= 2 ? parts[^2] : "");
+            string ward = TextConvert.ConvertFromUnicodeEscape(parts.Count >= 1 ? parts[^3] : "");
+
+            return (ward, district, province);
+        }
+
+
+
+        private async Task<int> GetService(int districtId)
+        {
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services", new { shop_id = _shopId, from_district = 1450, to_district = districtId });
+            var result = JsonConvert.DeserializeObject<dynamic>(response);
+            return result.data.FirstOrDefault()?.ServiceID ?? 0;
+        }
+
+        private async Task<int> CalculateShippingFee(int districtId, string wardCode, decimal codAmount)
+        {
+            var feeData = new { service_type_id = 2, to_district_id = districtId, to_ward_code = wardCode, cod_value = codAmount };
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee", feeData);
+            var result = JsonConvert.DeserializeObject<dynamic>(response);
+            return result.data.total ?? 0;
+        }
+
+        private async Task<string> SendPostRequest(string url, object data)
+        {
+            var requestContent = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("Token", _ghnToken);
+            _httpClient.DefaultRequestHeaders.Add("ShopId", _shopId.ToString());
+
+            var response = await _httpClient.PostAsync(url, requestContent);
+            return await response.Content.ReadAsStringAsync();
         }
 
         public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> HandleCheckTransaction(string id, string token)
