@@ -6,6 +6,7 @@ using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.RequestModel;
 using AutoMapper;
 using System.Net;
+using System.Security.Claims;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Data.Enums;
 using HMES.Business.Utilities.Converter;
@@ -31,6 +32,33 @@ public class UserServices : IUserServices
     {
         var list = await _userRepositories.GetList();
         return list.FirstOrDefault();
+    }
+
+    public async Task<ResultModel<ListDataResultModel<StaffBriefInfoModel>>> GetStaffsBaseOnRole( string token ,string role)
+    {
+        var userRole = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
+        Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
+
+        IEnumerable<User> staffList;
+        
+        if (userRole == RoleEnums.Admin.ToString())
+        {
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(role) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+        }
+        else
+        {
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(userRole) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+        }
+        
+        var result = _mapper.Map<List<StaffBriefInfoModel>>(staffList);
+        return new ResultModel<ListDataResultModel<StaffBriefInfoModel>>()
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new ListDataResultModel<StaffBriefInfoModel>()
+            {
+                Data = result
+            }
+        };
     }
 
     public async Task<ResultModel<DataResultModel<UserLoginResModel>>> Login(UserLoginReqModel UserReqModel)
@@ -266,6 +294,37 @@ public class UserServices : IUserServices
             {
                 Message = "Account is created!"
             }
+        };
+    }
+
+    public async Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetUsers(string token, string? keyword,
+        string? role, string? status , int pageIndex, int pageSize)
+    {
+        var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+        if (role == RoleEnums.Admin.ToString()) 
+        {
+            role = null;
+        }
+        
+        var (tickets, totalItems) =
+            await _userRepositories.GetAllUsersAsync(keyword, userId,role, status, pageIndex, pageSize);
+
+
+        var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+        var result = new ListDataResultModel<UserProfileResModel>
+        {
+            Data = _mapper.Map<List<UserProfileResModel>>(tickets),
+            CurrentPage = pageIndex,
+            TotalPages = totalPages,
+            TotalItems = totalItems,
+            PageSize = pageSize
+        };
+        
+        return new ResultModel<ListDataResultModel<UserProfileResModel>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = result
         };
     }
 }

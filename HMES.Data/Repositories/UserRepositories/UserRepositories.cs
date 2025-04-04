@@ -24,5 +24,39 @@ namespace HMES.Data.Repositories.UserRepositories
         {
             return await Context.Users.AnyAsync(u => u.Id == id && u.Role == role);
         }
+
+        public async Task<(List<User> Products, int TotalItems)> GetAllUsersAsync(string? keyword, Guid userId, string? role, string? status, int pageIndex, int pageSize)
+        {
+            var query = Context.Users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(t => t.Name.Contains(keyword));
+            }
+
+            if (userId != Guid.Empty)
+            {
+                query = query.Where(t => t.Id != userId);
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(t => t.Status == status);
+            }
+            
+            if (!string.IsNullOrEmpty(role))
+            {
+                query = query.Where(t => t.Role == role);
+            }
+            
+            query = query.Where(t => t.Role != "Admin");
+            
+            int totalItems = await query.CountAsync();
+            var users = await query
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return (users, totalItems);
+        }
     }
 }

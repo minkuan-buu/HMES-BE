@@ -15,6 +15,7 @@ public class ProductBriefResponseDto
     public string CategoryName { get; set; } = null!;
     public decimal Price { get; set; }
     public string Status { get; set; } = null!;
+    public string Amount { get; set; } = null!;
     
 }
 
