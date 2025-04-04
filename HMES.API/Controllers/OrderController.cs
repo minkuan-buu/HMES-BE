@@ -25,5 +25,25 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetOrders( [FromQuery] string? keyword,
+            [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate, [FromQuery] string? status, [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10)
+        {
+   
+            var result = await _orderServices.GetOrderList( keyword, minPrice, maxPrice, startDate, endDate,
+                status, pageIndex, pageSize);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetOrderById(Guid id)
+        {
+            var result = await _orderServices.GetOrderDetails(id);
+            return Ok(result);
+        }
+        
+
     }
 }
