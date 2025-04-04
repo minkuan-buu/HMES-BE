@@ -375,6 +375,57 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
+        public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetOrderList(string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
+        {
+            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            
+            var result = new ListDataResultModel<OrderResModel>
+            {
+                Data = _mapper.Map<List<OrderResModel>>(orders),
+                CurrentPage = pageIndex,
+                TotalPages = totalPages,
+                TotalItems = totalItems,
+                PageSize = pageSize
+            };
+            return new ResultModel<ListDataResultModel<OrderResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+            
+            
+        }
+
+        public async Task<ResultModel<DataResultModel<OrderDetailsResModel>>> GetOrderDetails(Guid orderId)
+        {
+            
+            var order = await _orderRepositories.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return new ResultModel<DataResultModel<OrderDetailsResModel>>
+                {
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = null
+                };
+            }
+            
+            var orderDetails = _mapper.Map<OrderDetailsResModel>(order);
+        
+            var result = new DataResultModel<OrderDetailsResModel>
+            {
+                Data = orderDetails
+            };
+            return new ResultModel<DataResultModel<OrderDetailsResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
+            
+            
+        }
+
         private async Task CreateDeviceItem(Order order)
         {
             try
