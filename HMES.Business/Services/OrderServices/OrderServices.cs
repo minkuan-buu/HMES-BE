@@ -20,8 +20,11 @@ using HMES.Data.Repositories.UserRepositories;
 using Microsoft.Extensions.Logging;
 using Net.payOS;
 using Net.payOS.Types;
-using Newtonsoft.Json;
+using System.Text.Json;
+
 using Transaction = HMES.Data.Entities.Transaction;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HMES.Business.Services.OrderServices
 {
@@ -199,28 +202,31 @@ namespace HMES.Business.Services.OrderServices
 
                 var ghnOrder = new
                 {
-                    payment_type_id = 2,
-                    required_note = "KHONGCHOXEMHANG",
-                    from_name = "Shop Name",
-                    from_address = "Shop Address",
-                    from_province_name = "Shop Province",
-                    from_district_name = "Shop District",
-                    from_ward_name = "Shop Ward",
+                    token = _ghnToken,
+                    shop_id = _shopId,
+                    required_note = "CHOXEMHANGKHONGTHU",
+                    from_name = "HMES",
+                    from_address = "117 Xô Viết Nghệ Tĩnh, Phường 17, Quận Bình Thạnh,TP. Hồ Chí Minh",
+                    from_province_name = "Phường 17",
+                    from_district_name = "Bình Thạnh",
+                    from_ward_name = "TP. Hồ Chí Minh",
                     to_name = userAddress.Name,
                     to_phone = userAddress.Phone,
                     to_address = userAddress.Address,
-                    to_ward_code = wardCode,
-                    to_district_id = districtId,
+                    to_ward_name = wardCode,
+                    to_district_name = districtId,
+                    to_province_name = province,
                     cod_amount = totalAmount,
                     weight = 500,
                     length = 20,
-                    width = 20,
-                    height = 10,
-                    service_type_id = serviceId,
-                    items = orderRequest.Products
-                        .Select(p => new { name = p.Id, quantity = p.Quantity, price = p.UnitPrice })
-                        .Concat(orderRequest.Devices.Select(d => new { name = d.Id, quantity = d.Quantity, price = d.UnitPrice }))
-                        .ToArray()
+                    width = 50,
+                    height = 30,
+                    service_type_id = 2,
+                    payment_type_id = 2,
+                    // items = orderRequest.Products
+                    //     .Select(p => new { name = p.Name, code = p.Id, quantity = p.Quantity, price = p.UnitPrice })
+                    //     .Concat(orderRequest.Devices.Select(d => new { name = d.Name, code = d.Id, quantity = d.Quantity, price = d.UnitPrice }))
+                    //     .ToArray()
                 };
 
                 string ghnResponse = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create", ghnOrder);
@@ -260,23 +266,33 @@ namespace HMES.Business.Services.OrderServices
             var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district", new { province });
             var result = JsonConvert.DeserializeObject<dynamic>(response);
 
-            var matchedDistrict = ((IEnumerable<dynamic>)result.data).FirstOrDefault(d =>
-                string.Equals((string)d.DistrictName, district, StringComparison.OrdinalIgnoreCase));
+            if (result == null || result.data == null)
+                return 0;
 
-            return matchedDistrict?.DistrictID ?? 0;
+            var districts = (result.data as JArray)?.ToObject<List<dynamic>>();
+
+            var matchedDistrict = districts?.FirstOrDefault(d =>
+                string.Equals((string)d["DistrictName"], district, StringComparison.OrdinalIgnoreCase));
+
+            return matchedDistrict?["DistrictID"] != null ? (int)matchedDistrict["DistrictID"] : 0;
         }
+
 
         private async Task<string> GetWardCode(int districtId, string ward)
         {
             var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward", new { district_id = districtId });
             var result = JsonConvert.DeserializeObject<dynamic>(response);
 
-            var matchedWard = ((IEnumerable<dynamic>)result.data).FirstOrDefault(w =>
-                string.Equals((string)w.WardName, ward, StringComparison.OrdinalIgnoreCase));
+            if (result == null || result.data == null)
+                return string.Empty;
 
-            return matchedWard?.WardCode ?? string.Empty;
+            var wards = (result.data as JArray)?.ToObject<List<dynamic>>();
+
+            var matchedWard = wards?.FirstOrDefault(w =>
+                string.Equals((string)w["WardName"], ward, StringComparison.OrdinalIgnoreCase));
+
+            return matchedWard?["WardCode"]?.ToString() ?? string.Empty;
         }
-
         private (string Ward, string District, string Province) ParseAddressComponents(string fullAddress)
         {
             var parts = fullAddress.Split(',').Select(p => p.Trim()).ToList();
@@ -293,9 +309,24 @@ namespace HMES.Business.Services.OrderServices
 
         private async Task<int> GetService(int districtId)
         {
-            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services", new { shop_id = _shopId, from_district = 1450, to_district = districtId });
+            var requestBody = new
+            {
+                shop_id = _shopId,
+                from_district = 1462,  // Mã quận/huyện của shop
+                to_district = districtId
+            };
+
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/available-services", requestBody);
             var result = JsonConvert.DeserializeObject<dynamic>(response);
-            return result.data.FirstOrDefault()?.ServiceID ?? 0;
+
+            if (result == null || result.data == null)
+                return 0;
+
+            var services = (result.data as JArray)?.ToObject<List<dynamic>>();
+
+            var matchedService = services?.FirstOrDefault();
+
+            return matchedService?["service_id"] != null ? (int)matchedService["service_id"] : 0;
         }
 
         private async Task<int> CalculateShippingFee(int districtId, string wardCode, decimal codAmount)
@@ -303,7 +334,7 @@ namespace HMES.Business.Services.OrderServices
             var feeData = new { service_type_id = 2, to_district_id = districtId, to_ward_code = wardCode, cod_value = codAmount };
             var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee", feeData);
             var result = JsonConvert.DeserializeObject<dynamic>(response);
-            return result.data.total ?? 0;
+            return result.data != null && result.data["total"] != null ? (int)result.data["total"] : 0;
         }
 
         private async Task<string> SendPostRequest(string url, object data)

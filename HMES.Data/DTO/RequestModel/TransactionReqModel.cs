@@ -25,6 +25,7 @@ namespace HMES.Data.DTO.RequestModel
     public class OrderProductReqModel
     {
         public Guid Id { get; set; } 
+        public string Name { get; set; } = null!;
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
     }
@@ -32,6 +33,7 @@ namespace HMES.Data.DTO.RequestModel
         public class OrderDeviceReqModel
     {
         public Guid Id { get; set; } 
+        public string Name { get; set; } = null!;
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
     }
