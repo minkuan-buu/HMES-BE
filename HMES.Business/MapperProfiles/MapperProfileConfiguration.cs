@@ -269,7 +269,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product != null ? src.Product.Name : src.Device.Name)))
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.UnitPrice))
-                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.UnitPrice))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.UnitPrice * src.Quantity))
                 .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Product != null ? src.Product.MainImage : src.Device.Attachment));
 
             CreateMap<Transaction, OrderTransactionResModel>()
