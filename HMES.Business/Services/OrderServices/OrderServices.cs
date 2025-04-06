@@ -110,8 +110,10 @@ namespace HMES.Business.Services.OrderServices
                 itemDatas.Add(new ItemData(itemName, item.Quantity, (int)item.UnitPrice));
             }
 
+            string returnURL = Environment.GetEnvironmentVariable("PAYMENT_RETURN_URL") ?? throw new Exception("PAYMENT_RETURN_URL is missing");
+
             PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice, "",
-                itemDatas, cancelUrl: "https://hmes.buubuu.id.vn/payment", returnUrl: "https://hmes.buubuu.id.vn/payment");
+                itemDatas, cancelUrl: returnURL, returnUrl: returnURL);
 
             CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
 
