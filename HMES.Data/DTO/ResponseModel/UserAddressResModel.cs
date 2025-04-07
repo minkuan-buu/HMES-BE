@@ -18,6 +18,8 @@ namespace HMES.Data.DTO.ResponseModel
         public string Phone { get; set; } = null!;
 
         public string Address { get; set; } = null!;
+        public string Ward { get; set; } = null!;
+        public string District { get; set; } = null!;
 
         public bool? IsDefault { get; set; }
     }

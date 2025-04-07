@@ -46,6 +46,8 @@ public class UserAddressServices : IUserAddressServices
             userAddressEntity.Id = newUserAddressId;
             userAddressEntity.UserId = userId;
             userAddressEntity.CreatedAt = DateTime.Now;
+            userAddressEntity.Ward = userAddressReq.Ward;
+            userAddressEntity.District = userAddressReq.District;
             userAddressEntity.Status = userAddresses.Any() ? UserAddressEnums.Active.ToString() : UserAddressEnums.Default.ToString();
 
             if (latitude.HasValue && longitude.HasValue)
@@ -131,6 +133,8 @@ public class UserAddressServices : IUserAddressServices
             userAddress.Name = userAddressReq.Name;
             userAddress.Phone = userAddressReq.Phone;
             userAddress.UpdatedAt = DateTime.Now;
+            userAddress.Ward = userAddressReq.Ward;
+            userAddress.District = userAddressReq.District;
 
             if (latitude.HasValue && longitude.HasValue)
             {
@@ -251,6 +255,8 @@ public class UserAddressServices : IUserAddressServices
                 Name = TextConvert.ConvertFromUnicodeEscape(x.Name),
                 Phone = x.Phone,
                 Address = TextConvert.ConvertFromUnicodeEscape(x.Address),
+                Ward = TextConvert.ConvertFromUnicodeEscape(x.Ward),
+                District = TextConvert.ConvertFromUnicodeEscape(x.District),
                 IsDefault = x.Status.Equals(UserAddressEnums.Default.ToString())
             }).ToList();
 
