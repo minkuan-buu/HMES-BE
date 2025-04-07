@@ -46,8 +46,9 @@ public class UserAddressServices : IUserAddressServices
             userAddressEntity.Id = newUserAddressId;
             userAddressEntity.UserId = userId;
             userAddressEntity.CreatedAt = DateTime.Now;
-            userAddressEntity.Ward = userAddressReq.Ward;
-            userAddressEntity.District = userAddressReq.District;
+            userAddressEntity.Ward = TextConvert.ConvertToUnicodeEscape(userAddressReq.Ward);
+            userAddressEntity.District = TextConvert.ConvertToUnicodeEscape(userAddressReq.District);
+            userAddressEntity.Province = TextConvert.ConvertToUnicodeEscape(userAddressReq.Province);
             userAddressEntity.Status = userAddresses.Any() ? UserAddressEnums.Active.ToString() : UserAddressEnums.Default.ToString();
 
             if (latitude.HasValue && longitude.HasValue)
@@ -130,11 +131,12 @@ public class UserAddressServices : IUserAddressServices
             var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
 
             userAddress = _mapper.Map(userAddressReq, userAddress);
-            userAddress.Name = userAddressReq.Name;
+            userAddress.Name = TextConvert.ConvertToUnicodeEscape(userAddressReq.Name);
             userAddress.Phone = userAddressReq.Phone;
             userAddress.UpdatedAt = DateTime.Now;
-            userAddress.Ward = userAddressReq.Ward;
-            userAddress.District = userAddressReq.District;
+            userAddress.Ward = TextConvert.ConvertToUnicodeEscape(userAddressReq.Ward);
+            userAddress.District = TextConvert.ConvertToUnicodeEscape(userAddressReq.District);
+            userAddress.Province = TextConvert.ConvertToUnicodeEscape(userAddressReq.Province);
 
             if (latitude.HasValue && longitude.HasValue)
             {
@@ -257,6 +259,7 @@ public class UserAddressServices : IUserAddressServices
                 Address = TextConvert.ConvertFromUnicodeEscape(x.Address),
                 Ward = TextConvert.ConvertFromUnicodeEscape(x.Ward),
                 District = TextConvert.ConvertFromUnicodeEscape(x.District),
+                Province = TextConvert.ConvertFromUnicodeEscape(x.Province),
                 IsDefault = x.Status.Equals(UserAddressEnums.Default.ToString())
             }).ToList();
 

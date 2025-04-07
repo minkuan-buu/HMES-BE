@@ -44,6 +44,13 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-
+        [HttpPost("ShippingGHN")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> CreateShippingGHN([FromBody] Guid orderId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.CreateShippingGHN(orderId, token);
+            return Ok(result);
+        }
     }
 }
