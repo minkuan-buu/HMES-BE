@@ -171,6 +171,8 @@ namespace HMES.Business.Services.OrderServices
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var userAddress = await _userAddressRepositories.GetSingle(
                     ua => ua.UserId == userId && ua.Status == "Default");
+                
+                userAddress.Address = TextConvert.ConvertFromUnicodeEscape(userAddress.Address);
 
                 if (userAddress == null)
                     throw new CustomException("Người dùng chưa có địa chỉ mặc định.");
@@ -207,14 +209,14 @@ namespace HMES.Business.Services.OrderServices
                     required_note = "CHOXEMHANGKHONGTHU",
                     from_name = "HMES",
                     from_address = "117 Xô Viết Nghệ Tĩnh, Phường 17, Quận Bình Thạnh,TP. Hồ Chí Minh",
-                    from_province_name = "Phường 17",
+                    from_province_name = "TP. Hồ Chí Minh",
                     from_district_name = "Bình Thạnh",
-                    from_ward_name = "TP. Hồ Chí Minh",
-                    to_name = userAddress.Name,
+                    from_ward_name = "Phường 17",
+                    to_name = TextConvert.ConvertFromUnicodeEscape(userAddress.Name),
                     to_phone = userAddress.Phone,
-                    to_address = userAddress.Address,
-                    to_ward_name = wardCode,
-                    to_district_name = districtId,
+                    to_address = TextConvert.ConvertFromUnicodeEscape(userAddress.Address),
+                    to_ward_name = ward,
+                    to_district_name = district,
                     to_province_name = province,
                     cod_amount = totalAmount,
                     weight = 500,
@@ -223,10 +225,10 @@ namespace HMES.Business.Services.OrderServices
                     height = 30,
                     service_type_id = 2,
                     payment_type_id = 2,
-                    // items = orderRequest.Products
-                    //     .Select(p => new { name = p.Name, code = p.Id, quantity = p.Quantity, price = p.UnitPrice })
-                    //     .Concat(orderRequest.Devices.Select(d => new { name = d.Name, code = d.Id, quantity = d.Quantity, price = d.UnitPrice }))
-                    //     .ToArray()
+                    items = orderRequest.Products
+                        .Select(p => new { name = p.Name, code = p.Id, quantity = p.Quantity, price = (int)p.UnitPrice })
+                        .Concat(orderRequest.Devices.Select(d => new { name = d.Name, code = d.Id, quantity = d.Quantity, price = (int)d.UnitPrice }))
+                        .ToArray()
                 };
 
                 string ghnResponse = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create", ghnOrder);
