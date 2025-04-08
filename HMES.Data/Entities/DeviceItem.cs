@@ -31,6 +31,8 @@ public partial class DeviceItem
 
     public DateTime? LastSeen { get; set; }
 
+    public int RefreshCycleHours { get; set; }
+
     public virtual Device Device { get; set; } = null!;
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();

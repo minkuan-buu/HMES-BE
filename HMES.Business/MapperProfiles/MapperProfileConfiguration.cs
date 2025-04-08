@@ -142,17 +142,23 @@ namespace HMES.Business.MapperProfiles
             // UserAddress
             CreateMap<UserAddressCreateReqModel, UserAddress>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
             CreateMap<UserAddressUpdateReqModel, UserAddress>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
             CreateMap<UserAddress, ListUserAddressResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
 
             // Ticket
@@ -259,7 +265,7 @@ namespace HMES.Business.MapperProfiles
 
             CreateMap<Order, OrderDetailsResModel>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
                 .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
                 .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
                 .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));

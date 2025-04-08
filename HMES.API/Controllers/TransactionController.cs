@@ -24,6 +24,15 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("cod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> HandleCOD([FromBody] Guid Id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.CashOnDeliveryHandle(Id, token);
+            return Ok(result);
+        }
+
         [HttpPost ("check")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> HandleCheckTransaction([FromBody] string PaymentLinkId)
