@@ -266,6 +266,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<Order, OrderDetailsResModel>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
                 .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
                 .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));
@@ -293,7 +294,32 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => src.Longitude))
                 .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => src.Latitude));
                 
-                
+            // Notification
+
+            CreateMap<NotificationReqModel, Notification>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Title)))
+                .ForMember(dest => dest.Message,
+                    opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Message)))
+                .ForMember(dest => dest.NotificationType, opt => opt.MapFrom(src => src.Type))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => false));
+
+            CreateMap<Notification, NotificationResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Title,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Title)))
+                .ForMember(dest => dest.Message,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Message)))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.NotificationType))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => src.IsRead))
+                .ForMember(dest => dest.ReceiverName,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
+                .ForMember(dest => dest.SenderName,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Sender.Name ?? "")))
+                .ForMember(dest => dest.ReferenceId, opt => opt.MapFrom(src => src.ReferenceId));
+
 
 
 

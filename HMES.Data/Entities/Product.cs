@@ -9,10 +9,6 @@ public partial class Product
 
     public string Name { get; set; } = null!;
 
-    public string? Description { get; set; }
-
-    public string? MainImage { get; set; }
-
     public Guid CategoryId { get; set; }
 
     public int Amount { get; set; }
@@ -24,6 +20,10 @@ public partial class Product
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public string? MainImage { get; set; }
+
+    public string? Description { get; set; }
 
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 

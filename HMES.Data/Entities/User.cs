@@ -31,6 +31,10 @@ public partial class User
 
     public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
 
+    public virtual ICollection<Notification> NotificationSenders { get; set; } = new List<Notification>();
+
+    public virtual ICollection<Notification> NotificationUsers { get; set; } = new List<Notification>();
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<Otp> Otps { get; set; } = new List<Otp>();

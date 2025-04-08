@@ -25,6 +25,8 @@ public partial class HmesContext : DbContext
 
     public virtual DbSet<DeviceItem> DeviceItems { get; set; }
 
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     public virtual DbSet<NutritionReport> NutritionReports { get; set; }
 
     public virtual DbSet<NutritionReportDetail> NutritionReportDetails { get; set; }
@@ -65,7 +67,7 @@ public partial class HmesContext : DbContext
     {
         modelBuilder.Entity<Cart>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Cart__3214EC076FF1E8EB");
+            entity.HasKey(e => e.Id).HasName("PK__Cart__3214EC0729D3F158");
 
             entity.ToTable("Cart");
 
@@ -81,7 +83,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<CartItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__CartItem__3214EC0788AADC23");
+            entity.HasKey(e => e.Id).HasName("PK__CartItem__3214EC07C27CEF20");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -102,7 +104,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC078E3D49D5");
+            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC071F1EE23D");
 
             entity.ToTable("Category");
 
@@ -123,7 +125,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Device>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Device__3214EC07CD85BD6C");
+            entity.HasKey(e => e.Id).HasName("PK__Device__3214EC07B1A63893");
 
             entity.ToTable("Device");
 
@@ -145,7 +147,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<DeviceItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__DeviceIt__3214EC07B740241F");
+            entity.HasKey(e => e.Id).HasName("PK__DeviceIt__3214EC074A2AA25B");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -177,9 +179,37 @@ public partial class HmesContext : DbContext
                 .HasConstraintName("FK__DeviceIte__UserI__22751F6C");
         });
 
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__3214EC07632D7EA5");
+
+            entity.ToTable("Notification");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.Property(e => e.Message)
+                .HasMaxLength(1000)
+                .IsUnicode(false);
+            entity.Property(e => e.NotificationType).HasMaxLength(50);
+            entity.Property(e => e.ReadAt).HasColumnType("datetime");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.NotificationSenders)
+                .HasForeignKey(d => d.SenderId)
+                .HasConstraintName("FK__Notificat__Sende__2BFE89A6");
+
+            entity.HasOne(d => d.User).WithMany(p => p.NotificationUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Notificat__UserI__2B0A656D");
+        });
+
         modelBuilder.Entity<NutritionReport>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC070FD9AC57");
+            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC07A4D7EEBA");
 
             entity.ToTable("NutritionReport");
 
@@ -194,7 +224,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<NutritionReportDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC07D655C376");
+            entity.HasKey(e => e.Id).HasName("PK__Nutritio__3214EC07D8AD5733");
 
             entity.ToTable("NutritionReportDetail");
 
@@ -214,7 +244,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Order__3214EC07A19519F8");
+            entity.HasKey(e => e.Id).HasName("PK__Order__3214EC07DB98AF41");
 
             entity.ToTable("Order");
 
@@ -242,7 +272,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<OrderDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__OrderDet__3214EC07753CC1E6");
+            entity.HasKey(e => e.Id).HasName("PK__OrderDet__3214EC07E5C1EB53");
 
             entity.ToTable("OrderDetail");
 
@@ -270,7 +300,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Otp>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__OTP__3214EC07DC371D95");
+            entity.HasKey(e => e.Id).HasName("PK__OTP__3214EC0700347C11");
 
             entity.ToTable("OTP");
 
@@ -292,7 +322,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Plant>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Plant__3214EC073A31EC4B");
+            entity.HasKey(e => e.Id).HasName("PK__Plant__3214EC075738BAC9");
 
             entity.ToTable("Plant");
 
@@ -307,7 +337,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Product__3214EC07E0CFB150");
+            entity.HasKey(e => e.Id).HasName("PK__Product__3214EC07626DB43F");
 
             entity.ToTable("Product");
 
@@ -336,7 +366,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<ProductAttachment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ProductA__3214EC07EC5BD512");
+            entity.HasKey(e => e.Id).HasName("PK__ProductA__3214EC07A3460727");
 
             entity.ToTable("ProductAttachment");
 
@@ -347,13 +377,13 @@ public partial class HmesContext : DbContext
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductAttachments)
                 .HasForeignKey(d => d.ProductId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ProductAt__Produ__30C33EC3");
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__ProductAt__Produ__02FC7413");
         });
 
         modelBuilder.Entity<TargetOfPlant>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TargetOf__3214EC070453D9FD");
+            entity.HasKey(e => e.Id).HasName("PK__TargetOf__3214EC07B64A825F");
 
             entity.ToTable("TargetOfPlant");
 
@@ -372,7 +402,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<TargetValue>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TargetVa__3214EC073DD92AEA");
+            entity.HasKey(e => e.Id).HasName("PK__TargetVa__3214EC0768A65C81");
 
             entity.ToTable("TargetValue");
 
@@ -386,7 +416,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Ticket>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Ticket__3214EC0717D2F02F");
+            entity.HasKey(e => e.Id).HasName("PK__Ticket__3214EC0739624D37");
 
             entity.ToTable("Ticket");
 
@@ -414,7 +444,7 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.TransferToNavigation).WithMany(p => p.TicketTransferToNavigations)
                 .HasForeignKey(d => d.TransferTo)
                 .HasConstraintName("FK__Ticket__Transfer__7E37BEF6");
-
+            
             entity.HasOne(d => d.User).WithMany(p => p.TicketUsers)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -423,7 +453,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<TicketAttachment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TicketAt__3214EC074667E8CF");
+            entity.HasKey(e => e.Id).HasName("PK__TicketAt__3214EC07E80D6CF4");
 
             entity.ToTable("TicketAttachment");
 
@@ -440,7 +470,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<TicketResponse>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TicketRe__3214EC07BE834E90");
+            entity.HasKey(e => e.Id).HasName("PK__TicketRe__3214EC077BD5A733");
 
             entity.ToTable("TicketResponse");
 
@@ -480,7 +510,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Transact__3214EC07F2CEAE24");
+            entity.HasKey(e => e.Id).HasName("PK__Transact__3214EC071C06AB18");
 
             entity.ToTable("Transaction");
 
@@ -508,7 +538,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__User__3214EC0788BE3343");
+            entity.HasKey(e => e.Id).HasName("PK__User__3214EC07A887FF9B");
 
             entity.ToTable("User");
 
@@ -537,7 +567,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<UserAddress>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserAddr__3214EC07E48CC3F4");
+            entity.HasKey(e => e.Id).HasName("PK__UserAddr__3214EC0732BF3DF9");
 
             entity.ToTable("UserAddress");
 
@@ -576,7 +606,7 @@ public partial class HmesContext : DbContext
 
         modelBuilder.Entity<UserToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserToke__3214EC071BD27455");
+            entity.HasKey(e => e.Id).HasName("PK__UserToke__3214EC07E07753E0");
 
             entity.ToTable("UserToken");
 
