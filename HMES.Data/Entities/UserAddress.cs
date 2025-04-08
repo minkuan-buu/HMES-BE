@@ -15,6 +15,12 @@ public partial class UserAddress
 
     public string Address { get; set; } = null!;
 
+    public string Ward { get; set; } = null!;
+
+    public string District { get; set; } = null!;
+
+    public string Province { get; set; } = null!;
+
     public string Status { get; set; } = null!;
 
     public decimal? Longitude { get; set; }
