@@ -44,12 +44,12 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
         
-        [HttpPost("ShippingGHN")]
+        [HttpPost("cancel")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> CreateShippingGHN([FromBody] Guid orderId)
+        public async Task<IActionResult> CancelOrder([FromBody] Guid orderId)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _orderServices.CreateShippingGHN(orderId, token);
+            var result = await _orderServices.CancelOrder(orderId, token);
             return Ok(result);
         }
     }

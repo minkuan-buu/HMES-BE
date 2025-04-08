@@ -265,7 +265,7 @@ namespace HMES.Business.MapperProfiles
 
             CreateMap<Order, OrderDetailsResModel>()
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
                 .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
                 .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
                 .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));
