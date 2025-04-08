@@ -36,6 +36,8 @@ using Microsoft.OpenApi.Models;
 using HMES.Business.Services.UserAddressServices;
 using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Business.Services.DeviceItemServices;
+using HMES.Business.Services.NotificationServices;
+using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.PlantRepositories;
 using HMES.Data.Repositories.TargetOfPlantRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
@@ -199,6 +201,7 @@ builder.Services.AddScoped<IDeviceItemsRepositories, DeviceItemsRepositories>();
 builder.Services.AddScoped<IPlantRepositories, PlantRepositories>();
 builder.Services.AddScoped<ITargetValueRepositories, TargetValueRepositories>();
 builder.Services.AddScoped<ITargetOfPlantRepository, TargetOfPlantRepositories>();
+builder.Services.AddScoped<INotificationRepositories, NotificationRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -217,7 +220,7 @@ builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
 builder.Services.AddScoped<IPlantServices, PlantServices>();
 builder.Services.AddScoped<ITargetValueServices, TargetValueServices>();
-
+builder.Services.AddScoped<INotificationServices, NotificationServices>();
 
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
