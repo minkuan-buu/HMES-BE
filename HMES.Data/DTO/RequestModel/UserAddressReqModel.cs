@@ -12,6 +12,12 @@ public class  UserAddressCreateReqModel
     public string Phone { get; set; } = null!;
 
     public string Address { get; set; } = null!;
+
+    public string Ward { get; set; } = null!;
+
+    public string Province { get; set; } = null!;
+    
+    public string District { get; set; } = null!;
 }
 public class UserAddressUpdateReqModel
 {
@@ -20,4 +26,10 @@ public class UserAddressUpdateReqModel
     public string Phone { get; set; } = null!;
 
     public string Address { get; set; } = null!;
+
+    public string Ward { get; set; } = null!;
+    
+    public string District { get; set; } = null!;
+    
+    public string Province { get; set; } = null!;
 }

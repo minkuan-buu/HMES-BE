@@ -23,10 +23,12 @@ public class OrderResModel
 public class OrderDetailsResModel
 {
     public Guid OrderId { get; set; }
+    public decimal Price { get; set; }
+    public decimal ShippingFee { get; set; }
     public decimal TotalPrice { get; set; }
     public string Status { get; set; } = null!;
     public List<OrderDetailsItemResModel> OrderDetailsItems { get; set; } = null!;
-    public OrderAddressResModel UserAddress { get; set; } = null!;
+    public OrderAddressResModel? UserAddress { get; set; }
     public List<OrderTransactionResModel> Transactions { get; set; } = null!;
     
 }
