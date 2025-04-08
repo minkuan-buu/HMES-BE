@@ -1,0 +1,48 @@
+name: Deploy .NET App to Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: SSH Deploy
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /www/wwwroot/api.hmes.site/HMES-BE
+
+          # Cập nhật mã nguồn
+          sudo git reset --hard
+          sudo git pull origin master
+
+          # Xóa thư mục publish cũ
+          sudo rm -rf /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cd /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/
+
+          # Build & Publish ứng dụng
+          dotnet restore
+          dotnet build -c Release
+          dotnet publish -c Release -r linux-x64 -o ./publish
+
+          # Copy file meowwoofsocial.json vào thư mục publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/meowwoofsocial.json /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/.env /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/MeowWoofLogo.webp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/ResetPassword.html /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+
+          # Cấp quyền cho thư mục publish
+          sudo chown -R www:www /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+
+          # Restart service
+          sudo systemctl restart hmes
