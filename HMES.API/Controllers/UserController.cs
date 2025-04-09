@@ -96,6 +96,15 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("me/mobile/devices/{id}")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateLogFromMobile(Guid id, [FromBody] UpdateLogIoT log)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.UpdateLog(log, token, id);
+            return Ok(result);
+        }
+
         [HttpGet("me/iot/devices/{id}")]
         [Authorize(AuthenticationSchemes = "HMESIoTAuthentication")]
         public async Task<IActionResult> GetDeviceItemForIoT(Guid id)

@@ -41,6 +41,8 @@ using HMES.Data.Repositories.PlantRepositories;
 using HMES.Data.Repositories.TargetOfPlantRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 using HMES.Business.Utilities.Email;
+using HMES.Data.Repositories.NutritionRDRepositories;
+using HMES.Data.Repositories.NutritionReportRepositories;
 
 DotNetEnv.Env.Load();
 
@@ -202,6 +204,8 @@ builder.Services.AddScoped<IPlantRepositories, PlantRepositories>();
 builder.Services.AddScoped<ITargetValueRepositories, TargetValueRepositories>();
 builder.Services.AddScoped<ITargetOfPlantRepository, TargetOfPlantRepositories>();
 builder.Services.AddScoped<INotificationRepositories, NotificationRepositories>();
+builder.Services.AddScoped<INutritionRDRepositories, NutritionRDRepositories>();
+builder.Services.AddScoped<INutritionReportRepositories, NutritionReportRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();

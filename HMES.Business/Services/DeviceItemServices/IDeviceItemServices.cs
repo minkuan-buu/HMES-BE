@@ -1,3 +1,4 @@
+using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 
@@ -14,5 +15,7 @@ namespace HMES.Business.Services.DeviceItemServices
 
         Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId);
         Task<DeviceItem> GetDeviceItemById(Guid deviceItemId);
+        Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId); //From Mobile App
+        Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, Guid DeviceId); //From IoT
     }
 }
