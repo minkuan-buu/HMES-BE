@@ -156,4 +156,44 @@ public class Authentication
         }
         return result.ToString();
     }
+
+    public static string CreateIoTToken(Guid deviceId, string serialNumber, string userId)
+    {
+        string deviceIdString = deviceId.ToString();
+        byte[] deviceIdBytes = Encoding.UTF8.GetBytes(deviceIdString);
+        byte[] serialNumberBytes = Encoding.UTF8.GetBytes(serialNumber);
+        byte[] userIdBytes = Encoding.UTF8.GetBytes(userId);
+        byte[] combinedBytes = new byte[deviceIdBytes.Length + serialNumberBytes.Length + userIdBytes.Length];
+        Buffer.BlockCopy(deviceIdBytes, 0, combinedBytes, 0, deviceIdBytes.Length);
+        Buffer.BlockCopy(serialNumberBytes, 0, combinedBytes, deviceIdBytes.Length, serialNumberBytes.Length);
+        Buffer.BlockCopy(userIdBytes, 0, combinedBytes, deviceIdBytes.Length + serialNumberBytes.Length, userIdBytes.Length);
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashBytes = sha256.ComputeHash(combinedBytes);
+            string token = Convert.ToBase64String(hashBytes);
+            return token;
+        }
+    }
+
+    public static bool VerifyIoTToken(string token, Guid deviceId, string serialNumber, string userId)
+    {
+        string deviceIdString = deviceId.ToString();
+        byte[] deviceIdBytes = Encoding.UTF8.GetBytes(deviceIdString);
+        byte[] serialNumberBytes = Encoding.UTF8.GetBytes(serialNumber);
+        byte[] userIdBytes = Encoding.UTF8.GetBytes(userId);
+
+        byte[] combinedBytes = new byte[deviceIdBytes.Length + serialNumberBytes.Length + userIdBytes.Length];
+
+        Buffer.BlockCopy(deviceIdBytes, 0, combinedBytes, 0, deviceIdBytes.Length);
+        Buffer.BlockCopy(serialNumberBytes, 0, combinedBytes, deviceIdBytes.Length, serialNumberBytes.Length);
+        Buffer.BlockCopy(userIdBytes, 0, combinedBytes, deviceIdBytes.Length + serialNumberBytes.Length, userIdBytes.Length);
+
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashBytes = sha256.ComputeHash(combinedBytes);
+            string expectedToken = Convert.ToBase64String(hashBytes);
+
+            return expectedToken == token;
+        }
+    }
 }

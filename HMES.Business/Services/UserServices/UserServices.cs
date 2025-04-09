@@ -10,7 +10,7 @@ using System.Security.Claims;
 using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Data.Enums;
 using HMES.Business.Utilities.Converter;
-using HMES.Business.Ultilities.Email;
+using HMES.Business.Utilities.Email;
 namespace HMES.Business.Services.UserServices;
 
 public class UserServices : IUserServices
@@ -34,22 +34,22 @@ public class UserServices : IUserServices
         return list.FirstOrDefault();
     }
 
-    public async Task<ResultModel<ListDataResultModel<StaffBriefInfoModel>>> GetStaffsBaseOnRole( string token ,string role)
+    public async Task<ResultModel<ListDataResultModel<StaffBriefInfoModel>>> GetStaffsBaseOnRole(string token, string role)
     {
         var userRole = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
         IEnumerable<User> staffList;
-        
+
         if (userRole == RoleEnums.Admin.ToString())
         {
-            staffList = await _userRepositories.GetList(x => x.Role.Equals(role) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(role) && x.Status.Equals(GeneralStatusEnums.Active.ToString()) && x.Id != userId);
         }
         else
         {
-            staffList = await _userRepositories.GetList(x => x.Role.Equals(userRole) && x.Status.Equals(GeneralStatusEnums.Active.ToString())&& x.Id != userId);
+            staffList = await _userRepositories.GetList(x => x.Role.Equals(userRole) && x.Status.Equals(GeneralStatusEnums.Active.ToString()) && x.Id != userId);
         }
-        
+
         var result = _mapper.Map<List<StaffBriefInfoModel>>(staffList);
         return new ResultModel<ListDataResultModel<StaffBriefInfoModel>>()
         {
@@ -298,16 +298,16 @@ public class UserServices : IUserServices
     }
 
     public async Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetUsers(string token, string? keyword,
-        string? role, string? status , int pageIndex, int pageSize)
+        string? role, string? status, int pageIndex, int pageSize)
     {
         var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
-        if (role == RoleEnums.Admin.ToString()) 
+        if (role == RoleEnums.Admin.ToString())
         {
             role = null;
         }
-        
+
         var (tickets, totalItems) =
-            await _userRepositories.GetAllUsersAsync(keyword, userId,role, status, pageIndex, pageSize);
+            await _userRepositories.GetAllUsersAsync(keyword, userId, role, status, pageIndex, pageSize);
 
 
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
@@ -320,11 +320,16 @@ public class UserServices : IUserServices
             TotalItems = totalItems,
             PageSize = pageSize
         };
-        
+
         return new ResultModel<ListDataResultModel<UserProfileResModel>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
             Response = result
         };
+    }
+
+    public async Task<User> GetUserById(Guid id)
+    {
+        return await _userRepositories.GetSingle(x => x.Id == id);
     }
 }
