@@ -1,5 +1,5 @@
 using System.Net;
-using HMES.Business.Ultilities.Email;
+using HMES.Business.Utilities.Email;
 using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
@@ -75,8 +75,9 @@ namespace HMES.Business.Services.OTPServices
             return new ResultModel<MessageResultModel>
             {
                 StatusCodes = (int)HttpStatusCode.OK,
-                Response = 
-                new MessageResultModel(){
+                Response =
+                new MessageResultModel()
+                {
                     Message = "Ok"
                 }
             };

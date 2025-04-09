@@ -13,12 +13,13 @@ using HMES.Data.Repositories.UserTokenRepositories;
 using HMES.Business.Services.UserTokenServices;
 using HMES.Data.Entities;
 using HMES.Data.DTO.Custom;
+using HMES.Business.Services.UserServices;
 
 namespace HMES.API.Middleware
 {
     public class AuthorizeMiddleware : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        private readonly IUserRepositories _userRepositories;
+        private readonly IUserServices _userServices;
         private readonly IUserTokenServices _userTokenServices;
         private static string Key = "TestingIssuerSigningKeyPTEducationMS@123";
         private static string Issuser = "TestingJWTIssuerSigningPTEducationMS@123";
@@ -26,11 +27,11 @@ namespace HMES.API.Middleware
         public AuthorizeMiddleware(IOptionsMonitor<AuthenticationSchemeOptions> options,
             ILoggerFactory logger,
             UrlEncoder encoder,
-            ISystemClock systemClock, IUserRepositories userRepositories, IUserTokenServices userTokenServices)
+            ISystemClock systemClock, IUserServices userServices, IUserTokenServices userTokenServices)
             : base(options, logger, encoder, systemClock)
         {
             _userTokenServices = userTokenServices;
-            _userRepositories = userRepositories;
+            _userServices = userServices;
         }
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -69,7 +70,7 @@ namespace HMES.API.Middleware
                     ValidAudience = "TestingJWTIssuerSigningPTEducationMS@123",
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
-                
+
                 // Giải mã token, không kiểm tra thời gian sống
                 var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
 
@@ -86,7 +87,8 @@ namespace HMES.API.Middleware
                     if (typeClaim != "reset")
                     {
                         return AuthenticateResult.Fail("Invalid token for reset-password.");
-                    } else if (validatedToken.ValidTo < DateTime.UtcNow)
+                    }
+                    else if (validatedToken.ValidTo < DateTime.UtcNow)
                     {
                         return AuthenticateResult.Fail("Token is expired.");
                     }
@@ -94,14 +96,16 @@ namespace HMES.API.Middleware
                 else if (typeClaim == "reset")
                 {
                     return AuthenticateResult.Fail("Invalid token for reset-password.");
-                } else {
+                }
+                else
+                {
                     var DeviceId = Context.Request.Cookies["DeviceId"];
-                
+
                     var RefreshToken = Context.Request.Cookies["RefreshToken"];
-                    
+
                     if (string.IsNullOrEmpty(RefreshToken))
                         throw new CustomException("RefreshToken is missing.");
-                    
+
                     if (string.IsNullOrEmpty(DeviceId))
                         throw new CustomException("DeviceId is missing.");
 
@@ -109,13 +113,13 @@ namespace HMES.API.Middleware
                         throw new CustomException("Invalid DeviceId format.");
 
                     var UserToken = await _userTokenServices.GetUserToken(deviceGuid);
-                    
+
                     if (UserToken == null || UserToken.RefreshToken != RefreshToken)
                         throw new CustomException("RefreshToken is invalid.");
 
-                    if(token != UserToken.AccesToken)
+                    if (token != UserToken.AccesToken)
                         return AuthenticateResult.Fail("AccessToken is invalid.");
-                    
+
                     // Kiểm tra nếu token đã hết hạn (tự handle)
                     if (validatedToken.ValidTo < DateTime.UtcNow)
                     {
@@ -126,7 +130,7 @@ namespace HMES.API.Middleware
                     var userIdClaim = identity.FindFirst("userid")?.Value;
                     if (Guid.TryParse(userIdClaim, out var userId))
                     {
-                        var user = await _userRepositories.GetSingle(u => u.Id == userId);
+                        var user = await _userServices.GetUserById(userId);
                         if (user == null || user.Status.Equals(AccountStatusEnums.Inactive.ToString()))
                         {
                             return AuthenticateResult.Fail("User is inactive or not found.");
@@ -163,7 +167,7 @@ namespace HMES.API.Middleware
                 return AuthenticateResult.Fail("RefreshToken is expired.");
             }
 
-            var user = await _userRepositories.GetSingle(u => u.Id == UserToken.UserId);
+            var user = await _userServices.GetUserById(UserToken.UserId);
             if (user == null || user.Status.Equals(AccountStatusEnums.Inactive.ToString()))
             {
                 return AuthenticateResult.Fail("User is inactive or not found.");
