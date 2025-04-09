@@ -268,10 +268,22 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
-                .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+                .ForMember(dest => dest.OrderDetailsItems, opt =>
+                {
+                    opt.Condition(src => src.OrderDetails != null);
+                    opt.MapFrom(src => src.OrderDetails);
+                })
+                .ForMember(dest => dest.UserAddress, opt =>
+                {
+                    opt.Condition(src => src.UserAddress != null);
+                    opt.MapFrom(src => src.UserAddress);
+                })
                 .ForMember(dest => dest.ShippingFee, opt => opt.MapFrom(src => src.ShippingFee))
-                .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));
+                .ForMember(dest => dest.Transactions, opt =>
+                {
+                    opt.Condition(src => src.Transactions != null);
+                    opt.MapFrom(src => src.Transactions);
+                });
             
             CreateMap<OrderDetail, OrderDetailsItemResModel>()
                 .ForMember(dest => dest.OrderDetailsId, opt => opt.MapFrom(src => src.Id))
