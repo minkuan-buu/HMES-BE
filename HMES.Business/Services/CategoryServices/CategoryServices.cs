@@ -170,6 +170,8 @@ public class CategoryServices : ICategoryServices
                 throw new CustomException("Category not found!");
             }
             
+            var oldImage = oldCategory.Attachment;
+            
             _mapper.Map(category, oldCategory);
             
             if(category.Attachment != null)
@@ -177,6 +179,10 @@ public class CategoryServices : ICategoryServices
                 var filePath = $"category/{category.Id}/attachments";
                 var mainImage = await _cloudServices.UploadSingleFile(category.Attachment, filePath);
                 oldCategory.Attachment = mainImage;
+            }
+            else
+            {
+                oldCategory.Attachment = oldImage;
             }
             
             await _categoryRepository.Update(oldCategory);
