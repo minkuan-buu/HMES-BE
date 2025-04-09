@@ -723,10 +723,6 @@ namespace HMES.Business.Services.OrderServices
                 };
             }
 
-            if (order.UserAddress == null)
-            {
-                throw new CustomException("Người dùng chưa có địa chỉ mặc định.");
-            }
 
             var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
             var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
