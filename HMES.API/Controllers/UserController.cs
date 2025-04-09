@@ -98,10 +98,10 @@ namespace HMES.API.Controllers
 
         [HttpPatch("me/devices/{id}/refresh-cycle")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] int refreshCycleHours)
+        public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] UpdateRefreshCycleHoursReqModel updateModel)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _deviceItemServices.UpdateRefreshCycleHours(refreshCycleHours, id, token);
+            var result = await _deviceItemServices.UpdateRefreshCycleHours(updateModel.RefreshCycleHours, id, token);
             return Ok(result);
         }
     }
