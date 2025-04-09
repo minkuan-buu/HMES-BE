@@ -79,6 +79,12 @@ public class PlantController: ControllerBase
         return Ok(result);
     }
     
+    [HttpGet("not-set-value/{type}")]
+    public async Task<IActionResult> GetPlantNotSetValueOfType(string type)
+    {
+        var result = await _plantServices.GetPlantNotSetValueOfType(type);
+        return Ok(result);
+    }
     
     
     

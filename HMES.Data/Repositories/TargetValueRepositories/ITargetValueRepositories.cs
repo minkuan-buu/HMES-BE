@@ -9,6 +9,9 @@ public interface ITargetValueRepositories : IGenericRepositories<TargetValue>
     
     Task<TargetValue?> GetTargetValueByTypeAndMinAndMax(string type, decimal minValue, decimal maxValue);
     
+    Task<bool> CheckTargetValueByTypeAndMinAndMax(string type, decimal minValue, decimal maxValue);
+
+    
     Task<TargetValue?> GetTargetValueById(Guid id);
     
     public Task<(List<TargetValue> values, int TotalItems)> GetAllValuesAsync(
