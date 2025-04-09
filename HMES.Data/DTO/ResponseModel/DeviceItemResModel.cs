@@ -21,3 +21,8 @@ public class IoTResModel
     public decimal Ph { get; set; } = 0;
     public decimal WaterLevel { get; set; } = 0;
 }
+
+public class IoTToken
+{
+    public string Token { get; set; } = null!;
+}

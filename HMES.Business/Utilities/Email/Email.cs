@@ -5,8 +5,9 @@ using HMES.Data.Entities;
 using System;
 using System.Net;
 using System.Net.Mail;
+using HMES.Business.Utilities.Email;
 
-namespace HMES.Business.Ultilities.Email
+namespace HMES.Business.Utilities.Email
 {
     public class Email : IEmail
     {

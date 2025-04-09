@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HMES.Business.Ultilities.Email
+namespace HMES.Business.Utilities.Email
 {
     public interface IEmail
     {

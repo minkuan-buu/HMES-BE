@@ -55,14 +55,6 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-                [HttpPost("active")]
-                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
-                {
-                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _deviceServices.ActiveDevice(token, Id);
-                        return Ok(result);
-                }
                 [HttpPut("set-plant")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> SetPlantForDeviceDevice([FromBody] SetPlantReqModel model)
@@ -71,7 +63,7 @@ namespace HMES.API.Controllers
                         var result = await _deviceItemServices.SetPlantForDevice(model.DeviceItemId, model.PlantId, token);
                         return Ok(result);
                 }
-                
+
 
         }
 }
