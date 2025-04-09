@@ -3,22 +3,33 @@ using System.Text.Json;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
 using HMES.Data.DTO.Custom;
+using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.DeviceItemsRepositories;
+using HMES.Data.Repositories.NutritionRDRepositories;
+using HMES.Data.Repositories.NutritionReportRepositories;
+using HMES.Data.Repositories.PlantRepositories;
+using Org.BouncyCastle.Math.EC.Rfc7748;
 
 namespace HMES.Business.Services.DeviceItemServices
 {
     public class DeviceItemServices : IDeviceItemServices
     {
+        private readonly INutritionRDRepositories _nutritionRDRepositories;
+        private readonly INutritionReportRepositories _nutritionReportRepositories;
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
+        private readonly IPlantRepositories _plantRepositories;
         private readonly IMapper _mapper;
         private readonly IMqttService _mqttService;
 
-        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService)
+        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories)
         {
+            _nutritionRDRepositories = nutritionRDRepositories;
+            _nutritionReportRepositories = nutritionReportRepositories;
             _deviceItemsRepositories = deviceItemsRepositories;
+            _plantRepositories = plantRepositories;
             _mapper = mapper;
             _mqttService = mqttService;
         }
@@ -123,6 +134,7 @@ namespace HMES.Business.Services.DeviceItemServices
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
                 var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
                 if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
                 {
                     throw new Exception("Can't Active Device!");
@@ -134,6 +146,10 @@ namespace HMES.Business.Services.DeviceItemServices
                 else if (getDevice == null)
                 {
                     throw new Exception("Device not found!");
+                }
+                else if (plant != null)
+                {
+                    getDevice.PlantId = plant.Id;
                 }
                 getDevice.IsActive = true;
                 getDevice.IsOnline = true;
@@ -174,6 +190,195 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = dataResult
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.UserId == userId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+
+                if (getDevice == null)
+                {
+                    throw new Exception("Device item not found");
+                }
+                else if (getDevice.Plant == null)
+                {
+                    throw new Exception("Active device before update log!");
+                }
+
+                var targetValues = getDevice.Plant.TargetOfPlants.Where(x => x.PlantId == getDevice.PlantId)
+                .Select(x => new
+                {
+                    x.TargetValue.Id,
+                    x.TargetValue.Type,
+                    x.TargetValue.MinValue,
+                    x.TargetValue.MaxValue
+                }).ToList();
+
+                var vietnameseMap = new Dictionary<string, string>
+                {
+                    { "Temperature", "Nhiệt độ" },
+                    { "SoluteConcentration", "Nồng độ chất hòa tan" },
+                    { "Ph", "Độ pH" },
+                    { "WaterLevel", "Mực nước" }
+                };
+
+                string messageWarning = string.Empty;
+                var newNutritionReportId = new Guid();
+                var nutritionReport = new NutritionReport
+                {
+                    Id = newNutritionReportId,
+                    DeviceItemId = getDevice.Id,
+                    CreatedAt = DateTime.Now,
+                };
+                await _nutritionReportRepositories.Insert(nutritionReport);
+                List<NutritionReportDetail> nutritionReportDetails = new List<NutritionReportDetail>();
+
+                for (int i = 0; i < targetValues.Count; i++)
+                {
+                    var targetValue = targetValues[i];
+                    var value = deviceItem.GetType().GetProperty(targetValue.Type)?.GetValue(deviceItem, null);
+                    var nutritionReportDetail = new NutritionReportDetail
+                    {
+                        TargetValueId = targetValue.Id,
+                        RecordValue = value != null ? (decimal)value : 0,
+                        NutritionId = newNutritionReportId,
+                        Id = Guid.NewGuid(),
+                    };
+                    nutritionReportDetails.Add(nutritionReportDetail);
+
+                    if (value != null && (decimal)value < targetValue.MinValue)
+                    {
+                        var fieldName = vietnameseMap.ContainsKey(targetValue.Type)
+                            ? vietnameseMap[targetValue.Type]
+                            : targetValue.Type;
+
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                    }
+                    else if (value != null && (decimal)value > targetValue.MaxValue)
+                    {
+                        var fieldName = vietnameseMap.ContainsKey(targetValue.Type)
+                            ? vietnameseMap[targetValue.Type]
+                            : targetValue.Type;
+
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                    }
+                }
+                await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", JsonSerializer.Serialize(new
+                {
+                    message = messageWarning,
+                }));
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Update log successfully"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, Guid DeviceId)
+        {
+            try
+            {
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+
+                if (getDevice == null)
+                {
+                    throw new Exception("Device item not found");
+                }
+                else if (getDevice.Plant == null)
+                {
+                    throw new Exception("Active device before update log!");
+                }
+
+                var targetValues = getDevice.Plant.TargetOfPlants.Where(x => x.PlantId == getDevice.PlantId)
+                .Select(x => new
+                {
+                    x.TargetValue.Id,
+                    x.TargetValue.Type,
+                    x.TargetValue.MinValue,
+                    x.TargetValue.MaxValue
+                }).ToList();
+
+                var vietnameseMap = new Dictionary<string, string>
+                {
+                    { "Temperature", "Nhiệt độ" },
+                    { "SoluteConcentration", "Nồng độ chất hòa tan" },
+                    { "Ph", "Độ pH" },
+                    { "WaterLevel", "Mực nước" }
+                };
+
+                string messageWarning = string.Empty;
+                var newNutritionReportId = new Guid();
+                var nutritionReport = new NutritionReport
+                {
+                    Id = newNutritionReportId,
+                    DeviceItemId = getDevice.Id,
+                    CreatedAt = DateTime.Now,
+                };
+                await _nutritionReportRepositories.Insert(nutritionReport);
+                List<NutritionReportDetail> nutritionReportDetails = new List<NutritionReportDetail>();
+
+                for (int i = 0; i < targetValues.Count; i++)
+                {
+                    var targetValue = targetValues[i];
+                    var value = deviceItem.GetType().GetProperty(targetValue.Type)?.GetValue(deviceItem, null);
+                    var nutritionReportDetail = new NutritionReportDetail
+                    {
+                        TargetValueId = targetValue.Id,
+                        RecordValue = value != null ? (decimal)value : 0,
+                        NutritionId = newNutritionReportId,
+                        Id = Guid.NewGuid(),
+                    };
+                    nutritionReportDetails.Add(nutritionReportDetail);
+
+                    if (value != null && (decimal)value < targetValue.MinValue)
+                    {
+                        var fieldName = vietnameseMap.ContainsKey(targetValue.Type)
+                            ? vietnameseMap[targetValue.Type]
+                            : targetValue.Type;
+
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                    }
+                    else if (value != null && (decimal)value > targetValue.MaxValue)
+                    {
+                        var fieldName = vietnameseMap.ContainsKey(targetValue.Type)
+                            ? vietnameseMap[targetValue.Type]
+                            : targetValue.Type;
+
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                    }
+                }
+                await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", JsonSerializer.Serialize(new
+                {
+                    message = messageWarning,
+                }));
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Update log successfully"
+                    }
                 };
             }
             catch (Exception ex)
