@@ -199,6 +199,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Plant != null ? src.Plant.Name : string.Empty)))
                 .ForMember(dest => dest.isOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
+                .ForMember(dest => dest.RefreshCycleHours, opt => opt.MapFrom(src => src.RefreshCycleHours))
                 .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate))
                 .ForMember(dest => dest.LastUpdatedDate, opt => opt.MapFrom(src => src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().CreatedAt : DateTime.Now))
                 .ForMember(dest => dest.IoTData, opt => opt.MapFrom(src => new IoTResModel()
