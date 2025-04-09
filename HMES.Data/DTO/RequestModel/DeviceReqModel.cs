@@ -30,4 +30,12 @@ namespace HMES.Data.DTO.RequestModel
     {
         public int RefreshCycleHours { get; set; }
     }
+
+    public class UpdateLogIoT
+    {
+        public decimal Temperature { get; set; } = 0;
+        public decimal SoluteConcentration { get; set; } = 0;
+        public decimal Ph { get; set; } = 0;
+        public decimal WaterLevel { get; set; } = 0;
+    }
 }
