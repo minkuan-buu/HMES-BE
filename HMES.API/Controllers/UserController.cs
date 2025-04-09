@@ -41,7 +41,7 @@ namespace HMES.API.Controllers
             var result = await _userServices.GetTechnicians();
             return Ok(result);
         }
-        
+
         [HttpGet("staffs/{role}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetStaffs(
@@ -95,8 +95,14 @@ namespace HMES.API.Controllers
             var result = await _deviceItemServices.GetDeviceItemDetailById(id, token);
             return Ok(result);
         }
-        
-        
-        
+
+        [HttpPatch("me/devices/{id}/refresh-cycle")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] int refreshCycleHours)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.UpdateRefreshCycleHours(refreshCycleHours, id, token);
+            return Ok(result);
+        }
     }
 }
