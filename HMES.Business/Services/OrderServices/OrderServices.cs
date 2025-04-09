@@ -472,15 +472,18 @@ namespace HMES.Business.Services.OrderServices
                 string ghnResponse = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create", ghnOrder);
                 var responseObject = JsonConvert.DeserializeObject<dynamic>(ghnResponse);
 
-                if (responseObject == null || responseObject.code != 200){
+                if (responseObject == null || responseObject.code != 200)
+                {
                     throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
-                } else if (responseObject.data == null || responseObject.data["order_code"] != null){
+                }
+                else if (responseObject.data == null || responseObject.data["order_code"] != null)
+                {
                     order.ShippingOrderCode = (string)responseObject.data["order_code"];
                     order.UpdatedAt = DateTime.Now;
                     order.Status = OrderEnums.Delivering.ToString();
                     await _orderRepositories.Update(order);
-                } 
-                    
+                }
+
             }
             catch (Exception ex)
             {
@@ -723,7 +726,22 @@ namespace HMES.Business.Services.OrderServices
                 };
             }
 
+            if (order.UserAddressId == null)
+            {
+                var defaultUserAddress = await _userAddressRepositories.GetSingle(
+                    ua => ua.UserId == order.UserId && ua.Status == "Default")
+                    ?? throw new CustomException("Không tìm thấy địa chỉ mặc định cho người dùng.");
 
+                // Gán UserAddressId cho Order
+                order.UserAddressId = defaultUserAddress.Id;
+
+                // Cập nhật Order trong cơ sở dữ liệu
+                await _orderRepositories.Update(order);
+
+                // Tải lại đối tượng Order từ cơ sở dữ liệu để đảm bảo dữ liệu mới nhất
+                order = await _orderRepositories.GetOrderByIdAsync(order.Id)
+                    ?? throw new CustomException("Không thể tải lại đơn hàng sau khi cập nhật UserAddressId.");
+            }
             var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
             var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
@@ -862,7 +880,8 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
-        public async Task<ResultModel<MessageResultModel>> CashOnDeliveryHandle(Guid orderId, string token){
+        public async Task<ResultModel<MessageResultModel>> CashOnDeliveryHandle(Guid orderId, string token)
+        {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
@@ -894,7 +913,8 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
-        public async Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token){
+        public async Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token)
+        {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
