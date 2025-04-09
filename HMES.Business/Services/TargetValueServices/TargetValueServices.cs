@@ -3,6 +3,8 @@ using AutoMapper;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
+using HMES.Data.Enums;
+using HMES.Data.Repositories.TargetOfPlantRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 
 namespace HMES.Business.Services.TargetValueServices;
@@ -11,11 +13,13 @@ public class TargetValueServices : ITargetValueServices
 {
     
     private readonly ITargetValueRepositories _targetValueRepositories;
+    private readonly ITargetOfPlantRepository _targetOfPlantRepository;
     private readonly IMapper _mapper;
     
-    public TargetValueServices(ITargetValueRepositories targetValueRepositories, IMapper mapper)
+    public TargetValueServices(ITargetOfPlantRepository targetOfPlantRepository ,ITargetValueRepositories targetValueRepositories, IMapper mapper)
     {
         _targetValueRepositories = targetValueRepositories;
+        _targetOfPlantRepository = targetOfPlantRepository;
         _mapper = mapper;
     }
     
@@ -72,7 +76,7 @@ public class TargetValueServices : ITargetValueServices
     public async Task<ResultModel<DataResultModel<TargetResModel>>> CreateTargetValueAsync(TargetReqModel targetReqModel)
     {
         
-        if(targetReqModel.MinValue > targetReqModel.MaxValue)
+        if(targetReqModel.MinValue >= targetReqModel.MaxValue)
         {
             return new ResultModel<DataResultModel<TargetResModel>>
             {
@@ -81,8 +85,20 @@ public class TargetValueServices : ITargetValueServices
             };
         }
         
-        var targetValueExist = await _targetValueRepositories.GetTargetValueByTypeAndMinAndMax(targetReqModel.Type.ToString(), targetReqModel.MinValue, targetReqModel.MaxValue);
-        if(targetValueExist != null)
+        if (targetReqModel.Type.Equals(ValueTypeEnums.pH))
+        {
+            if (targetReqModel.MaxValue > 14)
+            {
+                return new ResultModel<DataResultModel<TargetResModel>>
+                {
+                    StatusCodes = (int)HttpStatusCode.BadRequest,
+                    Response = null
+                };
+            }
+        }
+        
+        var targetValueExist = await _targetValueRepositories.CheckTargetValueByTypeAndMinAndMax(targetReqModel.Type.ToString(), targetReqModel.MinValue, targetReqModel.MaxValue);
+        if(targetValueExist)
         {
             return new ResultModel<DataResultModel<TargetResModel>>
             {
@@ -109,16 +125,48 @@ public class TargetValueServices : ITargetValueServices
         
     }
 
-    public async Task<ResultModel<DataResultModel<TargetResModel>>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel)
+    public async Task<ResultModel<MessageResultModel>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel)
     {
-        var targetValue = await _targetValueRepositories.GetTargetValueById(id);
-        
-        if (targetValue == null || IsTargetValueExist(targetValue, targetReqModel))
+
+        if (targetReqModel.Type.Equals(ValueTypeEnums.pH))
         {
-            return new ResultModel<DataResultModel<TargetResModel>>
+            if (targetReqModel.MaxValue > 14)
             {
-                StatusCodes = (int)HttpStatusCode.NotFound,
-                Response = null
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.BadRequest,
+                    Response = new MessageResultModel
+                    {
+                        Message = "Max value must be less than 14 for pH",
+                    }
+                };
+            }
+        }
+        
+        if(targetReqModel.MinValue >= targetReqModel.MaxValue)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Min value must be less than max value",
+                }
+            };
+        }
+        
+        var targetValue = await _targetValueRepositories.GetTargetValueById(id);
+        var targetValueExist = await _targetValueRepositories.CheckTargetValueByTypeAndMinAndMax(targetReqModel.Type.ToString(), targetReqModel.MinValue, targetReqModel.MaxValue);
+
+        if (targetValue == null || targetValueExist || targetValue.Type != targetReqModel.Type.ToString())
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = "Target value not found or already exists",
+                }
             };
         }
 
@@ -132,10 +180,13 @@ public class TargetValueServices : ITargetValueServices
         }catch (Exception e)
         {
             Console.WriteLine(e.Message);
-            return new ResultModel<DataResultModel<TargetResModel>>
+            return new ResultModel<MessageResultModel>
             {
                 StatusCodes = (int)HttpStatusCode.BadRequest,
-                Response = null
+                Response = new MessageResultModel
+                {
+                    Message = e.Message,
+                }
             };
         }
         
@@ -145,10 +196,13 @@ public class TargetValueServices : ITargetValueServices
             Data = _mapper.Map<TargetResModel>(targetValue)
         };
         
-        return new ResultModel<DataResultModel<TargetResModel>>
+        return new ResultModel<MessageResultModel>
         {
             StatusCodes = (int)HttpStatusCode.OK,
-            Response = result
+            Response = new MessageResultModel
+            {
+                Message = "Update target value successfully",
+            }
         };
     }
 
@@ -164,8 +218,29 @@ public class TargetValueServices : ITargetValueServices
                 Response = null
             };
         }
+
+        var targetValueOfPlants = targetValue.TargetOfPlants.ToList();
         
-        await _targetValueRepositories.Delete(targetValue);
+        try
+        {
+            if (targetValueOfPlants.Count != 0)
+            {
+                await _targetOfPlantRepository.DeleteRange(targetValueOfPlants);
+            }
+            await _targetValueRepositories.Delete(targetValue);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel
+                {
+                    Message = e.Message,
+                }
+            };
+        }
         
         return new ResultModel<MessageResultModel>
         {
@@ -175,13 +250,6 @@ public class TargetValueServices : ITargetValueServices
                 Message = "Target value deleted successfully"
             }
         };
-    }
-    
-    private bool IsTargetValueExist(TargetValue targetValue, TargetReqModel targetReqModel)
-    {
-        return targetReqModel.MinValue != targetReqModel.MaxValue
-               || targetValue.MinValue != targetValue.MaxValue
-               || !targetValue.Type.Equals(targetReqModel.Type.ToString());
     }
     
 }

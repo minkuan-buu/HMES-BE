@@ -35,7 +35,7 @@ public class TargetValueController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<IActionResult> CreateTargetValueAsync([FromBody] TargetReqModel targetReqModel)
+    public async Task<IActionResult> CreateTargetValueAsync([FromForm] TargetReqModel targetReqModel)
     {
         var result = await _targetValueServices.CreateTargetValueAsync(targetReqModel);
         return Ok(result);

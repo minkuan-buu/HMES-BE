@@ -95,5 +95,8 @@ namespace HMES.API.Controllers
             var result = await _deviceItemServices.GetDeviceItemDetailById(id, token);
             return Ok(result);
         }
+        
+        
+        
     }
 }

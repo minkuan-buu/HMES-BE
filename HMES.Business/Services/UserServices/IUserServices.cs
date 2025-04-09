@@ -16,4 +16,7 @@ public interface IUserServices
     Task<ResultModel<DataResultModel<UserProfileResModel>>> Profile(string Token);
     Task<ResultModel<MessageResultModel>> ResetPassword(UserResetPasswordReqModel ReqModel, string token);
     Task<ResultModel<MessageResultModel>> CreateModUser(CreateModUserModel ReqModel);
+    Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetUsers(string token, string? keyword, string? role, string? status , int pageIndex, int pageSize);
+
+    
 }

@@ -142,17 +142,23 @@ namespace HMES.Business.MapperProfiles
             // UserAddress
             CreateMap<UserAddressCreateReqModel, UserAddress>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
             CreateMap<UserAddressUpdateReqModel, UserAddress>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
             CreateMap<UserAddress, ListUserAddressResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Address)));
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Ward, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Ward)))
+                .ForMember(dest => dest.District, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.District)));
 
 
             // Ticket
@@ -246,6 +252,81 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
                 .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => src.TargetOfPlants.Select(t => t.Plant)));
+            // Order
+            
+            CreateMap<Order,OrderResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
+                .ForMember(dest => dest.UserAddressId, opt => opt.MapFrom(src => src.UserAddressId))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt));
+
+            CreateMap<Order, OrderDetailsResModel>()
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
+                .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+                .ForMember(dest => dest.ShippingFee, opt => opt.MapFrom(src => src.ShippingFee))
+                .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));
+            
+            CreateMap<OrderDetail, OrderDetailsItemResModel>()
+                .ForMember(dest => dest.OrderDetailsId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product != null ? src.Product.Name : src.Device.Name)))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.UnitPrice))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.UnitPrice * src.Quantity))
+                .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Product != null ? src.Product.MainImage : src.Device.Attachment));
+
+            CreateMap<Transaction, OrderTransactionResModel>()
+                .ForMember(dest => dest.TransactionId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
+                .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+            
+            CreateMap<UserAddress, OrderAddressResModel>()
+                .ForMember(dest => dest.AddressId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
+                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Address)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => src.Longitude))
+                .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => src.Latitude));
+                
+            // Notification
+
+            CreateMap<NotificationReqModel, Notification>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Title)))
+                .ForMember(dest => dest.Message,
+                    opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Message)))
+                .ForMember(dest => dest.NotificationType, opt => opt.MapFrom(src => src.Type))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => TimeZoneHelper.GetCurrentHoChiMinhTime()))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => false));
+
+            CreateMap<Notification, NotificationResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Title,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Title)))
+                .ForMember(dest => dest.Message,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Message)))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.NotificationType))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => src.IsRead))
+                .ForMember(dest => dest.ReceiverName,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
+                .ForMember(dest => dest.SenderName,
+                    opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Sender.Name ?? "")))
+                .ForMember(dest => dest.ReferenceId, opt => opt.MapFrom(src => src.ReferenceId));
+
+
+
+
+
+
         }
     }
 }
