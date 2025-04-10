@@ -231,7 +231,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 };
 
                 string messageWarning = string.Empty;
-                var newNutritionReportId = new Guid();
+                var newNutritionReportId = Guid.NewGuid();
                 var nutritionReport = new NutritionReport
                 {
                     Id = newNutritionReportId,
@@ -325,7 +325,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 };
 
                 string messageWarning = string.Empty;
-                var newNutritionReportId = new Guid();
+                var newNutritionReportId = Guid.NewGuid();
                 var nutritionReport = new NutritionReport
                 {
                     Id = newNutritionReportId,
