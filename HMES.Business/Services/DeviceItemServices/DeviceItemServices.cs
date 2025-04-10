@@ -78,8 +78,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     deviceId = deviceItem.Id,
                     refreshCycleHours = refreshCycleHours
                 };
-                var payloadJson = JsonSerializer.Serialize(payload);
-                await _mqttService.PublishAsync($"esp32/{deviceItem.Id.ToString().ToUpper()}/refreshCycleHours", payloadJson);
+                await _mqttService.PublishAsync($"esp32/{deviceItem.Id.ToString().ToUpper()}/refreshCycleHours", payload);
                 return new ResultModel<MessageResultModel>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
@@ -273,10 +272,10 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
-                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", JsonSerializer.Serialize(new
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", new
                 {
                     message = messageWarning,
-                }));
+                });
 
                 return new ResultModel<MessageResultModel>()
                 {
