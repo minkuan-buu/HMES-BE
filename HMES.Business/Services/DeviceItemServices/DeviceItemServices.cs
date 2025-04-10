@@ -39,7 +39,7 @@ namespace HMES.Business.Services.DeviceItemServices
             try
             {
                 var userId = Guid.Parse(Authentication.DecodeToken(Token, "userid"));
-                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails,Device");
+                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails.TargetValue,Device");
                 if (deviceItem == null)
                 {
                     throw new Exception("Device item not found");
@@ -47,13 +47,14 @@ namespace HMES.Business.Services.DeviceItemServices
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
 
                 var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
-                result.IoTData = new IoTResModel
+                var newIoTResModel = new IoTResModel
                 {
                     Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
                     SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
                     Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
                     WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
                 };
+                result.IoTData = newIoTResModel;
                 var dataResult = new DataResultModel<DeviceItemDetailResModel>
                 {
                     Data = result
