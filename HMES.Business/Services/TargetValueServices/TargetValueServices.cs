@@ -85,7 +85,7 @@ public class TargetValueServices : ITargetValueServices
             };
         }
         
-        if (targetReqModel.Type.Equals(ValueTypeEnums.pH))
+        if (targetReqModel.Type.Equals(ValueTypeEnums.Ph))
         {
             if (targetReqModel.MaxValue > 14)
             {
@@ -128,7 +128,7 @@ public class TargetValueServices : ITargetValueServices
     public async Task<ResultModel<MessageResultModel>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel)
     {
 
-        if (targetReqModel.Type.Equals(ValueTypeEnums.pH))
+        if (targetReqModel.Type.Equals(ValueTypeEnums.Ph))
         {
             if (targetReqModel.MaxValue > 14)
             {
