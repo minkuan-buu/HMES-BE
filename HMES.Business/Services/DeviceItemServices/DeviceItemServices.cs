@@ -75,11 +75,11 @@ namespace HMES.Business.Services.DeviceItemServices
                 await _deviceItemsRepositories.Update(deviceItem);
                 var payload = new
                 {
-                    deviceId = deviceItem.DeviceId,
+                    deviceId = deviceItem.Id,
                     refreshCycleHours = refreshCycleHours
                 };
                 var payloadJson = JsonSerializer.Serialize(payload);
-                await _mqttService.PublishAsync($"esp32/{deviceItem.Id}/refreshCycleHours", payloadJson);
+                await _mqttService.PublishAsync($"esp32/{deviceItem.Id.ToString().ToUpper()}/refreshCycleHours", payloadJson);
                 return new ResultModel<MessageResultModel>()
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
