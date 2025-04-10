@@ -45,7 +45,7 @@ public class DeviceStatusChecker : BackgroundService
                         device.LastSeen = DateTime.Now;
                         device.IsOnline = data.Status == "online";
                         await deviceItemsRepository.Update(device);
-                        Console.WriteLine($"✅ Cập nhật {device.DeviceId} thành {data.Status}!");
+                        Console.WriteLine($"✅ Cập nhật {device.Id} thành {data.Status}!");
                     }
                     else
                     {

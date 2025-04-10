@@ -41,7 +41,7 @@ namespace HMES.API.Controllers
             var result = await _userServices.GetTechnicians();
             return Ok(result);
         }
-        
+
         [HttpGet("staffs/{role}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetStaffs(
@@ -87,7 +87,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("me/devices/{id}")]
+        [HttpGet("me/mobile/devices/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetDeviceItem(Guid id)
         {
@@ -95,8 +95,40 @@ namespace HMES.API.Controllers
             var result = await _deviceItemServices.GetDeviceItemDetailById(id, token);
             return Ok(result);
         }
-        
-        
-        
+
+        [HttpPost("me/mobile/devices/{id}")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateLogFromMobile(Guid id, [FromBody] UpdateLogIoT log)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.UpdateLog(log, token, id);
+            return Ok(result);
+        }
+
+        [HttpGet("me/iot/devices/{id}")]
+        [Authorize(AuthenticationSchemes = "HMESIoTAuthentication")]
+        public async Task<IActionResult> GetDeviceItemForIoT(Guid id)
+        {
+            var result = await _deviceItemServices.GetDeviceItemDetail(id);
+            return Ok(result);
+        }
+
+        [HttpPost("me/devices/active")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.ActiveDevice(token, Id);
+            return Ok(result);
+        }
+
+        [HttpPatch("me/devices/{id}/refresh-cycle")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] UpdateRefreshCycleHoursReqModel updateModel)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.UpdateRefreshCycleHours(updateModel.RefreshCycleHours, id, token);
+            return Ok(result);
+        }
     }
 }

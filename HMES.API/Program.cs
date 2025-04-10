@@ -13,7 +13,6 @@ using HMES.Business.Services.TargetValueServices;
 using HMES.Business.Services.TicketServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Services.UserTokenServices;
-using HMES.Business.Ultilities.Email;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.CartRepositories;
@@ -41,6 +40,9 @@ using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.PlantRepositories;
 using HMES.Data.Repositories.TargetOfPlantRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
+using HMES.Business.Utilities.Email;
+using HMES.Data.Repositories.NutritionRDRepositories;
+using HMES.Data.Repositories.NutritionReportRepositories;
 
 DotNetEnv.Env.Load();
 
@@ -170,7 +172,7 @@ builder.Services.AddSwaggerGen(c =>
 
 //======================================= AUTHENTICATION ==========================================
 builder.Services.AddAuthentication("HMESAuthentication")
-    .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null);
+    .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null).AddScheme<AuthenticationSchemeOptions, IoTAuthorizeMiddleware>("HMESIoTAuthentication", null);
 
 //=========================================== FIREBASE ============================================
 Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"meowwoofsocial.json");
@@ -202,6 +204,8 @@ builder.Services.AddScoped<IPlantRepositories, PlantRepositories>();
 builder.Services.AddScoped<ITargetValueRepositories, TargetValueRepositories>();
 builder.Services.AddScoped<ITargetOfPlantRepository, TargetOfPlantRepositories>();
 builder.Services.AddScoped<INotificationRepositories, NotificationRepositories>();
+builder.Services.AddScoped<INutritionRDRepositories, NutritionRDRepositories>();
+builder.Services.AddScoped<INutritionReportRepositories, NutritionReportRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();

@@ -191,43 +191,5 @@ namespace HMES.Business.Services.DeviceServices
                 throw new CustomException(ex.Message);
             }
         }
-
-        public async Task<ResultModel<MessageResultModel>> ActiveDevice(string token, Guid DeviceId)
-        {
-            try
-            {
-                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
-                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
-                {
-                    throw new Exception("Can't Active Device!");
-                }
-                else if (!getDevice.UserId.Equals(userId))
-                {
-                    throw new Exception("Access denied");
-                }
-                else if (getDevice == null)
-                {
-                    throw new Exception("Device not found!");
-                }
-                getDevice.IsActive = true;
-                getDevice.IsOnline = true;
-                getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
-                await _deviceItemsRepositories.Update(getDevice);
-
-                return new ResultModel<MessageResultModel>()
-                {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new MessageResultModel()
-                    {
-                        Message = "Device is activated!"
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ex.Message);
-            }
-        }
     }
 }
