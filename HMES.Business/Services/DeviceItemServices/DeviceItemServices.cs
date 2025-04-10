@@ -45,6 +45,15 @@ namespace HMES.Business.Services.DeviceItemServices
                     throw new Exception("Device item not found");
                 }
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
+
+                var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+                result.IoTData = new IoTResModel
+                {
+                    Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                    SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                    Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                    WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                };
                 var dataResult = new DataResultModel<DeviceItemDetailResModel>
                 {
                     Data = result
