@@ -39,12 +39,22 @@ namespace HMES.Business.Services.DeviceItemServices
             try
             {
                 var userId = Guid.Parse(Authentication.DecodeToken(Token, "userid"));
-                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails,Device");
+                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails.TargetValue,Device");
                 if (deviceItem == null)
                 {
                     throw new Exception("Device item not found");
                 }
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
+
+                var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+                var newIoTResModel = new IoTResModel
+                {
+                    Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                    SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                    Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                    WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                };
+                result.IoTData = newIoTResModel;
                 var dataResult = new DataResultModel<DeviceItemDetailResModel>
                 {
                     Data = result
@@ -231,7 +241,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 };
 
                 string messageWarning = string.Empty;
-                var newNutritionReportId = new Guid();
+                var newNutritionReportId = Guid.NewGuid();
                 var nutritionReport = new NutritionReport
                 {
                     Id = newNutritionReportId,
@@ -325,7 +335,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 };
 
                 string messageWarning = string.Empty;
-                var newNutritionReportId = new Guid();
+                var newNutritionReportId = Guid.NewGuid();
                 var nutritionReport = new NutritionReport
                 {
                     Id = newNutritionReportId,

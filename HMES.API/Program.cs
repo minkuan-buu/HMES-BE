@@ -236,7 +236,8 @@ builder.Services.AddCors(options =>
             .WithOrigins(allowedOrigins!)
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials(); // Cho phép cookies, authorization headers, hoặc TLS client certificates
+            .AllowCredentials()
+            .WithExposedHeaders("New-Access-Token");
     });
 });
 
