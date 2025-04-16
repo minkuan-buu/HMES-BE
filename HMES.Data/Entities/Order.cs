@@ -19,9 +19,9 @@ public partial class Order
 
     public DateTime? UpdatedAt { get; set; }
 
-    public decimal? ShippingFee { get; set; }
-
     public string? ShippingOrderCode { get; set; }
+
+    public decimal? ShippingFee { get; set; }
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
