@@ -14,5 +14,6 @@ namespace HMES.Business.Services.OrderServices
             int pageSize = 10);
         Task<ResultModel<DataResultModel<OrderDetailsResModel>>> GetOrderDetails(Guid orderId);
         Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token);
+        Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token);
     }
 }

@@ -477,20 +477,23 @@ namespace HMES.Business.Services.OrderServices
                     var message = responseObject?.message?.ToString();
                     if (!string.IsNullOrEmpty(message) && message.Contains("Too many request. This request is processing", StringComparison.OrdinalIgnoreCase))
                     {
-                        order.ShippingOrderCode = (string)responseObject.data["order_code"];
-                        order.UpdatedAt = DateTime.Now;
-                        order.Status = OrderEnums.Delivering.ToString();
-                        await _orderRepositories.Update(order);
-                        return;
+                        if (responseObject?.data is JObject dataObj && dataObj["order_code"] != null)
+                        {
+                            order.ShippingOrderCode = dataObj["order_code"]?.ToString();
+                            order.UpdatedAt = DateTime.Now;
+                            order.Status = OrderEnums.Delivering.ToString();
+                            await _orderRepositories.Update(order);
+                            return;
+                        }
                     }
                     else
                     {
                         throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
                     }
                 }
-                else if (responseObject.data == null || responseObject.data["order_code"] != null)
+                else if (responseObject?.data is JObject dataObj && dataObj["order_code"] != null)
                 {
-                    order.ShippingOrderCode = (string)responseObject.data["order_code"];
+                    order.ShippingOrderCode = dataObj["order_code"]?.ToString();
                     order.UpdatedAt = DateTime.Now;
                     order.Status = OrderEnums.Delivering.ToString();
                     await _orderRepositories.Update(order);
@@ -594,7 +597,9 @@ namespace HMES.Business.Services.OrderServices
                 var orderResModel = new OrderPaymentResModel()
                 {
                     Id = transaction.Order.Id,
-                    TotalPrice = transaction.Order.TotalPrice,
+                    OrderPrice = transaction.Order.TotalPrice,
+                    ShippingPrice = transaction.Order.ShippingFee ?? 0,
+                    TotalPrice = transaction.Order.TotalPrice + (transaction.Order.ShippingFee ?? 0),
                     StatusPayment = transaction.Status,
                     UserAddress = transaction.Order.UserAddress != null ? new OrderUserAddress
                     {
@@ -636,7 +641,7 @@ namespace HMES.Business.Services.OrderServices
                     // Xóa giỏ hàng sau khi thanh toán
 
                     // Lấy cart items của user từ DB (hoặc theo orderId nếu bạn đang lọc theo order)
-                    var cartItems = await _cartItemsRepositories.GetList(x => x.Cart.UserId.Equals(userId), includeProperties: "Cart,Product,Device");
+                    var cartItems = await _cartItemsRepositories.GetList(x => x.Cart.UserId.Equals(userId), includeProperties: "Cart");
 
                     // Giả sử bạn đã có transaction.Order.OrderDetails như trước
                     var cartItemFromTransaction = transaction.Order.OrderDetails
@@ -653,7 +658,7 @@ namespace HMES.Business.Services.OrderServices
                         {
                             if (matchedTransactionItem.Quantity >= cartItem.Quantity)
                             {
-                                await _cartItemsRepositories.Delete(cartItem);
+                                await _cartItemsRepositories.Delete(cartItem); //Lỗi ở đây!!!
                             }
                             else
                             {
@@ -843,6 +848,8 @@ namespace HMES.Business.Services.OrderServices
 
             orderDetails.ShippingFee = shippingFee;
             orderDetails.TotalPrice = order.TotalPrice + shippingFee;
+            order.ShippingFee = shippingFee;
+            await _orderRepositories.Update(order);
 
             var result = new DataResultModel<OrderDetailsResModel>
             {
@@ -912,6 +919,9 @@ namespace HMES.Business.Services.OrderServices
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
+                order.Status = OrderEnums.Delivering.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
 
                 return new ResultModel<MessageResultModel>
                 {
@@ -987,6 +997,50 @@ namespace HMES.Business.Services.OrderServices
             {
                 throw new CustomException($"Lỗi khi hủy đơn hàng GHN: {ex.Message}");
             }
+        }
+
+        public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token)
+        {
+            var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress");
+            if (order == null)
+            {
+                throw new CustomException("Order not found");
+            }
+            if (order.Status != OrderEnums.Delivering.ToString())
+            {
+                throw new CustomException("Order is not in pending status");
+            }
+            var orderResModel = new OrderPaymentResModel()
+            {
+                Id = order.Id,
+                OrderPrice = order.TotalPrice,
+                ShippingPrice = order.ShippingFee ?? 0,
+                TotalPrice = order.TotalPrice + (order.ShippingFee ?? 0),
+                StatusPayment = order.Status,
+                UserAddress = order.UserAddress != null ? new OrderUserAddress
+                {
+                    Id = order.UserAddress.Id,
+                    Name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Name),
+                    Phone = order.UserAddress.Phone,
+                    Address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
+                    IsDefault = order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
+                } : null,
+                OrderProductItem = order.OrderDetails.Select(detail => new OrderDetailResModel
+                {
+                    Id = detail.Id,
+                    ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
+                    ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
+                    Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? "",
+                    Quantity = detail.Quantity,
+                    UnitPrice = detail.UnitPrice
+                }).ToList()
+            };
+            return new ResultModel<DataResultModel<OrderPaymentResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
+            };
         }
     }
 }
