@@ -18,6 +18,8 @@ namespace HMES.Data.DTO.RequestModel
         public Guid Id { get; set; }
         public List<OrderDetailResModel> OrderProductItem { get; set; } = null!;
         public OrderUserAddress? UserAddress { get; set; } = null!;
+        public decimal OrderPrice { get; set; }
+        public decimal ShippingPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public string StatusPayment { get; set; } = null!;
     }
