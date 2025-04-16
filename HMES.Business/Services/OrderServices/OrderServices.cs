@@ -614,7 +614,7 @@ namespace HMES.Business.Services.OrderServices
                         Id = detail.Id,
                         ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
                         ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
-                        Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? "",
+                        Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
                     }).ToList()
@@ -1031,7 +1031,7 @@ namespace HMES.Business.Services.OrderServices
                     Id = detail.Id,
                     ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
                     ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
-                    Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? "",
+                    Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                     Quantity = detail.Quantity,
                     UnitPrice = detail.UnitPrice
                 }).ToList()
