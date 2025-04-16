@@ -33,7 +33,16 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost ("check")]
+        [HttpGet("cod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetCODBilling([FromBody] Guid Id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.GetCODBilling(Id, token);
+            return Ok(result);
+        }
+
+        [HttpPost("check")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> HandleCheckTransaction([FromBody] string PaymentLinkId)
         {
