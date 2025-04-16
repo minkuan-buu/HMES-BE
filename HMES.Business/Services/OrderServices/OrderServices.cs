@@ -935,6 +935,18 @@ namespace HMES.Business.Services.OrderServices
                 order.Status = OrderEnums.Delivering.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
+                var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
+
+                var NewTransaction = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    OrderPaymentRefId = OrderPaymentRefId,
+                    Status = TransactionEnums.PROCESSING.ToString(),
+                    PaymentMethod = PaymentMethodEnums.COD.ToString(),
+                    CreatedAt = DateTime.Now,
+                };
+                await _transactionRepositories.Insert(NewTransaction);
 
                 return new ResultModel<MessageResultModel>
                 {
