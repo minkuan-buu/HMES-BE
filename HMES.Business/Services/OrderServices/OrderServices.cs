@@ -474,7 +474,8 @@ namespace HMES.Business.Services.OrderServices
 
                 if (responseObject == null || responseObject.code != 200)
                 {
-                    if (responseObject?.message.Contains("Too many request. This request is processing", StringComparison.OrdinalIgnoreCase))
+                    var message = responseObject?.message?.ToString();
+                    if (!string.IsNullOrEmpty(message) && message.Contains("Too many request. This request is processing", StringComparison.OrdinalIgnoreCase))
                     {
                         order.ShippingOrderCode = (string)responseObject.data["order_code"];
                         order.UpdatedAt = DateTime.Now;
