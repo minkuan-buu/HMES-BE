@@ -474,7 +474,18 @@ namespace HMES.Business.Services.OrderServices
 
                 if (responseObject == null || responseObject.code != 200)
                 {
-                    throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
+                    if (responseObject?.message.Contains("Too many request. This request is processing", StringComparison.OrdinalIgnoreCase))
+                    {
+                        order.ShippingOrderCode = (string)responseObject.data["order_code"];
+                        order.UpdatedAt = DateTime.Now;
+                        order.Status = OrderEnums.Delivering.ToString();
+                        await _orderRepositories.Update(order);
+                        return;
+                    }
+                    else
+                    {
+                        throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
+                    }
                 }
                 else if (responseObject.data == null || responseObject.data["order_code"] != null)
                 {
