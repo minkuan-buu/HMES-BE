@@ -584,7 +584,7 @@ namespace HMES.Business.Services.OrderServices
 
                 // Lấy giao dịch đang chờ xử lý theo PaymentLinkId
                 var transaction = await _transactionRepositories.GetSingle(
-                    x => x.PaymentLinkId.Equals(id) && x.Status.Equals(TransactionEnums.PENDING.ToString()),
+                    x => x.PaymentLinkId.Equals(id),
                     includeProperties: "Order.OrderDetails.Product,Order.OrderDetails.Device,Order.UserAddress"
                 );
 
@@ -612,13 +612,26 @@ namespace HMES.Business.Services.OrderServices
                     OrderProductItem = transaction.Order.OrderDetails.Select(detail => new OrderDetailResModel
                     {
                         Id = detail.Id,
-                        ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
+                        ProductName = detail.Product != null
+                            ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name)
+                            : detail.Device != null
+                                ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name)
+                                : null,
                         ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
                         Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
                     }).ToList()
                 };
+
+                if (!transaction.Status.Equals(TransactionEnums.PENDING.ToString()))
+                {
+                    return new ResultModel<DataResultModel<OrderPaymentResModel>>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
+                    };
+                }
 
                 // Lấy thông tin thanh toán từ cổng thanh toán
                 PaymentLinkInformation paymentLinkInformation = await _payOS.getPaymentLinkInformation(transaction.OrderPaymentRefId);
