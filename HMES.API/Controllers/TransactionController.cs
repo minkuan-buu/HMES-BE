@@ -33,12 +33,12 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("cod")]
+        [HttpGet("cod/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> GetCODBilling([FromBody] Guid Id)
+        public async Task<IActionResult> GetCODBilling(Guid id)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _orderServices.GetCODBilling(Id, token);
+            var result = await _orderServices.GetCODBilling(id, token);
             return Ok(result);
         }
 
