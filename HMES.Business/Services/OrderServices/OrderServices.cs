@@ -215,9 +215,10 @@ namespace HMES.Business.Services.OrderServices
             itemDatas.Add(new ItemData("Phí vận chuyển", 1, shippingFee));
 
             string returnURL = Environment.GetEnvironmentVariable("PAYMENT_RETURN_URL") ?? throw new Exception("PAYMENT_RETURN_URL is missing");
+            DateTime paymentExpireDate = DateTime.Now.AddMinutes(15);
 
             PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice + shippingFee, "",
-                itemDatas, cancelUrl: returnURL, returnUrl: returnURL);
+                itemDatas, cancelUrl: returnURL, returnUrl: returnURL, expiredAt: new DateTimeOffset(paymentExpireDate).ToUnixTimeSeconds());
 
             CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
 
