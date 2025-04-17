@@ -222,6 +222,7 @@ builder.Services.AddScoped<ITicketServices, TicketServices>();
 builder.Services.AddScoped<IDeviceItemServices, DeviceItemServices>();
 builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
+builder.Services.AddHostedService<DoubleCheckExpiredPayment>();
 builder.Services.AddScoped<IPlantServices, PlantServices>();
 builder.Services.AddScoped<ITargetValueServices, TargetValueServices>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();

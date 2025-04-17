@@ -655,7 +655,7 @@ namespace HMES.Business.Services.OrderServices
                     // Xóa giỏ hàng sau khi thanh toán
 
                     // Lấy cart items của user từ DB (hoặc theo orderId nếu bạn đang lọc theo order)
-                    var cartItems = await _cartItemsRepositories.GetList(x => x.Cart.UserId.Equals(userId), includeProperties: "Cart");
+                    var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
 
                     // Giả sử bạn đã có transaction.Order.OrderDetails như trước
                     var cartItemFromTransaction = transaction.Order.OrderDetails
@@ -663,20 +663,21 @@ namespace HMES.Business.Services.OrderServices
                         .ToList();
 
                     // Áp dụng logic kiểm tra số lượng
-                    foreach (var cartItem in cartItems)
+                    foreach (var cartItem in cart.CartItems)
                     {
-                        var matchedTransactionItem = cartItemFromTransaction
-                            .FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
-
-                        if (matchedTransactionItem != null)
+                        // Tìm kiếm sản phẩm trong giỏ hàng tương ứng với sản phẩm trong giao dịch
+                        var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                        if (productInTransaction != null)
                         {
-                            if (matchedTransactionItem.Quantity >= cartItem.Quantity)
+                            // Nếu số lượng trong giỏ hàng lớn hơn hoặc bằng số lượng trong giao dịch, xóa giỏ hàng
+                            if (cartItem.Quantity >= productInTransaction.Quantity)
                             {
                                 await _cartItemsRepositories.Delete(cartItem); //Lỗi ở đây!!!
                             }
                             else
                             {
-                                cartItem.Quantity -= matchedTransactionItem.Quantity;
+                                // Nếu không, cập nhật lại số lượng trong giỏ hàng
+                                cartItem.Quantity -= productInTransaction.Quantity;
                                 await _cartItemsRepositories.Update(cartItem);
                             }
                         }
