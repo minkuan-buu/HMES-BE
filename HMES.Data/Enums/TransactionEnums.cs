@@ -6,6 +6,7 @@ namespace HMES.Data.Enums
         PENDING,
         CANCELLED,
         PROCESSING,
+        EXPIRED
     }
 
     public enum PaymentMethodEnums
