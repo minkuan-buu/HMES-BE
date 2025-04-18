@@ -682,8 +682,8 @@ namespace HMES.Business.Services.OrderServices
                             }
                         }
                     }
-                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
                     await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
                     await CreateDeviceItem(transaction.Order);
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
