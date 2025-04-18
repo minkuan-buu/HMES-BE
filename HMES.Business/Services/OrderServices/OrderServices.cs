@@ -671,7 +671,7 @@ namespace HMES.Business.Services.OrderServices
                         var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
                         if (productInTransaction != null)
                         {
-                            if (cartItem.Quantity >= productInTransaction.Quantity)
+                            if (cartItem.Quantity <= productInTransaction.Quantity)
                             {
                                 itemsToDelete.Add(cartItem);
                             }
