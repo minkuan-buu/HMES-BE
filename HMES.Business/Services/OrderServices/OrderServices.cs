@@ -417,7 +417,7 @@ namespace HMES.Business.Services.OrderServices
                     items = productDetails
                         .Select(p => new
                         {
-                            name = p.Product?.Name ?? "Sản phẩm",
+                            name = TextConvert.ConvertFromUnicodeEscape(p.Product?.Name) ?? "Sản phẩm",
                             code = p.ProductId,
                             quantity = p.Quantity,
                             price = (int)p.UnitPrice,
@@ -428,7 +428,7 @@ namespace HMES.Business.Services.OrderServices
                         })
                         .Concat(deviceDetails.Select(d => new
                         {
-                            name = d.Device?.Name ?? "Thiết bị",
+                            name = TextConvert.ConvertFromUnicodeEscape(d.Device?.Name) ?? "Thiết bị",
                             code = d.DeviceId,
                             quantity = d.Quantity,
                             price = (int)d.UnitPrice,
