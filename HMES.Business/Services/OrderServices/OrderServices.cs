@@ -663,26 +663,27 @@ namespace HMES.Business.Services.OrderServices
                         .ToList();
 
                     // Áp dụng logic kiểm tra số lượng
+                    var itemsToDelete = new List<CartItem>();
+                    var itemsToUpdate = new List<CartItem>();
+
                     foreach (var cartItem in cart.CartItems)
                     {
-                        // Tìm kiếm sản phẩm trong giỏ hàng tương ứng với sản phẩm trong giao dịch
                         var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
                         if (productInTransaction != null)
                         {
-                            // Nếu số lượng trong giỏ hàng lớn hơn hoặc bằng số lượng trong giao dịch, xóa giỏ hàng
                             if (cartItem.Quantity >= productInTransaction.Quantity)
                             {
-                                await _cartItemsRepositories.Delete(cartItem); //Lỗi ở đây!!!
+                                itemsToDelete.Add(cartItem);
                             }
                             else
                             {
-                                // Nếu không, cập nhật lại số lượng trong giỏ hàng
                                 cartItem.Quantity -= productInTransaction.Quantity;
-                                await _cartItemsRepositories.Update(cartItem);
+                                itemsToUpdate.Add(cartItem);
                             }
                         }
                     }
-
+                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
+                    await _cartItemsRepositories.UpdateRange(itemsToUpdate);
                     await CreateDeviceItem(transaction.Order);
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
