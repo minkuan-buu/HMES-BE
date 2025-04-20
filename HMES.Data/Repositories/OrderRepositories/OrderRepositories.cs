@@ -15,6 +15,7 @@ namespace HMES.Data.Repositories.OrderRepositories
         {
             var query = Context.Orders
                 .Include(o => o.User)
+                .OrderByDescending(o => o.CreatedAt)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -59,6 +60,7 @@ namespace HMES.Data.Repositories.OrderRepositories
         {
             var query = Context.Orders
                 .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.CreatedAt)
                 .Include(o => o.User)
                 .AsQueryable();
 
