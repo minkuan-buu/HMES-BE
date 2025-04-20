@@ -742,8 +742,29 @@ namespace HMES.Business.Services.OrderServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = result
             };
+        }
 
+        public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetSelfOrderList(string token, string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
+        {
+            var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
+            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            var result = new ListDataResultModel<OrderResModel>
+            {
+                Data = _mapper.Map<List<OrderResModel>>(orders),
+                CurrentPage = pageIndex,
+                TotalPages = totalPages,
+                TotalItems = totalItems,
+                PageSize = pageSize
+            };
+            return new ResultModel<ListDataResultModel<OrderResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
         }
 
         public async Task<ResultModel<DataResultModel<OrderDetailsResModel>>> GetOrderDetails(Guid orderId)
