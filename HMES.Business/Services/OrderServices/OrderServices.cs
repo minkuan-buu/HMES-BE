@@ -993,19 +993,28 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy đơn hàng theo orderId
                 var order = await _orderRepositories.GetSingle(
                     o => o.Id == orderId && o.UserId == userId,
-                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
                 );
 
                 if (order == null)
                     throw new CustomException("Order not found");
 
-                if (order.Status != OrderEnums.Pending.ToString())
-                    throw new CustomException("Order is not in pending status");
+                if (order.Status != OrderEnums.Delivering.ToString())
+                    throw new CustomException("Order is not in Delivering status");
+
+                var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                if (transaction == null)
+                {
+                    throw new CustomException("Order is not Cash on Delivery.");
+                }
 
                 // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                transaction.Status = TransactionEnums.CANCELLED.ToString();
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
+                await _transactionRepositories.Update(transaction);
                 await CancelShipping(order);
 
                 return new ResultModel<MessageResultModel>
