@@ -1039,7 +1039,7 @@ namespace HMES.Business.Services.OrderServices
                 var cancelRequest = new
                 {
                     token = _ghnToken,
-                    order_code = order.ShippingOrderCode,
+                    order_codes = order.ShippingOrderCode,
                     shop_id = _shopId,
                 };
 
