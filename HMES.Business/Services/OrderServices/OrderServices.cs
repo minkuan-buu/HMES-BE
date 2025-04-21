@@ -1035,11 +1035,11 @@ namespace HMES.Business.Services.OrderServices
             {
                 if (order == null)
                     throw new CustomException("Không tìm thấy đơn hàng.");
-
+                string[] orderCodes = { order.ShippingOrderCode };
                 var cancelRequest = new
                 {
                     token = _ghnToken,
-                    order_codes = order.ShippingOrderCode,
+                    order_codes = orderCodes,
                     shop_id = _shopId,
                 };
 
