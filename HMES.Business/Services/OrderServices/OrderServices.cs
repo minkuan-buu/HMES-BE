@@ -215,9 +215,10 @@ namespace HMES.Business.Services.OrderServices
             itemDatas.Add(new ItemData("Phí vận chuyển", 1, shippingFee));
 
             string returnURL = Environment.GetEnvironmentVariable("PAYMENT_RETURN_URL") ?? throw new Exception("PAYMENT_RETURN_URL is missing");
+            DateTime paymentExpireDate = DateTime.Now.AddMinutes(15);
 
             PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice + shippingFee, "",
-                itemDatas, cancelUrl: returnURL, returnUrl: returnURL);
+                itemDatas, cancelUrl: returnURL, returnUrl: returnURL, expiredAt: new DateTimeOffset(paymentExpireDate).ToUnixTimeSeconds());
 
             CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
 
@@ -416,7 +417,7 @@ namespace HMES.Business.Services.OrderServices
                     items = productDetails
                         .Select(p => new
                         {
-                            name = p.Product?.Name ?? "Sản phẩm",
+                            name = TextConvert.ConvertFromUnicodeEscape(p.Product?.Name) ?? "Sản phẩm",
                             code = p.ProductId,
                             quantity = p.Quantity,
                             price = (int)p.UnitPrice,
@@ -427,7 +428,7 @@ namespace HMES.Business.Services.OrderServices
                         })
                         .Concat(deviceDetails.Select(d => new
                         {
-                            name = d.Device?.Name ?? "Thiết bị",
+                            name = TextConvert.ConvertFromUnicodeEscape(d.Device?.Name) ?? "Thiết bị",
                             code = d.DeviceId,
                             quantity = d.Quantity,
                             price = (int)d.UnitPrice,
@@ -472,15 +473,33 @@ namespace HMES.Business.Services.OrderServices
                 string ghnResponse = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/create", ghnOrder);
                 var responseObject = JsonConvert.DeserializeObject<dynamic>(ghnResponse);
 
-                if (responseObject == null || responseObject.code != 200){
-                    throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
-                } else if (responseObject.data == null || responseObject.data["order_code"] != null){
-                    order.ShippingOrderCode = (string)responseObject.data["order_code"];
+                if (responseObject == null || responseObject.code != 200)
+                {
+                    var message = responseObject?.message?.ToString();
+                    if (!string.IsNullOrEmpty(message) && message.Contains("Too many request. This request is processing", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (responseObject?.data is JObject dataObj && dataObj["order_code"] != null)
+                        {
+                            order.ShippingOrderCode = dataObj["order_code"]?.ToString();
+                            order.UpdatedAt = DateTime.Now;
+                            order.Status = OrderEnums.Delivering.ToString();
+                            await _orderRepositories.Update(order);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        throw new CustomException("Không thể tạo đơn hàng trên GHN: " + (responseObject?.message ?? "Lỗi không xác định."));
+                    }
+                }
+                else if (responseObject?.data is JObject dataObj && dataObj["order_code"] != null)
+                {
+                    order.ShippingOrderCode = dataObj["order_code"]?.ToString();
                     order.UpdatedAt = DateTime.Now;
                     order.Status = OrderEnums.Delivering.ToString();
                     await _orderRepositories.Update(order);
-                } 
-                    
+                }
+
             }
             catch (Exception ex)
             {
@@ -566,7 +585,7 @@ namespace HMES.Business.Services.OrderServices
 
                 // Lấy giao dịch đang chờ xử lý theo PaymentLinkId
                 var transaction = await _transactionRepositories.GetSingle(
-                    x => x.PaymentLinkId.Equals(id) && x.Status.Equals(TransactionEnums.PENDING.ToString()),
+                    x => x.PaymentLinkId.Equals(id),
                     includeProperties: "Order.OrderDetails.Product,Order.OrderDetails.Device,Order.UserAddress"
                 );
 
@@ -579,7 +598,9 @@ namespace HMES.Business.Services.OrderServices
                 var orderResModel = new OrderPaymentResModel()
                 {
                     Id = transaction.Order.Id,
-                    TotalPrice = transaction.Order.TotalPrice,
+                    OrderPrice = transaction.Order.TotalPrice,
+                    ShippingPrice = transaction.Order.ShippingFee ?? 0,
+                    TotalPrice = transaction.Order.TotalPrice + (transaction.Order.ShippingFee ?? 0),
                     StatusPayment = transaction.Status,
                     UserAddress = transaction.Order.UserAddress != null ? new OrderUserAddress
                     {
@@ -592,13 +613,26 @@ namespace HMES.Business.Services.OrderServices
                     OrderProductItem = transaction.Order.OrderDetails.Select(detail => new OrderDetailResModel
                     {
                         Id = detail.Id,
-                        ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
+                        ProductName = detail.Product != null
+                            ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name)
+                            : detail.Device != null
+                                ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name)
+                                : null,
                         ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
-                        Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? "",
+                        Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
                     }).ToList()
                 };
+
+                if (!transaction.Status.Equals(TransactionEnums.PENDING.ToString()))
+                {
+                    return new ResultModel<DataResultModel<OrderPaymentResModel>>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
+                    };
+                }
 
                 // Lấy thông tin thanh toán từ cổng thanh toán
                 PaymentLinkInformation paymentLinkInformation = await _payOS.getPaymentLinkInformation(transaction.OrderPaymentRefId);
@@ -621,7 +655,7 @@ namespace HMES.Business.Services.OrderServices
                     // Xóa giỏ hàng sau khi thanh toán
 
                     // Lấy cart items của user từ DB (hoặc theo orderId nếu bạn đang lọc theo order)
-                    var cartItems = await _cartItemsRepositories.GetList(x => x.Cart.UserId.Equals(userId), includeProperties: "Cart,Product,Device");
+                    var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
 
                     // Giả sử bạn đã có transaction.Order.OrderDetails như trước
                     var cartItemFromTransaction = transaction.Order.OrderDetails
@@ -629,25 +663,27 @@ namespace HMES.Business.Services.OrderServices
                         .ToList();
 
                     // Áp dụng logic kiểm tra số lượng
-                    foreach (var cartItem in cartItems)
-                    {
-                        var matchedTransactionItem = cartItemFromTransaction
-                            .FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                    var itemsToDelete = new List<CartItem>();
+                    var itemsToUpdate = new List<CartItem>();
 
-                        if (matchedTransactionItem != null)
+                    foreach (var cartItem in cart.CartItems)
+                    {
+                        var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                        if (productInTransaction != null)
                         {
-                            if (matchedTransactionItem.Quantity >= cartItem.Quantity)
+                            if (cartItem.Quantity <= productInTransaction.Quantity)
                             {
-                                await _cartItemsRepositories.Delete(cartItem);
+                                itemsToDelete.Add(cartItem);
                             }
                             else
                             {
-                                cartItem.Quantity -= matchedTransactionItem.Quantity;
-                                await _cartItemsRepositories.Update(cartItem);
+                                cartItem.Quantity -= productInTransaction.Quantity;
+                                itemsToUpdate.Add(cartItem);
                             }
                         }
                     }
-
+                    await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
                     await CreateDeviceItem(transaction.Order);
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
@@ -706,8 +742,29 @@ namespace HMES.Business.Services.OrderServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = result
             };
+        }
 
+        public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetSelfOrderList(string token, string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
+        {
+            var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
+            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            var result = new ListDataResultModel<OrderResModel>
+            {
+                Data = _mapper.Map<List<OrderResModel>>(orders),
+                CurrentPage = pageIndex,
+                TotalPages = totalPages,
+                TotalItems = totalItems,
+                PageSize = pageSize
+            };
+            return new ResultModel<ListDataResultModel<OrderResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = result
+            };
         }
 
         public async Task<ResultModel<DataResultModel<OrderDetailsResModel>>> GetOrderDetails(Guid orderId)
@@ -723,11 +780,22 @@ namespace HMES.Business.Services.OrderServices
                 };
             }
 
-            if (order.UserAddress == null)
+            if (order.UserAddressId == null)
             {
-                throw new CustomException("Người dùng chưa có địa chỉ mặc định.");
-            }
+                var defaultUserAddress = await _userAddressRepositories.GetSingle(
+                    ua => ua.UserId == order.UserId && ua.Status == "Default")
+                    ?? throw new CustomException("Không tìm thấy địa chỉ mặc định cho người dùng.");
 
+                // Gán UserAddressId cho Order
+                order.UserAddressId = defaultUserAddress.Id;
+
+                // Cập nhật Order trong cơ sở dữ liệu
+                await _orderRepositories.Update(order);
+
+                // Tải lại đối tượng Order từ cơ sở dữ liệu để đảm bảo dữ liệu mới nhất
+                order = await _orderRepositories.GetOrderByIdAsync(order.Id)
+                    ?? throw new CustomException("Không thể tải lại đơn hàng sau khi cập nhật UserAddressId.");
+            }
             var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
             var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
@@ -817,6 +885,8 @@ namespace HMES.Business.Services.OrderServices
 
             orderDetails.ShippingFee = shippingFee;
             orderDetails.TotalPrice = order.TotalPrice + shippingFee;
+            order.ShippingFee = shippingFee;
+            await _orderRepositories.Update(order);
 
             var result = new DataResultModel<OrderDetailsResModel>
             {
@@ -866,7 +936,8 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
-        public async Task<ResultModel<MessageResultModel>> CashOnDeliveryHandle(Guid orderId, string token){
+        public async Task<ResultModel<MessageResultModel>> CashOnDeliveryHandle(Guid orderId, string token)
+        {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
@@ -885,6 +956,21 @@ namespace HMES.Business.Services.OrderServices
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
+                order.Status = OrderEnums.Delivering.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+                var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
+
+                var NewTransaction = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    OrderPaymentRefId = OrderPaymentRefId,
+                    Status = TransactionEnums.PROCESSING.ToString(),
+                    PaymentMethod = PaymentMethodEnums.COD.ToString(),
+                    CreatedAt = DateTime.Now,
+                };
+                await _transactionRepositories.Insert(NewTransaction);
 
                 return new ResultModel<MessageResultModel>
                 {
@@ -898,7 +984,8 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
-        public async Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token){
+        public async Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token)
+        {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
@@ -906,19 +993,28 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy đơn hàng theo orderId
                 var order = await _orderRepositories.GetSingle(
                     o => o.Id == orderId && o.UserId == userId,
-                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
                 );
 
                 if (order == null)
                     throw new CustomException("Order not found");
 
-                if (order.Status != OrderEnums.Pending.ToString())
-                    throw new CustomException("Order is not in pending status");
+                if (order.Status != OrderEnums.Delivering.ToString())
+                    throw new CustomException("Order is not in Delivering status");
+
+                var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                if (transaction == null)
+                {
+                    throw new CustomException("Order is not Cash on Delivery.");
+                }
 
                 // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                transaction.Status = TransactionEnums.CANCELLED.ToString();
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
+                await _transactionRepositories.Update(transaction);
                 await CancelShipping(order);
 
                 return new ResultModel<MessageResultModel>
@@ -939,11 +1035,11 @@ namespace HMES.Business.Services.OrderServices
             {
                 if (order == null)
                     throw new CustomException("Không tìm thấy đơn hàng.");
-
+                string[] orderCodes = { order.ShippingOrderCode };
                 var cancelRequest = new
                 {
                     token = _ghnToken,
-                    order_code = order.ShippingOrderCode,
+                    order_codes = orderCodes,
                     shop_id = _shopId,
                 };
 
@@ -959,6 +1055,50 @@ namespace HMES.Business.Services.OrderServices
             {
                 throw new CustomException($"Lỗi khi hủy đơn hàng GHN: {ex.Message}");
             }
+        }
+
+        public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token)
+        {
+            var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress");
+            if (order == null)
+            {
+                throw new CustomException("Order not found");
+            }
+            if (order.Status != OrderEnums.Delivering.ToString())
+            {
+                throw new CustomException("Order is not in pending status");
+            }
+            var orderResModel = new OrderPaymentResModel()
+            {
+                Id = order.Id,
+                OrderPrice = order.TotalPrice,
+                ShippingPrice = order.ShippingFee ?? 0,
+                TotalPrice = order.TotalPrice + (order.ShippingFee ?? 0),
+                StatusPayment = order.Status,
+                UserAddress = order.UserAddress != null ? new OrderUserAddress
+                {
+                    Id = order.UserAddress.Id,
+                    Name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Name),
+                    Phone = order.UserAddress.Phone,
+                    Address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
+                    IsDefault = order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
+                } : null,
+                OrderProductItem = order.OrderDetails.Select(detail => new OrderDetailResModel
+                {
+                    Id = detail.Id,
+                    ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
+                    ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
+                    Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
+                    Quantity = detail.Quantity,
+                    UnitPrice = detail.UnitPrice
+                }).ToList()
+            };
+            return new ResultModel<DataResultModel<OrderPaymentResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
+            };
         }
     }
 }

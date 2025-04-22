@@ -5,5 +5,6 @@ namespace HMES.Data.Repositories.TransactionRepositories
 {
     public interface ITransactionRepositories : IGenericRepositories<Transaction>
     {
+        Task<List<Transaction>> GetPendingTransaction();
     }
 }

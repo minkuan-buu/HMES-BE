@@ -18,6 +18,5 @@ namespace HMES.Business.Services.DeviceServices
         Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDevice();
 
         Task<ResultModel<ListDataResultModel<ListActiveDeviceResModel>>> GetListActiveDeviceByUserId(string token);
-        Task<ResultModel<MessageResultModel>> ActiveDevice(string token, Guid DeviceId);
     }
 }

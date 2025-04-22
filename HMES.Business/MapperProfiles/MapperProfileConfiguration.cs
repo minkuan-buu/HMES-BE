@@ -205,15 +205,10 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Plant != null ? src.Plant.Name : string.Empty)))
                 .ForMember(dest => dest.isOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
+                .ForMember(dest => dest.RefreshCycleHours, opt => opt.MapFrom(src => src.RefreshCycleHours))
                 .ForMember(dest => dest.WarrantyExpiryDate, opt => opt.MapFrom(src => src.WarrantyExpiryDate))
                 .ForMember(dest => dest.LastUpdatedDate, opt => opt.MapFrom(src => src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().CreatedAt : DateTime.Now))
-                .ForMember(dest => dest.IoTData, opt => opt.MapFrom(src => new IoTResModel()
-                {
-                    SoluteConcentration = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration").RecordValue : 0,
-                    Temperature = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature").RecordValue : 0,
-                    Ph = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph").RecordValue : 0,
-                    WaterLevel = src.NutritionReports != null && src.NutritionReports.Count > 0 ? src.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault().NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel").RecordValue : 0
-                }));
+                .ForMember(dest => dest.IoTData, opt => opt.Ignore());
 
             // Plant
 
@@ -252,8 +247,8 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
                 .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => src.TargetOfPlants.Select(t => t.Plant)));
             // Order
-            
-            CreateMap<Order,OrderResModel>()
+
+            CreateMap<Order, OrderResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
@@ -267,10 +262,23 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.TotalPrice))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.OrderDetailsItems, opt => opt.MapFrom(src => src.OrderDetails))
-                .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
-                .ForMember(dest => dest.Transactions, opt => opt.MapFrom(src => src.Transactions));
-            
+                .ForMember(dest => dest.OrderDetailsItems, opt =>
+                {
+                    opt.Condition(src => src.OrderDetails != null);
+                    opt.MapFrom(src => src.OrderDetails);
+                })
+                .ForMember(dest => dest.UserAddress, opt =>
+                {
+                    opt.Condition(src => src.UserAddress != null);
+                    opt.MapFrom(src => src.UserAddress);
+                })
+                .ForMember(dest => dest.ShippingFee, opt => opt.MapFrom(src => src.ShippingFee))
+                .ForMember(dest => dest.Transactions, opt =>
+                {
+                    opt.Condition(src => src.Transactions != null);
+                    opt.MapFrom(src => src.Transactions);
+                });
+                
             CreateMap<OrderDetail, OrderDetailsItemResModel>()
                 .ForMember(dest => dest.OrderDetailsId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product != null ? src.Product.Name : src.Device.Name)))
@@ -284,7 +292,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
-            
+
             CreateMap<UserAddress, OrderAddressResModel>()
                 .ForMember(dest => dest.AddressId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
@@ -293,7 +301,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => src.Longitude))
                 .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => src.Latitude));
-                
+
             // Notification
 
             CreateMap<NotificationReqModel, Notification>()

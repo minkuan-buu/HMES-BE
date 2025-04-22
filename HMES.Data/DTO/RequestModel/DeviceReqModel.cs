@@ -19,10 +19,23 @@ namespace HMES.Data.DTO.RequestModel
         public decimal Price { get; set; }
         public int Quantity { get; set; }
     }
-    
+
     public class SetPlantReqModel
     {
         public Guid DeviceItemId { get; set; }
         public Guid PlantId { get; set; }
+    }
+
+    public class UpdateRefreshCycleHoursReqModel
+    {
+        public int RefreshCycleHours { get; set; }
+    }
+
+    public class UpdateLogIoT
+    {
+        public decimal Temperature { get; set; } = 0;
+        public decimal SoluteConcentration { get; set; } = 0;
+        public decimal Ph { get; set; } = 0;
+        public decimal WaterLevel { get; set; } = 0;
     }
 }

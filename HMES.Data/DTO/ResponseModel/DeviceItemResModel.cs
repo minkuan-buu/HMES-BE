@@ -6,6 +6,7 @@ public class DeviceItemDetailResModel
     public string DeviceItemName { get; set; } = null!;
     public string Type { get; set; } = null!;
     public string? PlantName { get; set; } = string.Empty;
+    public int RefreshCycleHours { get; set; }
     public bool isOnline { get; set; }
     public string Serial { get; set; } = null!;
     public IoTResModel IoTData { get; set; } = new IoTResModel();
@@ -19,4 +20,9 @@ public class IoTResModel
     public decimal Temperature { get; set; } = 0;
     public decimal Ph { get; set; } = 0;
     public decimal WaterLevel { get; set; } = 0;
+}
+
+public class IoTToken
+{
+    public string Token { get; set; } = null!;
 }
