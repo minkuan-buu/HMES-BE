@@ -101,6 +101,33 @@ namespace HMES.Business.Services.DeviceServices
             }
         }
 
+        public async Task<ResultModel<ListDataResultModel<ListMyDeviceResModel>>> GetListDeviceByUserId(string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var devices = await _deviceItemsRepositories.GetList(x => x.UserId.Equals(userId));
+                if (devices == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                var resultList = _mapper.Map<List<ListMyDeviceResModel>>(devices);
+                var result = new ListDataResultModel<ListMyDeviceResModel>()
+                {
+                    Data = resultList
+                };
+                return new ResultModel<ListDataResultModel<ListMyDeviceResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = result
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
         // public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
         // {
         //     try

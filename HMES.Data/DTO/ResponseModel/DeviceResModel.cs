@@ -75,4 +75,13 @@ namespace HMES.Data.DTO.ResponseModel
         public DateTime WarrantyExpiryDate { get; set; }
 
     }
+
+    public class ListMyDeviceResModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = null!;
+        public bool IsActive { get; set; }
+        public bool IsOnline { get; set; }
+        public string Status { get; set; } = null!;
+    }
 }
