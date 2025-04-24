@@ -610,7 +610,7 @@ namespace HMES.Business.Services.OrderServices
                         Address = TextConvert.ConvertFromUnicodeEscape(transaction.Order.UserAddress.Address),
                         IsDefault = transaction.Order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
                     } : null,
-                    OrderProductItem = transaction.Order.OrderDetails.Select(detail => new OrderDetailResModel
+                    OrderProductItem = transaction.Order.OrderDetails.Where(x => x.DeviceId == null).Select(detail => new OrderDetailResModel
                     {
                         Id = detail.Id,
                         ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
