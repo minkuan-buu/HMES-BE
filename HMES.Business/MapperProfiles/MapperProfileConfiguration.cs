@@ -269,16 +269,15 @@ namespace HMES.Business.MapperProfiles
                 })
                 .ForMember(dest => dest.UserAddress, opt =>
                 {
-                    opt.Condition(src => src.UserAddress != null);
                     opt.MapFrom(src => src.UserAddress);
                 })
                 .ForMember(dest => dest.ShippingFee, opt => opt.MapFrom(src => src.ShippingFee))
                 .ForMember(dest => dest.Transactions, opt =>
                 {
                     opt.Condition(src => src.Transactions != null);
-                    opt.MapFrom(src => src.Transactions);
+                    opt.MapFrom(src => src.Transactions.OrderByDescending(x => x.CreatedAt).ToList());
                 });
-                
+
             CreateMap<OrderDetail, OrderDetailsItemResModel>()
                 .ForMember(dest => dest.OrderDetailsId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Product != null ? src.Product.Name : src.Device.Name)))
@@ -328,6 +327,12 @@ namespace HMES.Business.MapperProfiles
                     opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Sender.Name ?? "")))
                 .ForMember(dest => dest.ReferenceId, opt => opt.MapFrom(src => src.ReferenceId));
 
+            CreateMap<DeviceItem, ListMyDeviceResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
 
 

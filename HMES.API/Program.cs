@@ -43,6 +43,7 @@ using HMES.Data.Repositories.TargetValueRepositories;
 using HMES.Business.Utilities.Email;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
+using HMES.Business.Services.GHNService;
 
 DotNetEnv.Env.Load();
 
@@ -222,9 +223,11 @@ builder.Services.AddScoped<ITicketServices, TicketServices>();
 builder.Services.AddScoped<IDeviceItemServices, DeviceItemServices>();
 builder.Services.AddSingleton<IMqttService, MqttService>();
 builder.Services.AddHostedService<DeviceStatusChecker>();
+builder.Services.AddHostedService<DoubleCheckExpiredPayment>();
 builder.Services.AddScoped<IPlantServices, PlantServices>();
 builder.Services.AddScoped<ITargetValueServices, TargetValueServices>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
+builder.Services.AddScoped<IGHNService, GHNService>();
 
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
