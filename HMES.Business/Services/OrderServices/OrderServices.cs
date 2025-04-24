@@ -727,8 +727,8 @@ namespace HMES.Business.Services.OrderServices
                         }
                     }
                 }
-
                 await _transactionRepositories.Update(transaction);
+                await _orderRepositories.Update(transaction.Order);
 
                 return new ResultModel<DataResultModel<OrderPaymentResModel>>
                 {
