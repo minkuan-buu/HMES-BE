@@ -269,7 +269,6 @@ namespace HMES.Business.MapperProfiles
                 })
                 .ForMember(dest => dest.UserAddress, opt =>
                 {
-                    opt.Condition(src => src.UserAddress != null);
                     opt.MapFrom(src => src.UserAddress);
                 })
                 .ForMember(dest => dest.ShippingFee, opt => opt.MapFrom(src => src.ShippingFee))
