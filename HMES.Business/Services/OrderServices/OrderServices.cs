@@ -626,12 +626,12 @@ namespace HMES.Business.Services.OrderServices
                     {
                         orderResModel.OrderProductItem.Add(new OrderDetailResModel()
                         {
-                            Id = deviceItem.Id,
-                            ProductName = TextConvert.ConvertFromUnicodeEscape(deviceItem.Device.Name),
+                            Id = deviceItem.DeviceId,
+                            ProductName = TextConvert.ConvertFromUnicodeEscape(transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Name),
                             Attachment = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
                             Quantity = 1,
                             UnitPrice = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
-                            Serial = deviceItem.Serial
+                            Serial = deviceItem.Serial,
                         });
                     }
                     return new ResultModel<DataResultModel<OrderPaymentResModel>>
@@ -697,7 +697,7 @@ namespace HMES.Business.Services.OrderServices
                         orderResModel.OrderProductItem.Add(new OrderDetailResModel()
                         {
                             Id = deviceItem.Id,
-                            ProductName = TextConvert.ConvertFromUnicodeEscape(deviceItem.Name),
+                            ProductName = TextConvert.ConvertFromUnicodeEscape(transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Name),
                             Attachment = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
                             Quantity = 1,
                             UnitPrice = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
