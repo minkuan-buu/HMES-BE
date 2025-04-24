@@ -799,113 +799,114 @@ namespace HMES.Business.Services.OrderServices
                 };
             }
 
-            if (order.UserAddressId == null)
-            {
-                var defaultUserAddress = await _userAddressRepositories.GetSingle(
-                    ua => ua.UserId == order.UserId && ua.Status == "Default")
-                    ?? throw new CustomException("Không tìm thấy địa chỉ mặc định cho người dùng.");
+            // if (order.UserAddressId == null)
+            // {
+            //     var defaultUserAddress = await _userAddressRepositories.GetSingle(
+            //         ua => ua.UserId == order.UserId && ua.Status == "Default")
+            //         ?? throw new CustomException("Không tìm thấy địa chỉ mặc định cho người dùng.");
 
-                // Gán UserAddressId cho Order
-                order.UserAddressId = defaultUserAddress.Id;
+            //     // Gán UserAddressId cho Order
+            //     order.UserAddressId = defaultUserAddress.Id;
 
-                // Cập nhật Order trong cơ sở dữ liệu
-                await _orderRepositories.Update(order);
+            //     // Cập nhật Order trong cơ sở dữ liệu
+            //     await _orderRepositories.Update(order);
 
-                // Tải lại đối tượng Order từ cơ sở dữ liệu để đảm bảo dữ liệu mới nhất
-                order = await _orderRepositories.GetOrderByIdAsync(order.Id)
-                    ?? throw new CustomException("Không thể tải lại đơn hàng sau khi cập nhật UserAddressId.");
-            }
-            var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
-            var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
-
-            int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
-            int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
-            int serviceId = await GetService(districtId);
-
-            var ghnOrder = new
-            {
-                token = _ghnToken,
-                shop_id = _shopId,
-                required_note = "CHOXEMHANGKHONGTHU",
-                from_name = "HMES",
-                from_address = "117 Xô Viết Nghệ Tĩnh, Phường 17, Quận Bình Thạnh,TP. Hồ Chí Minh",
-                from_province_name = "TP. Hồ Chí Minh",
-                from_district_name = "Bình Thạnh",
-                from_ward_name = "Phường 17",
-                to_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Name),
-                to_phone = order.UserAddress.Phone,
-                to_address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
-                to_ward_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward),
-                to_district_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District),
-                to_province_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province),
-                cod_amount = 0,
-                weight = 500,
-                length = 20,
-                width = 50,
-                height = 30,
-                service_type_id = serviceId,
-                payment_type_id = 2,
-                items = productDetails
-                        .Select(p => new
-                        {
-                            name = p.Product?.Name ?? "Sản phẩm",
-                            code = p.ProductId,
-                            quantity = p.Quantity,
-                            price = (int)p.UnitPrice,
-                            weight = 500,
-                            length = 20,
-                            width = 50,
-                            height = 30,
-                        })
-                        .Concat(deviceDetails.Select(d => new
-                        {
-                            name = d.Device?.Name ?? "Thiết bị",
-                            code = d.DeviceId,
-                            quantity = d.Quantity,
-                            price = (int)d.UnitPrice,
-                            weight = 500,
-                            length = 20,
-                            width = 50,
-                            height = 30,
-                        }))
-                        .ToArray()
-            };
-
-            int weightOfOrder = ghnOrder.items.Sum(item => item.weight * item.quantity);
-            ghnOrder = new
-            {
-                ghnOrder.token,
-                ghnOrder.shop_id,
-                ghnOrder.required_note,
-                ghnOrder.from_name,
-                ghnOrder.from_address,
-                ghnOrder.from_province_name,
-                ghnOrder.from_district_name,
-                ghnOrder.from_ward_name,
-                ghnOrder.to_name,
-                ghnOrder.to_phone,
-                ghnOrder.to_address,
-                ghnOrder.to_ward_name,
-                ghnOrder.to_district_name,
-                ghnOrder.to_province_name,
-                ghnOrder.cod_amount,
-                weight = weightOfOrder,
-                ghnOrder.length,
-                ghnOrder.width,
-                ghnOrder.height,
-                ghnOrder.service_type_id,
-                ghnOrder.payment_type_id,
-                ghnOrder.items
-            };
-
-            int shippingFee = await CalculateShippingFee(ghnOrder);
-
+            //     // Tải lại đối tượng Order từ cơ sở dữ liệu để đảm bảo dữ liệu mới nhất
+            //     order = await _orderRepositories.GetOrderByIdAsync(order.Id)
+            //         ?? throw new CustomException("Không thể tải lại đơn hàng sau khi cập nhật UserAddressId.");
+            // }
             var orderDetails = _mapper.Map<OrderDetailsResModel>(order);
+            if (order.UserAddressId != null)
+            {
+                var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
+                var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
-            orderDetails.ShippingFee = shippingFee;
-            orderDetails.TotalPrice = order.TotalPrice + shippingFee;
-            order.ShippingFee = shippingFee;
-            await _orderRepositories.Update(order);
+                int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
+                int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
+                int serviceId = await GetService(districtId);
+
+                var ghnOrder = new
+                {
+                    token = _ghnToken,
+                    shop_id = _shopId,
+                    required_note = "CHOXEMHANGKHONGTHU",
+                    from_name = "HMES",
+                    from_address = "117 Xô Viết Nghệ Tĩnh, Phường 17, Quận Bình Thạnh,TP. Hồ Chí Minh",
+                    from_province_name = "TP. Hồ Chí Minh",
+                    from_district_name = "Bình Thạnh",
+                    from_ward_name = "Phường 17",
+                    to_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Name),
+                    to_phone = order.UserAddress.Phone,
+                    to_address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
+                    to_ward_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward),
+                    to_district_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District),
+                    to_province_name = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province),
+                    cod_amount = 0,
+                    weight = 500,
+                    length = 20,
+                    width = 50,
+                    height = 30,
+                    service_type_id = serviceId,
+                    payment_type_id = 2,
+                    items = productDetails
+                            .Select(p => new
+                            {
+                                name = p.Product?.Name ?? "Sản phẩm",
+                                code = p.ProductId,
+                                quantity = p.Quantity,
+                                price = (int)p.UnitPrice,
+                                weight = 500,
+                                length = 20,
+                                width = 50,
+                                height = 30,
+                            })
+                            .Concat(deviceDetails.Select(d => new
+                            {
+                                name = d.Device?.Name ?? "Thiết bị",
+                                code = d.DeviceId,
+                                quantity = d.Quantity,
+                                price = (int)d.UnitPrice,
+                                weight = 500,
+                                length = 20,
+                                width = 50,
+                                height = 30,
+                            }))
+                            .ToArray()
+                };
+
+                int weightOfOrder = ghnOrder.items.Sum(item => item.weight * item.quantity);
+                ghnOrder = new
+                {
+                    ghnOrder.token,
+                    ghnOrder.shop_id,
+                    ghnOrder.required_note,
+                    ghnOrder.from_name,
+                    ghnOrder.from_address,
+                    ghnOrder.from_province_name,
+                    ghnOrder.from_district_name,
+                    ghnOrder.from_ward_name,
+                    ghnOrder.to_name,
+                    ghnOrder.to_phone,
+                    ghnOrder.to_address,
+                    ghnOrder.to_ward_name,
+                    ghnOrder.to_district_name,
+                    ghnOrder.to_province_name,
+                    ghnOrder.cod_amount,
+                    weight = weightOfOrder,
+                    ghnOrder.length,
+                    ghnOrder.width,
+                    ghnOrder.height,
+                    ghnOrder.service_type_id,
+                    ghnOrder.payment_type_id,
+                    ghnOrder.items
+                };
+
+                int shippingFee = await CalculateShippingFee(ghnOrder);
+                orderDetails.ShippingFee = shippingFee;
+                orderDetails.TotalPrice = order.TotalPrice + shippingFee;
+                order.ShippingFee = shippingFee;
+                await _orderRepositories.Update(order);
+            }
 
             var result = new DataResultModel<OrderDetailsResModel>
             {
