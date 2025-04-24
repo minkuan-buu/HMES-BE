@@ -70,6 +70,8 @@ public class UserAddressServices : IUserAddressServices
                 userAddressEntity.Status = UserAddressEnums.Default.ToString();
             }
 
+            await _userAddressRepo.Insert(userAddressEntity);
+
             if (userAddressReq.orderId != null)
             {
                 var order = await _orderRepo.GetSingle(x => x.Id == userAddressReq.orderId && x.UserId == userId);
@@ -80,8 +82,6 @@ public class UserAddressServices : IUserAddressServices
                 order.UserAddressId = newUserAddressId;
                 await _orderRepo.Update(order);
             }
-
-            await _userAddressRepo.Insert(userAddressEntity);
 
             return new ResultModel<MessageResultModel>()
             {
