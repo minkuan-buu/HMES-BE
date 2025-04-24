@@ -586,7 +586,7 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy giao dịch đang chờ xử lý theo PaymentLinkId
                 var transaction = await _transactionRepositories.GetSingle(
                     x => x.PaymentLinkId.Equals(id),
-                    includeProperties: "Order.OrderDetails.Product,Order.OrderDetails.Device,Order.UserAddress"
+                    includeProperties: "Order.OrderDetails.Product,Order.OrderDetails.Device,Order.UserAddress,Order.DeviceItems"
                 );
 
                 if (transaction == null)
@@ -613,12 +613,7 @@ namespace HMES.Business.Services.OrderServices
                     OrderProductItem = transaction.Order.OrderDetails.Select(detail => new OrderDetailResModel
                     {
                         Id = detail.Id,
-                        ProductName = detail.Product != null
-                            ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name)
-                            : detail.Device != null
-                                ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name)
-                                : null,
-                        ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
+                        ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
                         Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                         Quantity = detail.Quantity,
                         UnitPrice = detail.UnitPrice
@@ -627,6 +622,18 @@ namespace HMES.Business.Services.OrderServices
 
                 if (!transaction.Status.Equals(TransactionEnums.PENDING.ToString()))
                 {
+                    foreach (var deviceItem in transaction.Order.DeviceItems)
+                    {
+                        orderResModel.OrderProductItem.Add(new OrderDetailResModel()
+                        {
+                            Id = deviceItem.Id,
+                            ProductName = TextConvert.ConvertFromUnicodeEscape(deviceItem.Device.Name),
+                            Attachment = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
+                            Quantity = 1,
+                            UnitPrice = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
+                            Serial = deviceItem.Serial
+                        });
+                    }
                     return new ResultModel<DataResultModel<OrderPaymentResModel>>
                     {
                         StatusCodes = (int)HttpStatusCode.OK,
@@ -684,7 +691,19 @@ namespace HMES.Business.Services.OrderServices
                     }
                     await _cartItemsRepositories.UpdateRange(itemsToUpdate);
                     await _cartItemsRepositories.DeleteRange(itemsToDelete);
-                    await CreateDeviceItem(transaction.Order);
+                    var newDeviceItem = await CreateDeviceItem(transaction.Order);
+                    foreach (var deviceItem in newDeviceItem)
+                    {
+                        orderResModel.OrderProductItem.Add(new OrderDetailResModel()
+                        {
+                            Id = deviceItem.Id,
+                            ProductName = TextConvert.ConvertFromUnicodeEscape(deviceItem.Name),
+                            Attachment = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
+                            Quantity = 1,
+                            UnitPrice = transaction.Order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
+                            Serial = deviceItem.Serial
+                        });
+                    }
                 }
                 else if (paymentLinkInformation.status.Equals(TransactionEnums.CANCELLED.ToString()))
                 {
@@ -901,10 +920,11 @@ namespace HMES.Business.Services.OrderServices
 
         }
 
-        private async Task CreateDeviceItem(Order order)
+        private async Task<List<DeviceItem>> CreateDeviceItem(Order order)
         {
             try
             {
+                List<DeviceItem> deviceItems = new List<DeviceItem>();
                 foreach (var orderDetail in order.OrderDetails)
                 {
                     if (orderDetail.Device != null)
@@ -924,11 +944,13 @@ namespace HMES.Business.Services.OrderServices
                                 Status = DeviceItemStatusEnum.Available.ToString(),
                                 CreatedAt = DateTime.Now,
                             };
+                            deviceItems.Add(deviceItem);
 
                             await _deviceItemsRepositories.Insert(deviceItem);
                         }
                     }
                 }
+                return deviceItems;
             }
             catch (Exception ex)
             {
@@ -1060,7 +1082,7 @@ namespace HMES.Business.Services.OrderServices
         public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token)
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress");
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
             if (order == null)
             {
                 throw new CustomException("Order not found");
@@ -1088,7 +1110,6 @@ namespace HMES.Business.Services.OrderServices
                 {
                     Id = detail.Id,
                     ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
-                    ProductItemName = detail.Device != null ? TextConvert.ConvertFromUnicodeEscape(detail.Device.Name) : null,
                     Attachment = detail.Product?.ProductAttachments.FirstOrDefault()?.Attachment ?? detail.Device?.Attachment ?? detail.Product?.MainImage ?? "",
                     Quantity = detail.Quantity,
                     UnitPrice = detail.UnitPrice

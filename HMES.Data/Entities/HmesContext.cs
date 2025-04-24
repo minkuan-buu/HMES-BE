@@ -170,6 +170,11 @@ public partial class HmesContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__DeviceIte__Devic__787EE5A0");
 
+            entity.HasOne(d => d.Order).WithMany(p => p.DeviceItems)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__DeviceIte__Order__607251E5");
+
             entity.HasOne(d => d.Plant).WithMany(p => p.DeviceItems)
                 .HasForeignKey(d => d.PlantId)
                 .HasConstraintName("FK__DeviceIte__Plant__7A672E12");

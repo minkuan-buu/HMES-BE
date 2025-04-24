@@ -29,7 +29,7 @@ namespace HMES.Data.DTO.RequestModel
         public Guid Id { get; set; }
         public string Attachment { get; set; } = null!;
         public string ProductName { get; set; } = null!;
-        public string ProductItemName { get; set; } = null!;
+        public string? Serial { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
     }

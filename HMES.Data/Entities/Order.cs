@@ -23,6 +23,8 @@ public partial class Order
 
     public decimal? ShippingFee { get; set; }
 
+    public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
+
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
