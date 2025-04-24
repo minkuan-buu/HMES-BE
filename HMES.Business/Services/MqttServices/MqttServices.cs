@@ -12,7 +12,7 @@ public class MqttService : IMqttService
         _mqttClient = factory.CreateMqttClient();
 
         var options = new MqttClientOptionsBuilder()
-            .WithTcpServer("localhost", 1883) // IP MQTT Broker
+            .WithTcpServer("14.225.210.123", 1883) // IP MQTT Broker
             .Build();
 
         _mqttClient.ConnectAsync(options, CancellationToken.None).Wait();
