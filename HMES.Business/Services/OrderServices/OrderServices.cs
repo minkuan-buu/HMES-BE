@@ -1052,6 +1052,36 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
+        public async Task<ResultModel<MessageResultModel>> UpdateOrderAddress(Guid orderId, Guid userAddressId, string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "UserAddress,UserAddress.User");
+
+                if (order == null)
+                    throw new CustomException("Order not found");
+
+                var userAddress = await _userAddressRepositories.GetSingle(x => x.Id.Equals(userAddressId) && x.UserId.Equals(order.UserId));
+                if (userAddress == null)
+                    throw new CustomException("User address not found");
+
+                order.UserAddressId = userAddress.Id;
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel { Message = "Order address updated successfully." }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
         private async Task CancelShipping(Order order)
         {
             try

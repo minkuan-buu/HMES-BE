@@ -16,5 +16,6 @@ namespace HMES.Business.Services.OrderServices
         Task<ResultModel<DataResultModel<OrderDetailsResModel>>> GetOrderDetails(Guid orderId);
         Task<ResultModel<MessageResultModel>> CancelOrder(Guid orderId, string token);
         Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token);
+        Task<ResultModel<MessageResultModel>> UpdateOrderAddress(Guid orderId, Guid userAddressId, string token);
     }
 }
