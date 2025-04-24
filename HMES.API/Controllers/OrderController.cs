@@ -66,7 +66,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("change-address")]
+        [HttpPut("change-address")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateOrderAddress([FromBody] OrderUpdateAddress request)
         {
