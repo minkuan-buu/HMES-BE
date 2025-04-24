@@ -276,7 +276,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Transactions, opt =>
                 {
                     opt.Condition(src => src.Transactions != null);
-                    opt.MapFrom(src => src.Transactions);
+                    opt.MapFrom(src => src.Transactions.OrderByDescending(x => x.CreatedAt).ToList());
                 });
 
             CreateMap<OrderDetail, OrderDetailsItemResModel>()
