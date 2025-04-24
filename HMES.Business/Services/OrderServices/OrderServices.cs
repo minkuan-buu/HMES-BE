@@ -1057,7 +1057,7 @@ namespace HMES.Business.Services.OrderServices
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "UserAddress,UserAddress.User");
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId));
 
                 if (order == null)
                     throw new CustomException("Order not found");
