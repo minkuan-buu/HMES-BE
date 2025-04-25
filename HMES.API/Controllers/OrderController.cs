@@ -65,5 +65,14 @@ namespace HMES.API.Controllers
             var result = await _orderServices.CancelOrder(orderId, token);
             return Ok(result);
         }
+
+        [HttpPut("change-address")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> UpdateOrderAddress([FromBody] OrderUpdateAddress request)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.UpdateOrderAddress(request.OrderId, request.UserAddressId, token);
+            return Ok(result);
+        }
     }
 }

@@ -33,9 +33,13 @@ public partial class DeviceItem
 
     public int RefreshCycleHours { get; set; }
 
+    public Guid OrderId { get; set; }
+
     public virtual Device Device { get; set; } = null!;
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
+
+    public virtual Order Order { get; set; } = null!;
 
     public virtual Plant? Plant { get; set; }
 

@@ -7,6 +7,7 @@ using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.OrderRepositories;
 using HMES.Data.Repositories.UserAddressRepositories;
 using HMES.Data.Repositories.UserRepositories;
 using Newtonsoft.Json.Linq;
@@ -16,10 +17,12 @@ namespace HMES.Business.Services.UserAddressServices;
 public class UserAddressServices : IUserAddressServices
 {
     private readonly IUserAddressRepositories _userAddressRepo;
+    private readonly IOrderRepositories _orderRepo;
     private readonly IMapper _mapper;
     private readonly IUserRepositories _userRepo;
-    public UserAddressServices(IUserAddressRepositories userAddressRepo, IMapper mapper, IUserRepositories userRepo)
+    public UserAddressServices(IUserAddressRepositories userAddressRepo, IMapper mapper, IUserRepositories userRepo, IOrderRepositories orderRepo)
     {
+        _orderRepo = orderRepo;
         _userAddressRepo = userAddressRepo;
         _mapper = mapper;
         _userRepo = userRepo;
@@ -49,7 +52,7 @@ public class UserAddressServices : IUserAddressServices
             userAddressEntity.Ward = TextConvert.ConvertToUnicodeEscape(userAddressReq.Ward);
             userAddressEntity.District = TextConvert.ConvertToUnicodeEscape(userAddressReq.District);
             userAddressEntity.Province = TextConvert.ConvertToUnicodeEscape(userAddressReq.Province);
-            userAddressEntity.Status = userAddresses.Any() ? UserAddressEnums.Active.ToString() : UserAddressEnums.Default.ToString();
+            userAddressEntity.Status = UserAddressEnums.Active.ToString();
 
             if (latitude.HasValue && longitude.HasValue)
             {
@@ -57,7 +60,28 @@ public class UserAddressServices : IUserAddressServices
                 userAddressEntity.Longitude = (decimal)longitude.Value;
             }
 
+            if (userAddressReq.IsDefault)
+            {
+                foreach (var address in userAddresses)
+                {
+                    address.Status = UserAddressEnums.Active.ToString();
+                }
+                await _userAddressRepo.UpdateRange(userAddresses.ToList());
+                userAddressEntity.Status = UserAddressEnums.Default.ToString();
+            }
+
             await _userAddressRepo.Insert(userAddressEntity);
+
+            if (userAddressReq.orderId != null)
+            {
+                var order = await _orderRepo.GetSingle(x => x.Id == userAddressReq.orderId && x.UserId == userId);
+                if (order == null)
+                {
+                    throw new CustomException("Order not found!");
+                }
+                order.UserAddressId = newUserAddressId;
+                await _orderRepo.Update(order);
+            }
 
             return new ResultModel<MessageResultModel>()
             {
