@@ -4,5 +4,6 @@ namespace HMES.Data.Enums
     {
         Default,
         Active,
+        Inactive
     }
 }
