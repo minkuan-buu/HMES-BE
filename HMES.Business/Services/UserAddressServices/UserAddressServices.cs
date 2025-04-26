@@ -154,7 +154,7 @@ public class UserAddressServices : IUserAddressServices
 
             var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
 
-            userAddress = _mapper.Map(userAddressReq, userAddress);
+            userAddress.Address = TextConvert.ConvertToUnicodeEscape(userAddressReq.Address);
             userAddress.Name = TextConvert.ConvertToUnicodeEscape(userAddressReq.Name);
             userAddress.Phone = userAddressReq.Phone;
             userAddress.UpdatedAt = DateTime.Now;
