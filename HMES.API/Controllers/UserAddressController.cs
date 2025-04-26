@@ -26,7 +26,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
+        [HttpPut("{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateUserAddress(Guid id, [FromBody] UserAddressUpdateReqModel userAddressReq)
         {
