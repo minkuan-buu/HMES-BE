@@ -35,7 +35,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpPut("soft-delete/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> DeleteUserAddress(Guid id)
         {
