@@ -154,7 +154,7 @@ public class UserAddressServices : IUserAddressServices
 
             var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
 
-            userAddress = _mapper.Map(userAddressReq, userAddress);
+            userAddress.Address = TextConvert.ConvertToUnicodeEscape(userAddressReq.Address);
             userAddress.Name = TextConvert.ConvertToUnicodeEscape(userAddressReq.Name);
             userAddress.Phone = userAddressReq.Phone;
             userAddress.UpdatedAt = DateTime.Now;
@@ -243,7 +243,14 @@ public class UserAddressServices : IUserAddressServices
                 throw new CustomException("Address not found!");
             }
 
-            await _userAddressRepo.Delete(userAddress);
+            if (userAddress.Status.Equals(UserAddressEnums.Default.ToString()))
+            {
+                throw new CustomException("Cannot delete default address!");
+            }
+
+            userAddress.Status = UserAddressEnums.Inactive.ToString();
+            userAddress.UpdatedAt = DateTime.Now;
+            await _userAddressRepo.Update(userAddress);
 
             return new ResultModel<MessageResultModel>()
             {
@@ -272,7 +279,11 @@ public class UserAddressServices : IUserAddressServices
                 throw new CustomException("You are banned from getting address due to violation of terms!");
             }
 
-            var userAddresses = await _userAddressRepo.GetList(x => x.UserId.Equals(userId));
+            var userAddresses = await _userAddressRepo.GetList(x => x.UserId.Equals(userId) && !x.Status.Equals(UserAddressEnums.Inactive.ToString()));
+            if (userAddresses == null || !userAddresses.Any())
+            {
+                throw new CustomException("No addresses found!");
+            }
 
             var result = new ListDataResultModel<ListUserAddressResModel>();
             result.Data = userAddresses.Select(x => new ListUserAddressResModel
