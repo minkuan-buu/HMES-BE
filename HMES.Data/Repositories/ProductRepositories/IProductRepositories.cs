@@ -17,4 +17,7 @@ public interface IProductRepositories:IGenericRepositories<Product>
         ProductStatusEnums? status,
         DateTime? createdAfter, DateTime? createdBefore,
         int pageIndex, int pageSize);
+    
+    Task<List<Product>> GetListInRange(List<Guid?> ids);
+    
 }

@@ -46,11 +46,14 @@ namespace HMES.Business.Services.OrderServices
         private PayOS _payOS;
         private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
         private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
+        private readonly string PayOSClientId = Environment.GetEnvironmentVariable("PAY_OS_CLIENT_ID");
+        private readonly string PayOSAPIKey = Environment.GetEnvironmentVariable("PAY_OS_API_KEY");
+        private readonly string PayOSChecksumKey = Environment.GetEnvironmentVariable("PAY_OS_CHECKSUM_KEY");
         private readonly HttpClient _httpClient;
 
         public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories)
         {
-            _payOS = new PayOS("421fdf87-bbe1-4694-a76c-17627d705a85", "7a2f58da-4003-4349-9e4b-f6bbfc556c9b", "da759facf68f863e0ed11385d3bf9cf24f35e2b171d1fa8bae8d91ce1db9ff0c");
+            _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
             _logger = logger;
             _userRepositories = userRepositories;
             _mapper = mapper;

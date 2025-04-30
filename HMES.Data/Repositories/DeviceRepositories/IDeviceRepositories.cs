@@ -10,5 +10,8 @@ namespace HMES.Data.Repositories.DeviceRepositories
 {
     public interface IDeviceRepositories : IGenericRepositories<Device>
     {
+        
+
+        Task<List<Device>> GetListInRange(List<Guid?> ids);
     }
 }
