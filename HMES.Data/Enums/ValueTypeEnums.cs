@@ -2,8 +2,8 @@ namespace HMES.Data.Enums;
 
 public enum ValueTypeEnums
 {
-    ConcentrationOfSolutes,
-    pH,
+    SoluteConcentration,
+    Ph,
     WaterLevel,
-    WaterTemperature,
+    Temperature,
 }

@@ -24,6 +24,7 @@ public class TicketDetailsDto
     public string Description { get; set; } = null!;
     public string Type { get; set; } = null!;
     public Guid? DeviceItemId { get; set; }
+    public String? DeviceItemSerial { get; set; }
     public List<string> Attachments { get; set; } = new List<string>();
     public string Status { get; set; } = null!;
     public string CreatedBy { get; set; } = null!;
