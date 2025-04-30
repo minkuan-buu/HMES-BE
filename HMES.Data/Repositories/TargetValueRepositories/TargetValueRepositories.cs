@@ -48,7 +48,9 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
 
     public async Task<(List<TargetValue> values, int TotalItems)> GetAllValuesAsync(string? type, decimal? minValue, decimal? maxValue, int pageIndex, int pageSize)
     {
-        var query = Context.TargetValues.AsQueryable();
+        var query = Context.TargetValues
+            .OrderBy(t => t.Type)
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(type))
         {
