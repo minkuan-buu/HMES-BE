@@ -1,6 +1,7 @@
 using HMES.Business.Services.ProductServices;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers;
@@ -48,6 +49,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> AddProduct([FromForm] ProductCreateDto productDto)
     {
         var result = await _productServices.AddProduct(productDto);
@@ -55,6 +57,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdateProduct([FromForm] ProductUpdateDto productDto)
     {
         var result = await _productServices.UpdateProduct(productDto);
@@ -62,6 +65,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(Guid id)
     {
         var result = await _productServices.DeleteProduct(id);
