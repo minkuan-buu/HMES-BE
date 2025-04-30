@@ -47,14 +47,18 @@ namespace HMES.Business.Services.DeviceItemServices
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
 
                 var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
-                var newIoTResModel = new IoTResModel
+                if (nutritionReport != null)
                 {
-                    Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
-                    SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
-                    Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
-                    WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
-                };
-                result.IoTData = newIoTResModel;
+                    var newIoTResModel = new IoTResModel
+                    {
+                        Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                        SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                        Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                        WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                    };
+                    result.IoTData = newIoTResModel;
+                }
+
                 var dataResult = new DataResultModel<DeviceItemDetailResModel>
                 {
                     Data = result
