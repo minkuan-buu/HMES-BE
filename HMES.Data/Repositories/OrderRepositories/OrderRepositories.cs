@@ -95,6 +95,7 @@ namespace HMES.Data.Repositories.OrderRepositories
 
             var totalItems = await query.CountAsync();
             var orders = await query
+                .OrderByDescending(o => o.CreatedAt)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

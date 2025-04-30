@@ -169,6 +169,8 @@ public class ProductServices : IProductServices
             }
             
 
+            var oldMainImage = product.MainImage;
+            
             // Update product details
             _mapper.Map(productDto, product);
             if(productDto.MainImage != null)
@@ -176,6 +178,10 @@ public class ProductServices : IProductServices
                 var filePath = $"product/{product.Id}/attachments";
                 var mainImage = await _cloudServices.UploadSingleFile(productDto.MainImage, filePath);
                 product.MainImage = mainImage;
+            }
+            else
+            {
+                product.MainImage = oldMainImage;
             }
             product.UpdatedAt = DateTime.UtcNow;
 

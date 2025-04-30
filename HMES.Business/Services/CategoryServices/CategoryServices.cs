@@ -164,26 +164,30 @@ public class CategoryServices : ICategoryServices
     {
         try
         {
-            
             var oldCategory = await _categoryRepository.GetCategoryById(category.Id);
             if(oldCategory == null)
             {
                 throw new CustomException("Category not found!");
             }
             
-            var updatingCategory = _mapper.Map<Category>(category);
-            updatingCategory.Attachment = oldCategory.Attachment;
+            var oldImage = oldCategory.Attachment;
+            
+            _mapper.Map(category, oldCategory);
             
             if(category.Attachment != null)
             {
                 var filePath = $"category/{category.Id}/attachments";
                 var mainImage = await _cloudServices.UploadSingleFile(category.Attachment, filePath);
-                updatingCategory.Attachment = mainImage;
+                oldCategory.Attachment = mainImage;
+            }
+            else
+            {
+                oldCategory.Attachment = oldImage;
             }
             
-            await _categoryRepository.Update(updatingCategory);
+            await _categoryRepository.Update(oldCategory);
             
-            var updatedCategoryRes = _mapper.Map<CategoryResModel>(updatingCategory);
+            var updatedCategoryRes = _mapper.Map<CategoryResModel>(oldCategory);
 
             return new ResultModel<DataResultModel<CategoryResModel>>
             {
@@ -195,7 +199,6 @@ public class CategoryServices : ICategoryServices
         {
             throw new CustomException(e.Message);
         }
-        
     }
 
     public async Task<ResultModel<MessageResultModel>> DeleteCategory(Guid id)
