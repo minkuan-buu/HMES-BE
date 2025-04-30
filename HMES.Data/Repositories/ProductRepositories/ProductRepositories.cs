@@ -52,6 +52,7 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
         int pageIndex, int pageSize)
     {
         var query = Context.Products
+            .OrderByDescending(p => p.CreatedAt)
             .Include(p => p.Category)
             .AsQueryable();
         if (!string.IsNullOrWhiteSpace(keyword))
