@@ -109,7 +109,8 @@ public class ProductRepositories : GenericRepositories<Product>, IProductReposit
         return (products, totalItems);
     }
 
-    
-    
-    
+    public async Task<List<Product>> GetListInRange(List<Guid?> ids)
+    {
+        return await Context.Products.Where(p => ids.Contains(p.Id)).ToListAsync();
+    }
 }

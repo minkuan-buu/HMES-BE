@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HMES.Business", "HMES.Busin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HMES.Data", "HMES.Data\HMES.Data.csproj", "{3F309E16-EA58-4C63-AD31-17828653FBB3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HMES.Business.Tests", "HMES.Business.Tests\HMES.Business.Tests.csproj", "{99B6A2E0-FE9D-471B-AA8A-14F2A7A5E3E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3F309E16-EA58-4C63-AD31-17828653FBB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F309E16-EA58-4C63-AD31-17828653FBB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F309E16-EA58-4C63-AD31-17828653FBB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99B6A2E0-FE9D-471B-AA8A-14F2A7A5E3E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99B6A2E0-FE9D-471B-AA8A-14F2A7A5E3E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99B6A2E0-FE9D-471B-AA8A-14F2A7A5E3E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99B6A2E0-FE9D-471B-AA8A-14F2A7A5E3E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
