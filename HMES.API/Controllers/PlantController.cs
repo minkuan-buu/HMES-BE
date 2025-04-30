@@ -1,6 +1,7 @@
 using HMES.Business.Services.PlantServices;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers;
@@ -35,6 +36,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> AddPlant([FromForm] PlantReqModel plantDto)
     {
         var result = await _plantServices.CreatePlantAsync(plantDto);
@@ -42,6 +44,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpPut("{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdatePlant(
         Guid id,
         [FromForm] PlantReqModel plantDto)
@@ -51,6 +54,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> DeletePlant(Guid id)
     {
         var result = await _plantServices.DeletePlantAsync(id);
@@ -58,6 +62,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpPost("{plantId}/target/{targetId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> SetValueForPlant(Guid plantId, Guid targetId)
     {
         var result = await _plantServices.SetValueForPlant(plantId, targetId);
@@ -65,6 +70,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpDelete("{plantId}/target/{targetId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> RemoveValueForPlant(Guid plantId, Guid targetId)
     {
         var result = await _plantServices.RemoveValueForPlant(plantId, targetId);
@@ -72,6 +78,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpPut("target/change")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdateValueForPlant(
         [FromBody] ChangeTargetReqModel changeTargetReqModel)
     {
@@ -80,6 +87,7 @@ public class PlantController: ControllerBase
     }
     
     [HttpGet("not-set-value/{type}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> GetPlantNotSetValueOfType(string type)
     {
         var result = await _plantServices.GetPlantNotSetValueOfType(type);
