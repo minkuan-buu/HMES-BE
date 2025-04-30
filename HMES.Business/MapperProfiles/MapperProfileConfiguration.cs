@@ -166,8 +166,14 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.HandledBy, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Technician.Name ?? "")))
-                .ForMember(dest => dest.BriefDescription, opt => opt.MapFrom(src => src.Description.Length > 100 ? TextConvert.ConvertFromUnicodeEscape(src.Description.Substring(0, 100)) : TextConvert.ConvertFromUnicodeEscape(src.Description)));
-
+                .ForMember(dest => dest.BriefDescription, opt =>
+                    opt.MapFrom(src =>
+                        TextConvert.ConvertFromUnicodeEscape(src.Description)
+                            .Length > 100
+                            ? TextConvert.ConvertFromUnicodeEscape(src.Description).Substring(0, 100)
+                            : TextConvert.ConvertFromUnicodeEscape(src.Description)
+                    )
+                );
             CreateMap<Ticket, TicketDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
@@ -177,7 +183,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.DeviceItemId, opt => opt.MapFrom(src => src.DeviceItem.Serial));
+                .ForMember(dest => dest.DeviceItemSerial, opt => opt.MapFrom(src => src.DeviceItem.Serial));
 
             CreateMap<TicketResponse, TicketResponseDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
