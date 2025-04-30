@@ -1,5 +1,6 @@
 using System.Net;
 using AutoMapper;
+using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
@@ -78,33 +79,22 @@ public class TargetValueServices : ITargetValueServices
         
         if(targetReqModel.MinValue >= targetReqModel.MaxValue)
         {
-            return new ResultModel<DataResultModel<TargetResModel>>
-            {
-                StatusCodes = (int)HttpStatusCode.BadRequest,
-                Response = null
-            };
+            throw new CustomException("Min value must be less than max value");
+            
         }
         
         if (targetReqModel.Type.Equals(ValueTypeEnums.Ph))
         {
-            if (targetReqModel.MaxValue > 14)
+            if (targetReqModel.MaxValue > 14 || targetReqModel.MinValue <= 0)
             {
-                return new ResultModel<DataResultModel<TargetResModel>>
-                {
-                    StatusCodes = (int)HttpStatusCode.BadRequest,
-                    Response = null
-                };
+                throw new CustomException("pH must be between 0 and 14");
             }
         }
         
         var targetValueExist = await _targetValueRepositories.CheckTargetValueByTypeAndMinAndMax(targetReqModel.Type.ToString(), targetReqModel.MinValue, targetReqModel.MaxValue);
         if(targetValueExist)
         {
-            return new ResultModel<DataResultModel<TargetResModel>>
-            {
-                StatusCodes = (int)HttpStatusCode.BadRequest,
-                Response = null
-            };
+            throw new CustomException("Target value already exist");
         }
         
         

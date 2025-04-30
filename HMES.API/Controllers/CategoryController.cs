@@ -1,5 +1,6 @@
 using HMES.Business.Services.CategoryServices;
 using HMES.Data.DTO.RequestModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers;
@@ -51,6 +52,7 @@ public class CategoryController:ControllerBase
     }
     
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateReqModel category)
     {
         var result = await _categoryServices.CreateCategory(category);
@@ -58,12 +60,14 @@ public class CategoryController:ControllerBase
     }
 
     [HttpPut]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdateCategory([FromForm] CategoryUpdateReqModel category)
     {
         var result = await _categoryServices.UpdateCategory(category);
         return Ok(result);
     }
     [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> DeleteCategory(Guid id)
     {
         var result = await _categoryServices.DeleteCategory(id);

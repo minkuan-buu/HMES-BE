@@ -8,7 +8,9 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
 {
     public async Task<(List<Plant> plants, int TotalItems)> GetAllPlantsAsync(string? keyword, string? status, int pageIndex, int pageSize)
     {
-        var query = Context.Plants.AsQueryable();
+        var query = Context.Plants
+            .OrderBy(p => p.Name)
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
