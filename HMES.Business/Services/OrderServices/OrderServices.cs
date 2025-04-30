@@ -26,42 +26,9 @@ using Transaction = HMES.Data.Entities.Transaction;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MimeKit.Text;
-using Net.payOS.Constants;
 
 namespace HMES.Business.Services.OrderServices
 {
-    /// <summary>
-    /// Interface for PayOS service that we can mock
-    /// </summary>
-    public interface IPayOSService
-    {
-        Task<Net.payOS.Types.PaymentLinkInformation> GetPaymentLinkInformation(long orderId);
-        Task<CreatePaymentResult> CreatePaymentLink(PaymentData paymentData);
-    }
-
-    /// <summary>
-    /// Adapter for PayOS to implement our mockable interface
-    /// </summary>
-    public class PayOSAdapter : IPayOSService
-    {
-        private readonly PayOS _payOS;
-
-        public PayOSAdapter(PayOS payOS)
-        {
-            _payOS = payOS;
-        }
-
-        public async Task<Net.payOS.Types.PaymentLinkInformation> GetPaymentLinkInformation(long orderId)
-        {
-            return await _payOS.getPaymentLinkInformation(orderId);
-        }
-
-        public async Task<CreatePaymentResult> CreatePaymentLink(PaymentData paymentData)
-        {
-            return await _payOS.createPaymentLink(paymentData);
-        }
-    }
-
     public class OrderServices : IOrderServices
     {
         private readonly ILogger<OrderServices> _logger;
@@ -76,7 +43,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly IDeviceRepositories _deviceRepositories;
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
-        private readonly IPayOSService _payOSService;
+        private PayOS _payOS;
         private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
         private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
         private readonly string PayOSClientId = Environment.GetEnvironmentVariable("PAY_OS_CLIENT_ID");
@@ -86,27 +53,7 @@ namespace HMES.Business.Services.OrderServices
 
         public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories)
         {
-            var payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
-            _payOSService = new PayOSAdapter(payOS);
-            _logger = logger;
-            _userRepositories = userRepositories;
-            _mapper = mapper;
-            _orderRepositories = orderRepositories;
-            _orderDetailRepositories = orderDetailRepositories;
-            _transactionRepositories = transactionRepositories;
-            _cartRepositories = cartRepositories;
-            _userAddressRepositories = userAddressRepositories;
-            _deviceRepositories = deviceRepositories;
-            _productRepositories = productRepositories;
-            _deviceItemsRepositories = deviceItemsRepositories;
-            _cartItemsRepositories = cartItemsRepositories;
-            _httpClient = new HttpClient();
-        }
-
-        // Constructor for testing with dependency injection of IPayOSService
-        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPayOSService payOSService)
-        {
-            _payOSService = payOSService;
+            _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
             _logger = logger;
             _userRepositories = userRepositories;
             _mapper = mapper;
@@ -149,8 +96,8 @@ namespace HMES.Business.Services.OrderServices
             var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
             var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
-            var products = await _productRepositories.GetListInRange(productIds);
-            var devices = await _deviceRepositories.GetListInRange(deviceIds);
+            var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
+            var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
 
             int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
             int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
@@ -276,7 +223,7 @@ namespace HMES.Business.Services.OrderServices
             PaymentData paymentData = new PaymentData(OrderPaymentRefId, (int)order.TotalPrice + shippingFee, "",
                 itemDatas, cancelUrl: returnURL, returnUrl: returnURL, expiredAt: new DateTimeOffset(paymentExpireDate).ToUnixTimeSeconds());
 
-            CreatePaymentResult createPayment = await _payOSService.CreatePaymentLink(paymentData);
+            CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
 
             Transaction NewTransaction = new Transaction()
             {
@@ -310,6 +257,7 @@ namespace HMES.Business.Services.OrderServices
 
             return createPayment.checkoutUrl;
         }
+
 
         private string GenerateRandomRefId()
         {
@@ -697,7 +645,7 @@ namespace HMES.Business.Services.OrderServices
                 }
 
                 // Lấy thông tin thanh toán từ cổng thanh toán
-                PaymentLinkInformation paymentLinkInformation = await _payOSService.GetPaymentLinkInformation(transaction.OrderPaymentRefId);
+                PaymentLinkInformation paymentLinkInformation = await _payOS.getPaymentLinkInformation(transaction.OrderPaymentRefId);
 
                 if (paymentLinkInformation == null)
                     throw new CustomException("Transaction not found in payment system");
