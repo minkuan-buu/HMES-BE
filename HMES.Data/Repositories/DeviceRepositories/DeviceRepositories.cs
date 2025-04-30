@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace HMES.Data.Repositories.DeviceRepositories
 {
@@ -12,6 +13,11 @@ namespace HMES.Data.Repositories.DeviceRepositories
     {
         public DeviceRepositories(HmesContext context) : base(context)
         {
+        }
+
+        public async Task<List<Device>> GetListInRange(List<Guid?> ids)
+        {
+            return await Context.Devices.Where(p => ids.Contains(p.Id)).ToListAsync();
         }
     }
 }

@@ -5,6 +5,8 @@ using System.Text.Json;
 public class MqttService : IMqttService
 {
     private readonly IMqttClient _mqttClient;
+    private readonly string MQTT_BROKER_URL = Environment.GetEnvironmentVariable("MQTT_BROKER_URL");
+    private readonly int MQTT_BROKER_PORT = int.TryParse(Environment.GetEnvironmentVariable("MQTT_BROKER_PORT"), out var port) ? port : 1883;
 
     public MqttService()
     {
@@ -12,7 +14,7 @@ public class MqttService : IMqttService
         _mqttClient = factory.CreateMqttClient();
 
         var options = new MqttClientOptionsBuilder()
-            .WithTcpServer("localhost", 1883) // IP MQTT Broker
+            .WithTcpServer(MQTT_BROKER_URL, MQTT_BROKER_PORT) // IP MQTT Broker
             .Build();
 
         _mqttClient.ConnectAsync(options, CancellationToken.None).Wait();
