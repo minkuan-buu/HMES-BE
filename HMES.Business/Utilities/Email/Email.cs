@@ -38,9 +38,9 @@ namespace HMES.Business.Utilities.Email
                         HtmlBody = item.HtmlContent
                     };
 
-                    var logoPath = "./MeowWoofLogo.webp";
+                    var logoPath = "./HMES.webp";
                     var logoImage = bodyBuilder.LinkedResources.Add(logoPath);
-                    logoImage.ContentId = "MeowWoofLogo";
+                    logoImage.ContentId = "HMES";
 
                     // Gán body vào message
                     message.Body = bodyBuilder.ToMessageBody();

@@ -41,6 +41,7 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     public async Task<(List<Ticket> tickets, int TotalItems)> GetAllOwnTicketsAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize)
     {
         var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
             .Include(t => t.User)
             .Include(t => t.Technician)
             .AsQueryable();
@@ -76,7 +77,7 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
             .Include(t => t.User)
             .Include(t => t.TicketResponses)
                 .ThenInclude(tr => tr.TicketResponseAttachments)
-            .Include(t => t.TicketResponses)
+            .Include(t => t.TicketResponses.OrderBy(tr => tr.CreatedAt))
                 .ThenInclude(tr => tr.User) // Include User in TicketResponse
             .Include(t => t.TicketAttachments)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -84,7 +85,9 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
 
     public async Task<(List<Ticket> tickets, int totalItems)> GetTicketsByTokenAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize)
     {
-        var query = Context.Tickets.Include(t => t.User).Include(t => t.Technician).AsQueryable();
+        var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
+            .Include(t => t.User).Include(t => t.Technician).AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
@@ -115,6 +118,7 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
         int pageSize)
     {
         var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
             .Include(t => t.User)
             .Include(t => t.Technician)
             .AsQueryable();

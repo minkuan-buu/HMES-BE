@@ -21,6 +21,7 @@ namespace HMES.API.Controllers
         }
 
         [HttpPost("mod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
         public async Task<IActionResult> Login([FromBody] CreateModUserModel UserReq)
         {
             var result = await _userServices.CreateModUser(UserReq);
