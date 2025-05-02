@@ -251,13 +251,8 @@ namespace HMES.Business.Services.OrderServices
                     product.Amount -= od.Quantity;
                     await _productRepositories.Update(product);
                 }
-                else if (od.DeviceId != null)
+                else if (od.Device != null)
                 {
-                    if (od.Device == null)
-                    {
-                        throw new CustomException($"Không tìm thấy thiết bị với ID {od.DeviceId} trong đơn hàng.");
-                    }
-
                     od.Device.Quantity -= od.Quantity;
                     await _deviceRepositories.Update(od.Device); // Dùng trực tiếp từ order
                 }
