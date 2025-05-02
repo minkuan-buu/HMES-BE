@@ -1015,6 +1015,38 @@ namespace HMES.Business.Services.OrderServices
                 };
                 await _transactionRepositories.Insert(NewTransaction);
 
+                var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
+
+                // Giả sử bạn đã có transaction.Order.OrderDetails như trước
+                var cartItemFromTransaction = order.OrderDetails
+                    .Select(od => new { od.ProductId, od.Quantity })
+                    .ToList();
+
+                // Áp dụng logic kiểm tra số lượng
+                var itemsToDelete = new List<CartItem>();
+                var itemsToUpdate = new List<CartItem>();
+
+                foreach (var cartItem in cart.CartItems)
+                {
+                    var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                    if (productInTransaction != null)
+                    {
+                        if (cartItem.Quantity <= productInTransaction.Quantity)
+                        {
+                            itemsToDelete.Add(cartItem);
+                        }
+                        else
+                        {
+                            cartItem.Quantity -= productInTransaction.Quantity;
+                            itemsToUpdate.Add(cartItem);
+                        }
+                    }
+                }
+                await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                await _cartItemsRepositories.DeleteRange(itemsToDelete);
+                var newDeviceItem = await CreateDeviceItem(order);
+
+
                 return new ResultModel<MessageResultModel>
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
@@ -1157,7 +1189,7 @@ namespace HMES.Business.Services.OrderServices
                     Address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
                     IsDefault = order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
                 } : null,
-                OrderProductItem = order.OrderDetails.Select(detail => new OrderDetailResModel
+                OrderProductItem = order.OrderDetails.Where(x => x.DeviceId == null).Select(detail => new OrderDetailResModel
                 {
                     Id = detail.Id,
                     ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
@@ -1166,6 +1198,19 @@ namespace HMES.Business.Services.OrderServices
                     UnitPrice = detail.UnitPrice
                 }).ToList()
             };
+
+            foreach (var deviceItem in order.DeviceItems)
+            {
+                orderResModel.OrderProductItem.Add(new OrderDetailResModel()
+                {
+                    Id = deviceItem.DeviceId,
+                    ProductName = TextConvert.ConvertFromUnicodeEscape(order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Name),
+                    Attachment = order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
+                    Quantity = 1,
+                    UnitPrice = order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
+                    Serial = deviceItem.Serial,
+                });
+            }
             return new ResultModel<DataResultModel<OrderPaymentResModel>>
             {
                 StatusCodes = (int)HttpStatusCode.OK,
