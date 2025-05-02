@@ -83,7 +83,7 @@ namespace HMES.Business.Services.OrderServices
             }
 
             // Kiểm tra giao dịch PENDING trước
-            var pendingTransaction = order.Transactions.FirstOrDefault(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
+            var pendingTransaction = order.Transactions.FirstOrDefault(x => x.OrderId.Equals(Id) && x.Status.Equals(TransactionEnums.PENDING.ToString()));
             if (pendingTransaction != null)
             {
                 return $"https://pay.payos.vn/web/{pendingTransaction.PaymentLinkId}";
@@ -253,9 +253,13 @@ namespace HMES.Business.Services.OrderServices
                 }
                 else if (od.DeviceId != null)
                 {
-                    var device = devices.First(d => d.Id == od.DeviceId);
-                    device.Quantity -= od.Quantity;
-                    await _deviceRepositories.Update(device);
+                    if (od.Device == null)
+                    {
+                        throw new CustomException($"Không tìm thấy thiết bị với ID {od.DeviceId} trong đơn hàng.");
+                    }
+
+                    od.Device.Quantity -= od.Quantity;
+                    await _deviceRepositories.Update(od.Device); // Dùng trực tiếp từ order
                 }
             }
 
