@@ -280,7 +280,7 @@ namespace HMES.Business.Services.OrderServices
 
                 // Lấy đơn hàng Pending hiện có của user (nếu có)
                 var existingOrder = await _orderRepositories.GetSingle(
-                    o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString() && !o.Transactions.Any(t => t.Status == TransactionEnums.PENDING.ToString() || t.Status == TransactionEnums.PAID.ToString() || t.Status == TransactionEnums.PROCESSING.ToString()),
+                    o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
                     includeProperties: "OrderDetails,Transactions");
 
                 // Xóa OrderDetail của đơn hàng cũ nếu có
