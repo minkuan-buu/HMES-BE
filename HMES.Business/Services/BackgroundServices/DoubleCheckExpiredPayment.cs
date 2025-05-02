@@ -22,13 +22,16 @@ public class DoubleCheckExpiredPayment : BackgroundService
     private readonly HttpClient _httpClient;
     private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
     private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
+    private readonly string PayOSClientId = Environment.GetEnvironmentVariable("PAY_OS_CLIENT_ID");
+    private readonly string PayOSAPIKey = Environment.GetEnvironmentVariable("PAY_OS_API_KEY");
+    private readonly string PayOSChecksumKey = Environment.GetEnvironmentVariable("PAY_OS_CHECKSUM_KEY");
 
     public DoubleCheckExpiredPayment(IServiceScopeFactory serviceScopeFactory)
     {
         _payOS = new PayOS(
-            "421fdf87-bbe1-4694-a76c-17627d705a85",
-            "7a2f58da-4003-4349-9e4b-f6bbfc556c9b",
-            "da759facf68f863e0ed11385d3bf9cf24f35e2b171d1fa8bae8d91ce1db9ff0c"
+            PayOSClientId,
+            PayOSAPIKey,
+            PayOSChecksumKey
         );
         _serviceScopeFactory = serviceScopeFactory;
         _httpClient = new HttpClient();
@@ -74,7 +77,7 @@ public class DoubleCheckExpiredPayment : BackgroundService
                         if (paymentLinkInformation.status.Equals(TransactionEnums.EXPIRED.ToString(), StringComparison.OrdinalIgnoreCase))
                         {
                             transaction.Status = TransactionEnums.EXPIRED.ToString();
-                            transaction.Order.Status = OrderEnums.Cancelled.ToString();
+                            transaction.Order.Status = OrderEnums.AllowRepayment.ToString();
                             transaction.Order.UpdatedAt = DateTime.Now;
 
                             foreach (var orderDetail in transaction.Order.OrderDetails)
