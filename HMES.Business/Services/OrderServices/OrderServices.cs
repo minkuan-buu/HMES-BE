@@ -73,7 +73,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(Token, "userid"));
             var order = await _orderRepositories.GetSingle(
-                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()),
+                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && (x.Status.Equals(OrderEnums.Pending.ToString()) || x.Status.Equals(OrderEnums.AllowRepayment.ToString())),
                 includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device,UserAddress"
             );
 
@@ -237,6 +237,10 @@ namespace HMES.Business.Services.OrderServices
             };
 
             await _transactionRepositories.Insert(NewTransaction);
+
+            order.Status = OrderEnums.PendingPayment.ToString();
+
+            await _orderRepositories.Update(order);
 
             // **Trừ số lượng sản phẩm sau khi đã tạo giao dịch thành công**
             foreach (var od in order.OrderDetails)
@@ -910,6 +914,23 @@ namespace HMES.Business.Services.OrderServices
                 order.ShippingFee = shippingFee;
                 await _orderRepositories.Update(order);
             }
+
+            if (!order.Status.Equals(OrderEnums.PendingPayment.ToString()))
+            {
+                orderDetails.Transactions = order.Transactions.Select(x => new OrderTransactionResModel
+                {
+                    PaymentLinkId = null,
+                    PaymentStatus = x.Status,
+                    PaymentMethod = x.PaymentMethod,
+                    CreatedAt = x.CreatedAt,
+                    TransactionId = x.Id,
+                }).ToList();
+            }
+            else
+            {
+                orderDetails.Transactions = new List<OrderTransactionResModel>();
+            }
+
 
             var result = new DataResultModel<OrderDetailsResModel>
             {

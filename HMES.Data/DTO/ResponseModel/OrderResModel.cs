@@ -30,7 +30,7 @@ public class OrderDetailsResModel
     public List<OrderDetailsItemResModel> OrderDetailsItems { get; set; } = null!;
     public OrderAddressResModel? UserAddress { get; set; }
     public List<OrderTransactionResModel> Transactions { get; set; } = null!;
-    
+
 }
 
 public class OrderDetailsItemResModel
@@ -38,9 +38,9 @@ public class OrderDetailsItemResModel
     public Guid OrderDetailsId { get; set; }
 
     public string ProductName { get; set; } = null!;
-    
+
     public string ProductImage { get; set; } = null!;
-    
+
     public decimal Price { get; set; }
 
     public int Quantity { get; set; }
@@ -68,10 +68,12 @@ public class OrderAddressResModel
 public class OrderTransactionResModel
 {
     public Guid TransactionId { get; set; }
-    
+
     public string PaymentMethod { get; set; } = null!;
 
     public string PaymentStatus { get; set; } = null!;
+
+    public string? PaymentLinkId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }

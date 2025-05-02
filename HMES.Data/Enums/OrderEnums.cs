@@ -4,7 +4,9 @@ namespace HMES.Data.Enums
     {
         Success,
         Pending,
+        PendingPayment,
         Delivering,
+        AllowRepayment,
         Cancelled
     }
 }
