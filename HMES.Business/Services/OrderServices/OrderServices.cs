@@ -925,10 +925,6 @@ namespace HMES.Business.Services.OrderServices
                     TransactionId = x.Id,
                 }).ToList();
             }
-            else
-            {
-                orderDetails.Transactions = new List<OrderTransactionResModel>();
-            }
 
 
             var result = new DataResultModel<OrderDetailsResModel>
