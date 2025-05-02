@@ -220,10 +220,21 @@ public class TicketServices : ITicketServices
         await _ticketRepositories.Update(ticket);
         
 //await _mqttService.PublishAsync($"ticket/{}", "response", ticket.Id.ToString());
+        var response = _mapper.Map<TicketDetailsDto>(ticket);
+        
+        var newResponse = response.TicketResponses.LastOrDefault();
+        if (newResponse != null)
+        {
+            var user = await _userRepositories.GetUserById(newResponse.UserId);
+            if (user != null)
+            {
+                newResponse.UserFullName = user.Name;
+            }
+        }
         
         var result = new DataResultModel<TicketDetailsDto>
         {
-            Data = _mapper.Map<TicketDetailsDto>(ticket)
+            Data = response
         };
         return new ResultModel<DataResultModel<TicketDetailsDto>>
         {

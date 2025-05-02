@@ -25,6 +25,11 @@ namespace HMES.Data.Repositories.UserRepositories
             return await Context.Users.AnyAsync(u => u.Id == id && u.Role == role);
         }
 
+        public async Task<User?> GetUserById(Guid id)
+        {
+            return await Context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        }
+
         public async Task<(List<User> Products, int TotalItems)> GetAllUsersAsync(string? keyword, Guid userId, string? role, string? status, int pageIndex, int pageSize)
         {
             var query = Context.Users.AsQueryable();

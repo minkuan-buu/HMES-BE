@@ -178,7 +178,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.TicketAttachments.Select(ta => ta.Attachment)))
-                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) // Map trực tiếp từ TicketResponses
+                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) 
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
