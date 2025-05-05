@@ -73,7 +73,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(Token, "userid"));
             var order = await _orderRepositories.GetSingle(
-                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && x.Status.Equals(OrderEnums.Pending.ToString()),
+                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && (x.Status.Equals(OrderEnums.Pending.ToString()) || x.Status.Equals(OrderEnums.AllowRepayment.ToString())),
                 includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device,UserAddress"
             );
 
@@ -83,7 +83,7 @@ namespace HMES.Business.Services.OrderServices
             }
 
             // Kiểm tra giao dịch PENDING trước
-            var pendingTransaction = order.Transactions.FirstOrDefault(x => x.Status.Equals(TransactionEnums.PENDING.ToString()));
+            var pendingTransaction = order.Transactions.FirstOrDefault(x => x.OrderId.Equals(Id) && x.Status.Equals(TransactionEnums.PENDING.ToString()));
             if (pendingTransaction != null)
             {
                 return $"https://pay.payos.vn/web/{pendingTransaction.PaymentLinkId}";
@@ -238,6 +238,10 @@ namespace HMES.Business.Services.OrderServices
 
             await _transactionRepositories.Insert(NewTransaction);
 
+            order.Status = OrderEnums.PendingPayment.ToString();
+
+            await _orderRepositories.Update(order);
+
             // **Trừ số lượng sản phẩm sau khi đã tạo giao dịch thành công**
             foreach (var od in order.OrderDetails)
             {
@@ -247,11 +251,10 @@ namespace HMES.Business.Services.OrderServices
                     product.Amount -= od.Quantity;
                     await _productRepositories.Update(product);
                 }
-                else if (od.DeviceId != null)
+                else if (od.Device != null)
                 {
-                    var device = devices.First(d => d.Id == od.DeviceId);
-                    device.Quantity -= od.Quantity;
-                    await _deviceRepositories.Update(device);
+                    od.Device.Quantity -= od.Quantity;
+                    await _deviceRepositories.Update(od.Device); // Dùng trực tiếp từ order
                 }
             }
 
@@ -278,7 +281,7 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy đơn hàng Pending hiện có của user (nếu có)
                 var existingOrder = await _orderRepositories.GetSingle(
                     o => o.UserId == userId && o.Status == OrderEnums.Pending.ToString(),
-                    includeProperties: "OrderDetails");
+                    includeProperties: "OrderDetails,Transactions");
 
                 // Xóa OrderDetail của đơn hàng cũ nếu có
                 if (existingOrder != null)
@@ -911,6 +914,19 @@ namespace HMES.Business.Services.OrderServices
                 await _orderRepositories.Update(order);
             }
 
+            if (!order.Status.Equals(OrderEnums.PendingPayment.ToString()))
+            {
+                orderDetails.Transactions = order.Transactions.Select(x => new OrderTransactionResModel
+                {
+                    PaymentLinkId = null,
+                    PaymentStatus = x.Status,
+                    PaymentMethod = x.PaymentMethod,
+                    CreatedAt = x.CreatedAt,
+                    TransactionId = x.Id,
+                }).ToList();
+            }
+
+
             var result = new DataResultModel<OrderDetailsResModel>
             {
                 Data = orderDetails
@@ -998,6 +1014,38 @@ namespace HMES.Business.Services.OrderServices
                     CreatedAt = DateTime.Now,
                 };
                 await _transactionRepositories.Insert(NewTransaction);
+
+                var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
+
+                // Giả sử bạn đã có transaction.Order.OrderDetails như trước
+                var cartItemFromTransaction = order.OrderDetails
+                    .Select(od => new { od.ProductId, od.Quantity })
+                    .ToList();
+
+                // Áp dụng logic kiểm tra số lượng
+                var itemsToDelete = new List<CartItem>();
+                var itemsToUpdate = new List<CartItem>();
+
+                foreach (var cartItem in cart.CartItems)
+                {
+                    var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                    if (productInTransaction != null)
+                    {
+                        if (cartItem.Quantity <= productInTransaction.Quantity)
+                        {
+                            itemsToDelete.Add(cartItem);
+                        }
+                        else
+                        {
+                            cartItem.Quantity -= productInTransaction.Quantity;
+                            itemsToUpdate.Add(cartItem);
+                        }
+                    }
+                }
+                await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                await _cartItemsRepositories.DeleteRange(itemsToDelete);
+                var newDeviceItem = await CreateDeviceItem(order);
+
 
                 return new ResultModel<MessageResultModel>
                 {
@@ -1141,7 +1189,7 @@ namespace HMES.Business.Services.OrderServices
                     Address = TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Address),
                     IsDefault = order.UserAddress.Status.Equals(UserAddressEnums.Default.ToString())
                 } : null,
-                OrderProductItem = order.OrderDetails.Select(detail => new OrderDetailResModel
+                OrderProductItem = order.OrderDetails.Where(x => x.DeviceId == null).Select(detail => new OrderDetailResModel
                 {
                     Id = detail.Id,
                     ProductName = detail.Product != null ? TextConvert.ConvertFromUnicodeEscape(detail.Product.Name) : null,
@@ -1150,6 +1198,19 @@ namespace HMES.Business.Services.OrderServices
                     UnitPrice = detail.UnitPrice
                 }).ToList()
             };
+
+            foreach (var deviceItem in order.DeviceItems)
+            {
+                orderResModel.OrderProductItem.Add(new OrderDetailResModel()
+                {
+                    Id = deviceItem.DeviceId,
+                    ProductName = TextConvert.ConvertFromUnicodeEscape(order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Name),
+                    Attachment = order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).Device?.Attachment ?? deviceItem.Device?.Attachment ?? "",
+                    Quantity = 1,
+                    UnitPrice = order.OrderDetails.FirstOrDefault(x => x.DeviceId == deviceItem.DeviceId).UnitPrice,
+                    Serial = deviceItem.Serial,
+                });
+            }
             return new ResultModel<DataResultModel<OrderPaymentResModel>>
             {
                 StatusCodes = (int)HttpStatusCode.OK,
