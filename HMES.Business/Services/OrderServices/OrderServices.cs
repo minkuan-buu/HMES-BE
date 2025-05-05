@@ -100,7 +100,7 @@ namespace HMES.Business.Services.OrderServices
             var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
 
             int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
-            int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
+            string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
             int serviceId = await GetService(districtId);
 
             // Kiểm tra tổng số lượng đã đặt nhưng chưa thanh toán
@@ -391,7 +391,7 @@ namespace HMES.Business.Services.OrderServices
                                + (int)deviceDetails.Sum(d => d.UnitPrice * d.Quantity);
 
                 int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
-                int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
+                string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
                 int serviceId = await GetService(districtId);
 
                 var ghnOrder = new
@@ -526,7 +526,7 @@ namespace HMES.Business.Services.OrderServices
         }
 
 
-        private async Task<int> GetWardId(int districtId, string ward)
+        private async Task<string> GetWardId(int districtId, string ward)
         {
             var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward", new { district_id = districtId });
             var result = JsonConvert.DeserializeObject<dynamic>(response);
@@ -534,10 +534,10 @@ namespace HMES.Business.Services.OrderServices
             foreach (var w in result.data)
             {
                 if ((string)w.WardName == ward)
-                    return (int)w.WardCode;
+                    return w.WardCode;
             }
 
-            return 0;
+            return "";
         }
 
         private async Task<int> GetService(int districtId)
@@ -825,7 +825,7 @@ namespace HMES.Business.Services.OrderServices
                 var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
                 int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
-                int wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
+                string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
                 int serviceId = await GetService(districtId);
 
                 var ghnOrder = new
