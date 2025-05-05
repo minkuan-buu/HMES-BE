@@ -12,7 +12,9 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     
     public async Task<(List<Ticket> tickets, int TotalItems)> GetAllTicketsAsync(string? keyword, string? type, string? status, int pageIndex, int pageSize)
     {
-        var query = Context.Tickets.Include(t => t.User).AsQueryable();
+        var query = Context.Tickets.Include(t => t.User)
+            .OrderByDescending(t => t.CreatedAt)
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
