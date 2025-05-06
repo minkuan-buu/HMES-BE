@@ -16,6 +16,11 @@ public class DeviceItemsRepositories : GenericRepositories<DeviceItem>, IDeviceI
         return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == deviceItemId && x.UserId == userId);
     }
 
+    public async Task<DeviceItem?> GetDeviceItemById(Guid id)
+    {
+        return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == id); 
+    }
+
     public async Task<List<DeviceItem>> GetOnlineDevicesAsync()
     {
         return await Context.DeviceItems.Where(x => x.IsOnline).ToListAsync();

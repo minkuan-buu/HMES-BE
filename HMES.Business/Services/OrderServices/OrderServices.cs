@@ -749,7 +749,7 @@ namespace HMES.Business.Services.OrderServices
 
         public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetOrderList(string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
         {
-            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -772,7 +772,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
