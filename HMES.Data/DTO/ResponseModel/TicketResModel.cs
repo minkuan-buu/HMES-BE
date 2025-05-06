@@ -42,5 +42,11 @@ public class TicketResponseDetailsDto
     public DateTime? CreatedAt { get; set; }
     public List<string> Attachments { get; set; } = new List<string>();
     
-    
+}
+
+public class TicketDeviceItemDto
+{
+    public Guid Id { get; set; }
+    public string Serial { get; set; } = null!;
+    public DateTime? WarrantyExpiryDate { get; set; }
 }
