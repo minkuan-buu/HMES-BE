@@ -1020,7 +1020,7 @@ namespace HMES.Business.Services.OrderServices
                 var cartItemFromTransaction = order.OrderDetails
                     .Select(od => new { od.ProductId, od.Quantity })
                     .ToList();
-
+                await CreateDeviceItem(order);
                 // Áp dụng logic kiểm tra số lượng
                 var itemsToDelete = new List<CartItem>();
                 var itemsToUpdate = new List<CartItem>();
@@ -1082,6 +1082,9 @@ namespace HMES.Business.Services.OrderServices
 
                 if (order.Status != OrderEnums.Delivering.ToString())
                     throw new CustomException("Order is not in Delivering status");
+
+                if (order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
+                    throw new CustomException("Order is not Cash on Delivery.");
 
                 var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
 
