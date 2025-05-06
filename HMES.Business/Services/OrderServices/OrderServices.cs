@@ -1025,7 +1025,14 @@ namespace HMES.Business.Services.OrderServices
                 // Áp dụng logic kiểm tra số lượng
                 var itemsToDelete = new List<CartItem>();
                 var itemsToUpdate = new List<CartItem>();
-
+                if (cart == null)
+                {
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Cash on delivery order created successfully." }
+                    };
+                }
                 foreach (var cartItem in cart.CartItems)
                 {
                     var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
