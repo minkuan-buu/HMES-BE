@@ -14,7 +14,7 @@ namespace HMES.Data.Repositories.GenericRepositories
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             string includeProperties = "",
             int? pageIndex = null,
-            int? pageSize = null);
+            int? pageSize = null, bool asNoTracking = false);
 
         Task<T> GetSingle(
             Expression<Func<T, bool>> filter = null,
