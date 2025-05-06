@@ -135,4 +135,13 @@ public class TicketController : ControllerBase
         return Ok(result);
     }
     
+    // GET: api/ticket/device/{serial}
+    [HttpGet("device/{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]       
+    public async Task<IActionResult> GetDeviceItemById(string id)
+    {
+        var result = await _ticketServices.GetDeviceItemById(id);
+        return Ok(result);
+    }
+    
 }

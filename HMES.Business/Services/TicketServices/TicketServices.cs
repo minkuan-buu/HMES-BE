@@ -4,7 +4,9 @@ using AutoMapper;
 using HMES.Business.Services.CloudServices;
 using HMES.Business.Services.UserServices;
 using HMES.Business.Utilities.Authentication;
+using HMES.Business.Utilities.Converter;
 using HMES.Business.Utilities.TimeZoneHelper;
+using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
@@ -63,13 +65,13 @@ public class TicketServices : ITicketServices
         
         if(!role.Equals(RoleEnums.Customer.ToString()))
         {       
-            (tickets, totalItems) = await _ticketRepositories.GetAllTicketsAsync(keyword, type, status, pageIndex, pageSize);
+            (tickets, totalItems) = await _ticketRepositories.GetAllTicketsAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), type, status, pageIndex, pageSize);
 
         }
         else
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-            (tickets, totalItems) = await _ticketRepositories.GetAllOwnTicketsAsync(keyword, type, status,userId, pageIndex, pageSize);
+            (tickets, totalItems) = await _ticketRepositories.GetAllOwnTicketsAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), type, status,userId, pageIndex, pageSize);
         }
 
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
@@ -94,7 +96,7 @@ public class TicketServices : ITicketServices
     {
 
         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        var (tickets, totalItems) = await _ticketRepositories.GetTicketsByTokenAsync(keyword, type, status, userId, pageIndex, pageSize);
+        var (tickets, totalItems) = await _ticketRepositories.GetTicketsByTokenAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), type, status, userId, pageIndex, pageSize);
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
         var result = new ListDataResultModel<TicketBriefDto>
@@ -329,7 +331,7 @@ public class TicketServices : ITicketServices
         var role = Authentication.DecodeToken(token, ClaimsIdentity.DefaultRoleClaimType);
         bool checkRequestAndTransferRole = await _userRepositories.CheckUserByIdAndRole(transferTo, role);
         
-        if (!checkRequestAndTransferRole)
+        if (!checkRequestAndTransferRole && !role.Equals(RoleEnums.Admin.ToString()))
         {
             return new ResultModel<MessageResultModel>
             {
@@ -383,7 +385,7 @@ public class TicketServices : ITicketServices
     {
         var technicianId = new Guid(Authentication.DecodeToken(token, "userid"));
         
-        var (tickets, totalItems) = await _ticketRepositories.GetTicketsRequestTransferByTokenAsync(keyword, null, TicketStatusEnums.IsTransferring.ToString(), technicianId, pageIndex, pageSize);
+        var (tickets, totalItems) = await _ticketRepositories.GetTicketsRequestTransferByTokenAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), null, TicketStatusEnums.IsTransferring.ToString(), technicianId, pageIndex, pageSize);
         var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
         
         var result = new ListDataResultModel<TicketBriefDto>
@@ -449,6 +451,24 @@ public class TicketServices : ITicketServices
             {
                 Message = "Ticket transferred"
             }
+        };
+    }
+
+    public async Task<ResultModel<DataResultModel<TicketDeviceItemDto>>> GetDeviceItemById(string id)
+    {
+        var deviceItem = await _deviceItemsRepositories.GetDeviceItemById(new Guid(id));
+        if (deviceItem == null)
+        {
+            throw new CustomException("Device not found");
+        }
+        var result = new DataResultModel<TicketDeviceItemDto>
+        {
+            Data = _mapper.Map<TicketDeviceItemDto>(deviceItem)
+        };
+        return new ResultModel<DataResultModel<TicketDeviceItemDto>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = result
         };
     }
 }
