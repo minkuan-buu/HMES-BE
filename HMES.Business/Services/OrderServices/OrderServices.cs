@@ -96,7 +96,7 @@ namespace HMES.Business.Services.OrderServices
             var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
             var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
-            var products = await _productRepositories.GetList(p => productIds.Contains(p.Id));
+            var products = await _productRepositories.GetList(p => productIds.Contains(p.Id), asNoTracking: true);
             var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
 
             int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
@@ -245,11 +245,10 @@ namespace HMES.Business.Services.OrderServices
             // **Trừ số lượng sản phẩm sau khi đã tạo giao dịch thành công**
             foreach (var od in order.OrderDetails)
             {
-                if (od.ProductId != null)
+                if (od.Product != null)
                 {
-                    var product = products.First(p => p.Id == od.ProductId);
-                    product.Amount -= od.Quantity;
-                    await _productRepositories.Update(product);
+                    od.Product.Amount -= od.Quantity;
+                    await _productRepositories.Update(od.Product);
                 }
                 else if (od.Device != null)
                 {
