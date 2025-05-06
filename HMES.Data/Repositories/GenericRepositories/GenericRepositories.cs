@@ -73,7 +73,7 @@ namespace HMES.Data.Repositories.GenericRepositories
             int? pageSize = null)
         {
             var query = GetQueryable(filter, orderBy, includeProperties, pageIndex, pageSize);
-            return await query.ToListAsync();
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<T> GetSingle(
