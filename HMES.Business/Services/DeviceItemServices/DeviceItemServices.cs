@@ -286,7 +286,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
-                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", new
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", new
                 {
                     message = messageWarning,
                 });
@@ -380,7 +380,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
-                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", JsonSerializer.Serialize(new
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", JsonSerializer.Serialize(new
                 {
                     message = messageWarning,
                 }));
