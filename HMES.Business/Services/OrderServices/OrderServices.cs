@@ -946,7 +946,7 @@ namespace HMES.Business.Services.OrderServices
                 List<DeviceItem> deviceItems = new List<DeviceItem>();
                 foreach (var orderDetail in order.OrderDetails)
                 {
-                    if (orderDetail.Device != null)
+                    if (orderDetail.DeviceId != null)
                     {
                         for (int i = 0; i < orderDetail.Quantity; i++)
                         {
@@ -965,11 +965,10 @@ namespace HMES.Business.Services.OrderServices
                                 OrderId = order.Id,
                             };
                             deviceItems.Add(deviceItem);
-
-                            await _deviceItemsRepositories.Insert(deviceItem);
                         }
                     }
                 }
+                await _deviceItemsRepositories.InsertRange(deviceItems);
                 return deviceItems;
             }
             catch (Exception ex)
@@ -1020,11 +1019,17 @@ namespace HMES.Business.Services.OrderServices
                 var cartItemFromTransaction = order.OrderDetails
                     .Select(od => new { od.ProductId, od.Quantity })
                     .ToList();
-
                 // Áp dụng logic kiểm tra số lượng
                 var itemsToDelete = new List<CartItem>();
                 var itemsToUpdate = new List<CartItem>();
-
+                if (cart == null)
+                {
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Cash on delivery order created successfully." }
+                    };
+                }
                 foreach (var cartItem in cart.CartItems)
                 {
                     var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
@@ -1043,7 +1048,7 @@ namespace HMES.Business.Services.OrderServices
                 }
                 await _cartItemsRepositories.UpdateRange(itemsToUpdate);
                 await _cartItemsRepositories.DeleteRange(itemsToDelete);
-                var newDeviceItem = await CreateDeviceItem(order);
+                _ = await CreateDeviceItem(order);
 
 
                 return new ResultModel<MessageResultModel>
@@ -1075,6 +1080,9 @@ namespace HMES.Business.Services.OrderServices
 
                 if (order.Status != OrderEnums.Delivering.ToString())
                     throw new CustomException("Order is not in Delivering status");
+
+                if (order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
+                    throw new CustomException("Order is not Cash on Delivery.");
 
                 var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
 
