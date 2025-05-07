@@ -73,7 +73,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(Token, "userid"));
             var order = await _orderRepositories.GetSingle(
-                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && (x.Status.Equals(OrderEnums.Pending.ToString()) || x.Status.Equals(OrderEnums.AllowRepayment.ToString())),
+                x => x.Id.Equals(Id) && x.UserId.Equals(userId) && (x.Status.Equals(OrderEnums.Pending.ToString()) || x.Status.Equals(OrderEnums.AllowRepayment.ToString()) || x.Status.Equals(OrderEnums.PendingPayment.ToString())),
                 includeProperties: "Transactions,OrderDetails.Product,OrderDetails.Device,UserAddress"
             );
 
@@ -84,7 +84,7 @@ namespace HMES.Business.Services.OrderServices
 
             // Kiểm tra giao dịch PENDING trước
             var pendingTransaction = order.Transactions.FirstOrDefault(x => x.OrderId.Equals(Id) && x.Status.Equals(TransactionEnums.PENDING.ToString()));
-            if (pendingTransaction != null)
+            if (pendingTransaction != null && order.Status.Equals(OrderEnums.PendingPayment.ToString()))
             {
                 return $"https://pay.payos.vn/web/{pendingTransaction.PaymentLinkId}";
             }
