@@ -332,4 +332,9 @@ public class UserServices : IUserServices
     {
         return await _userRepositories.GetSingle(x => x.Id == id);
     }
+
+    public async Task<int> GetUserCount()
+    {
+        return await _userRepositories.GetUserCount();
+    }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HMES.Data.Enums;
 
 namespace HMES.Data.Repositories.UserRepositories
 {
@@ -28,6 +29,11 @@ namespace HMES.Data.Repositories.UserRepositories
         public async Task<User?> GetUserById(Guid id)
         {
             return await Context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        }
+
+        public async Task<int> GetUserCount()
+        {
+            return await Context.Users.Where(u => u.Role.Equals(RoleEnums.Customer.ToString())).CountAsync();
         }
 
         public async Task<(List<User> Products, int TotalItems)> GetAllUsersAsync(string? keyword, Guid userId, string? role, string? status, int pageIndex, int pageSize)
