@@ -131,7 +131,7 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
-        [HttpPatch("me/devices/{id}/history-log")]
+        [HttpGet("me/devices/{id}/history-log")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetDeviceHistoryLog(Guid id)
         {
