@@ -14,6 +14,23 @@ public class DeviceItemDetailResModel
     public DateTime LastUpdatedDate { get; set; }
 }
 
+public class HistoryLogIoTResModel
+{
+    public Guid DeviceItemId { get; set; }
+    public string DeviceItemName { get; set; } = null!;
+    public List<IoTHistoryResModel>? IoTData { get; set; } = null;
+}
+
+public class IoTHistoryResModel
+{
+    public Guid NutrionId { get; set; }
+    public decimal SoluteConcentration { get; set; } = 0;
+    public decimal Temperature { get; set; } = 0;
+    public decimal Ph { get; set; } = 0;
+    public decimal WaterLevel { get; set; } = 0;
+    public DateTime CreatedAt { get; set; }
+}
+
 public class IoTResModel
 {
     public decimal SoluteConcentration { get; set; } = 0;
