@@ -341,7 +341,10 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
-
+            CreateMap<DeviceItem, HistoryLogIoTResModel>()
+                .ForMember(dest => dest.DeviceItemId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.DeviceItemName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.IoTData, opt => opt.Ignore());
 
 
 

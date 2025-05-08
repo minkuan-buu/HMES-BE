@@ -399,5 +399,48 @@ namespace HMES.Business.Services.DeviceItemServices
                 throw new CustomException(ex.Message);
             }
         }
+
+        public async Task<ResultModel<DataResultModel<HistoryLogIoTResModel>>> GetHistoryLog(Guid deviceItemId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails.TargetValue,Device");
+                if (deviceItem == null)
+                {
+                    throw new Exception("Device item not found");
+                }
+                var result = _mapper.Map<HistoryLogIoTResModel>(deviceItem);
+                var nutritionReports = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).ToList();
+                var nutritionReportDetails = new List<IoTHistoryResModel>();
+                foreach (var nutritionReport in nutritionReports)
+                {
+                    var nutritionReportDetail = new IoTHistoryResModel
+                    {
+                        NutrionId = nutritionReport.Id,
+                        SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                        Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                        Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                        WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                        CreatedAt = nutritionReport.CreatedAt,
+                    };
+                    nutritionReportDetails.Add(nutritionReportDetail);
+                }
+                result.IoTData = nutritionReportDetails;
+                var dataResult = new DataResultModel<HistoryLogIoTResModel>
+                {
+                    Data = result
+                };
+                return new ResultModel<DataResultModel<HistoryLogIoTResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = dataResult
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }
