@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
@@ -294,7 +295,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     Id = Guid.NewGuid(),
                     UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
                     CreatedAt = DateTime.Now,
-                    Message = messageWarning,
+                    Message = TextConvert.ConvertToUnicodeEscape(messageWarning),
                     NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
                     IsRead = false,
                     ReadAt = null,
@@ -402,7 +403,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     Id = Guid.NewGuid(),
                     UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
                     CreatedAt = DateTime.Now,
-                    Message = messageWarning,
+                    Message = TextConvert.ConvertToUnicodeEscape(messageWarning),
                     NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
                     IsRead = false,
                     ReadAt = null,
