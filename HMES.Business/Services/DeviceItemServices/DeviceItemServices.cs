@@ -8,6 +8,7 @@ using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.DeviceItemsRepositories;
+using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
 using HMES.Data.Repositories.PlantRepositories;
@@ -21,11 +22,13 @@ namespace HMES.Business.Services.DeviceItemServices
         private readonly INutritionReportRepositories _nutritionReportRepositories;
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IPlantRepositories _plantRepositories;
+        private readonly INotificationRepositories _notificationRepositories;
         private readonly IMapper _mapper;
         private readonly IMqttService _mqttService;
 
-        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories)
+        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories)
         {
+            _notificationRepositories = notificationRepositories;
             _nutritionRDRepositories = nutritionRDRepositories;
             _nutritionReportRepositories = nutritionReportRepositories;
             _deviceItemsRepositories = deviceItemsRepositories;
@@ -286,6 +289,20 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
+                Notification notification = new Notification()
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
+                    CreatedAt = DateTime.Now,
+                    Message = messageWarning,
+                    NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
+                    IsRead = false,
+                    ReadAt = null,
+                    ReferenceId = getDevice.Id,
+                    SenderId = null,
+                    Title = "Cảnh báo từ HMES",
+                };
+                await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", new
                 {
                     message = messageWarning,
@@ -380,6 +397,20 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
+                Notification notification = new Notification()
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
+                    CreatedAt = DateTime.Now,
+                    Message = messageWarning,
+                    NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
+                    IsRead = false,
+                    ReadAt = null,
+                    ReferenceId = getDevice.Id,
+                    SenderId = null,
+                    Title = "Cảnh báo từ HMES",
+                };
+                await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", JsonSerializer.Serialize(new
                 {
                     message = messageWarning,
