@@ -26,6 +26,7 @@ using Transaction = HMES.Data.Entities.Transaction;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MimeKit.Text;
+using HMES.Data.Repositories.PlantRepositories;
 
 namespace HMES.Business.Services.OrderServices
 {
@@ -43,6 +44,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly IDeviceRepositories _deviceRepositories;
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
+        private readonly IPlantRepositories _plantRepositories;
         private PayOS _payOS;
         private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
         private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
@@ -51,9 +53,8 @@ namespace HMES.Business.Services.OrderServices
         private readonly string PayOSChecksumKey = Environment.GetEnvironmentVariable("PAY_OS_CHECKSUM_KEY");
         private readonly HttpClient _httpClient;
 
-        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories)
+        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPlantRepositories plantRepositories)
         {
-            _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
             _logger = logger;
             _userRepositories = userRepositories;
             _mapper = mapper;
@@ -66,7 +67,10 @@ namespace HMES.Business.Services.OrderServices
             _productRepositories = productRepositories;
             _deviceItemsRepositories = deviceItemsRepositories;
             _cartItemsRepositories = cartItemsRepositories;
-            _httpClient = new HttpClient();
+            _plantRepositories = plantRepositories;
+
+            // Initialize PayOS client
+            _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
         }
 
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
@@ -943,6 +947,7 @@ namespace HMES.Business.Services.OrderServices
         {
             try
             {
+                var DefaultPlant = await _plantRepositories.GetSingle(x => x.Name.Equals("Default"));
                 List<DeviceItem> deviceItems = new List<DeviceItem>();
                 foreach (var orderDetail in order.OrderDetails)
                 {
@@ -956,6 +961,7 @@ namespace HMES.Business.Services.OrderServices
                                 DeviceId = orderDetail.Device.Id,
                                 UserId = order.UserId,
                                 Name = orderDetail.Device.Name,
+                                PlantId = DefaultPlant.Id,
                                 IsActive = false,
                                 IsOnline = false,
                                 Serial = Authentication.GenerateRandomSerial(16),
