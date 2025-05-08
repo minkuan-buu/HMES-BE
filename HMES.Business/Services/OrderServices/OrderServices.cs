@@ -71,6 +71,8 @@ namespace HMES.Business.Services.OrderServices
 
             // Initialize PayOS client
             _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
+
+            _httpClient = new HttpClient();
         }
 
         public async Task<String> CreatePaymentUrl(string Token, Guid Id)
@@ -103,8 +105,7 @@ namespace HMES.Business.Services.OrderServices
             var products = await _productRepositories.GetList(p => productIds.Contains(p.Id), asNoTracking: true);
             var devices = await _deviceRepositories.GetList(d => deviceIds.Contains(d.Id));
 
-            var provinceId = await GetProvinceId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province));
-            int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District), provinceId);
+            int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
             string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
             int serviceId = await GetService(districtId);
 
@@ -396,8 +397,8 @@ namespace HMES.Business.Services.OrderServices
 
                 int codAmount = (int)productDetails.Sum(p => p.UnitPrice * p.Quantity)
                                + (int)deviceDetails.Sum(d => d.UnitPrice * d.Quantity);
-                var provinceId = await GetProvinceId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province));
-                int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District), provinceId);
+
+                int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
                 string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
                 int serviceId = await GetService(districtId);
 
@@ -518,9 +519,9 @@ namespace HMES.Business.Services.OrderServices
         }
 
 
-        private async Task<int> GetDistrictId(string province, string district, int provinceId)
+        private async Task<int> GetDistrictId(string province, string district)
         {
-            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district", new { province_id = provinceId });
+            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district", new { province });
             var result = JsonConvert.DeserializeObject<dynamic>(response);
 
             foreach (var d in result.data)
@@ -530,20 +531,6 @@ namespace HMES.Business.Services.OrderServices
             }
 
             return 0;
-        }
-
-        private async Task<int> GetProvinceId(string provinceName)
-        {
-            var response = await SendPostRequest("https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province", null);
-            var result = JsonConvert.DeserializeObject<dynamic>(response);
-
-            foreach (var p in result.data)
-            {
-                if ((string)p.ProvinceName == provinceName)
-                    return (int)p.ProvinceID;
-            }
-
-            return 0; // không tìm thấy
         }
 
 
@@ -845,8 +832,7 @@ namespace HMES.Business.Services.OrderServices
                 var productDetails = order.OrderDetails.Where(od => od.ProductId != null).ToList();
                 var deviceDetails = order.OrderDetails.Where(od => od.DeviceId != null).ToList();
 
-                var provinceId = await GetProvinceId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province));
-                int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District), provinceId);
+                int districtId = await GetDistrictId(TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Province), TextConvert.ConvertFromUnicodeEscape(order.UserAddress.District));
                 string wardId = await GetWardId(districtId, TextConvert.ConvertFromUnicodeEscape(order.UserAddress.Ward));
                 int serviceId = await GetService(districtId);
 
