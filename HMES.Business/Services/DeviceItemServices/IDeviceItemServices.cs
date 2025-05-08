@@ -17,5 +17,6 @@ namespace HMES.Business.Services.DeviceItemServices
         Task<DeviceItem> GetDeviceItemById(Guid deviceItemId);
         Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId); //From Mobile App
         Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, Guid DeviceId); //From IoT
+        Task<ResultModel<DataResultModel<HistoryLogIoTResModel>>> GetHistoryLog(Guid deviceItemId, string token);
     }
 }
