@@ -215,6 +215,45 @@ namespace HMES.Business.Services.DeviceItemServices
             }
         }
 
+        public async Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId)
+        {
+            try
+            {
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == false || getDevice.IsOnline == false)
+                {
+                    throw new Exception("Can't Deactive Device!");
+                }
+                else if (getDevice == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (plant != null)
+                {
+                    getDevice.PlantId = plant.Id;
+                }
+                getDevice.IsActive = false;
+                getDevice.IsOnline = false;
+                getDevice.Status = DeviceItemStatusEnum.Available.ToString();
+                getDevice.LastSeen = null;
+                await _deviceItemsRepositories.Update(getDevice);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Deactive Device successfully!",
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
         public async Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId)
         {
             try

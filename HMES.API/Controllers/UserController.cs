@@ -122,6 +122,14 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("me/iot/devices/deactive")]
+        [Authorize(AuthenticationSchemes = "HMESIoTAuthentication")]
+        public async Task<IActionResult> Deactive([FromBody] Guid Id)
+        {
+            var result = await _deviceItemServices.DeactiveDevice(Id);
+            return Ok(result);
+        }
+
         [HttpPatch("me/devices/{id}/refresh-cycle")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] UpdateRefreshCycleHoursReqModel updateModel)
