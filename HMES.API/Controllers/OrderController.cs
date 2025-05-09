@@ -74,5 +74,13 @@ namespace HMES.API.Controllers
             var result = await _orderServices.UpdateOrderAddress(request.OrderId, request.UserAddressId, token);
             return Ok(result);
         }
+
+        [HttpPost("callback")]
+        public async Task<IActionResult> HandleCallback([FromBody] GHNReqModel callbackData)
+        {
+            await _orderServices.HandleGhnCallback(callbackData);
+            return Ok();
+        }
+        
     }
 }

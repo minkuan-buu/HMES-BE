@@ -117,5 +117,10 @@ namespace HMES.Data.Repositories.OrderRepositories
             return order;
 
         }
+
+        public async Task<Order?> GetOrderByOrderCode(string orderCode)
+        {
+            return await Context.Orders.FirstOrDefaultAsync(o => o.ShippingOrderCode == orderCode);
+        }
     }
 }
