@@ -1108,6 +1108,8 @@ namespace HMES.Business.Services.OrderServices
                 transaction.Status = TransactionEnums.CANCELLED.ToString();
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
+                var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                await _deviceItemsRepositories.DeleteRange(deviceItems);
                 await _orderRepositories.Update(order);
                 await _transactionRepositories.Update(transaction);
                 await CancelShipping(order);
