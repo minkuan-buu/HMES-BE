@@ -1164,6 +1164,11 @@ namespace HMES.Business.Services.OrderServices
                 order.Status = OrderEnums.Success.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
+            }else if (callbackData.Status.ToLower().Equals("returned"))
+            {
+                order.Status = OrderEnums.Cancelled.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
             }
         }
         
