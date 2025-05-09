@@ -674,34 +674,36 @@ namespace HMES.Business.Services.OrderServices
 
                     // Lấy cart items của user từ DB (hoặc theo orderId nếu bạn đang lọc theo order)
                     var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
-
-                    // Giả sử bạn đã có transaction.Order.OrderDetails như trước
-                    var cartItemFromTransaction = transaction.Order.OrderDetails
-                        .Select(od => new { od.ProductId, od.Quantity })
-                        .ToList();
-
-                    // Áp dụng logic kiểm tra số lượng
-                    var itemsToDelete = new List<CartItem>();
-                    var itemsToUpdate = new List<CartItem>();
-
-                    foreach (var cartItem in cart.CartItems)
+                    if (cart != null)
                     {
-                        var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
-                        if (productInTransaction != null)
+                        // Giả sử bạn đã có transaction.Order.OrderDetails như trước
+                        var cartItemFromTransaction = transaction.Order.OrderDetails
+                            .Select(od => new { od.ProductId, od.Quantity })
+                            .ToList();
+
+                        // Áp dụng logic kiểm tra số lượng
+                        var itemsToDelete = new List<CartItem>();
+                        var itemsToUpdate = new List<CartItem>();
+
+                        foreach (var cartItem in cart.CartItems)
                         {
-                            if (cartItem.Quantity <= productInTransaction.Quantity)
+                            var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                            if (productInTransaction != null)
                             {
-                                itemsToDelete.Add(cartItem);
-                            }
-                            else
-                            {
-                                cartItem.Quantity -= productInTransaction.Quantity;
-                                itemsToUpdate.Add(cartItem);
+                                if (cartItem.Quantity <= productInTransaction.Quantity)
+                                {
+                                    itemsToDelete.Add(cartItem);
+                                }
+                                else
+                                {
+                                    cartItem.Quantity -= productInTransaction.Quantity;
+                                    itemsToUpdate.Add(cartItem);
+                                }
                             }
                         }
+                        await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                        await _cartItemsRepositories.DeleteRange(itemsToDelete);
                     }
-                    await _cartItemsRepositories.UpdateRange(itemsToUpdate);
-                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
                     var newDeviceItem = await CreateDeviceItem(transaction.Order);
                     foreach (var deviceItem in newDeviceItem)
                     {
@@ -1022,40 +1024,43 @@ namespace HMES.Business.Services.OrderServices
                 await _transactionRepositories.Insert(NewTransaction);
 
                 var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
-
-                // Giả sử bạn đã có transaction.Order.OrderDetails như trước
-                var cartItemFromTransaction = order.OrderDetails
-                    .Select(od => new { od.ProductId, od.Quantity })
-                    .ToList();
-                // Áp dụng logic kiểm tra số lượng
-                var itemsToDelete = new List<CartItem>();
-                var itemsToUpdate = new List<CartItem>();
-                if (cart == null)
+                if (cart != null)
                 {
-                    return new ResultModel<MessageResultModel>
+                    // Giả sử bạn đã có transaction.Order.OrderDetails như trước
+                    var cartItemFromTransaction = order.OrderDetails
+                        .Select(od => new { od.ProductId, od.Quantity })
+                        .ToList();
+                    // Áp dụng logic kiểm tra số lượng
+                    var itemsToDelete = new List<CartItem>();
+                    var itemsToUpdate = new List<CartItem>();
+                    if (cart == null)
                     {
-                        StatusCodes = (int)HttpStatusCode.OK,
-                        Response = new MessageResultModel { Message = "Cash on delivery order created successfully." }
-                    };
-                }
-                foreach (var cartItem in cart.CartItems)
-                {
-                    var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
-                    if (productInTransaction != null)
+                        return new ResultModel<MessageResultModel>
+                        {
+                            StatusCodes = (int)HttpStatusCode.OK,
+                            Response = new MessageResultModel { Message = "Cash on delivery order created successfully." }
+                        };
+                    }
+                    foreach (var cartItem in cart.CartItems)
                     {
-                        if (cartItem.Quantity <= productInTransaction.Quantity)
+                        var productInTransaction = cartItemFromTransaction.FirstOrDefault(ct => ct.ProductId == cartItem.ProductId);
+                        if (productInTransaction != null)
                         {
-                            itemsToDelete.Add(cartItem);
-                        }
-                        else
-                        {
-                            cartItem.Quantity -= productInTransaction.Quantity;
-                            itemsToUpdate.Add(cartItem);
+                            if (cartItem.Quantity <= productInTransaction.Quantity)
+                            {
+                                itemsToDelete.Add(cartItem);
+                            }
+                            else
+                            {
+                                cartItem.Quantity -= productInTransaction.Quantity;
+                                itemsToUpdate.Add(cartItem);
+                            }
                         }
                     }
+                    await _cartItemsRepositories.UpdateRange(itemsToUpdate);
+                    await _cartItemsRepositories.DeleteRange(itemsToDelete);
                 }
-                await _cartItemsRepositories.UpdateRange(itemsToUpdate);
-                await _cartItemsRepositories.DeleteRange(itemsToDelete);
+
                 _ = await CreateDeviceItem(order);
 
 
