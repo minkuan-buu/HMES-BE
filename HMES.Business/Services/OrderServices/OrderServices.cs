@@ -1154,6 +1154,30 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
+        public async Task HandleGhnCallback(GHNReqModel callbackData)
+        {
+            if (callbackData == null)
+                throw new CustomException("Invalid callback data");
+
+            var orderCode = callbackData.OrderCode;
+            var order = await _orderRepositories.GetOrderByOrderCode(orderCode);
+            if (order == null)
+                throw new CustomException("Order not found");
+
+            if (callbackData.Status.ToLower().Equals("delivered"))
+            {
+                order.Status = OrderEnums.Success.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+            }else if (callbackData.Status.ToLower().Equals("returned"))
+            {
+                order.Status = OrderEnums.Cancelled.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+            }
+        }
+        
+
         private async Task CancelShipping(Order order)
         {
             try
