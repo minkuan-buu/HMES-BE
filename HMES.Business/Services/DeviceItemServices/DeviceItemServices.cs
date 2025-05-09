@@ -145,49 +145,71 @@ namespace HMES.Business.Services.DeviceItemServices
             return await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.IsActive);
         }
 
-        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId)
+        public async Task<ResultModel<IoTToken>> ToggleDeviceActiveState(string token, Guid deviceId)
         {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
-                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
-                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
-                {
-                    throw new Exception("Can't Active Device!");
-                }
-                else if (!getDevice.UserId.Equals(userId))
-                {
-                    throw new Exception("Access denied");
-                }
-                else if (getDevice == null)
-                {
-                    throw new Exception("Device not found!");
-                }
-                else if (plant != null)
-                {
-                    getDevice.PlantId = plant.Id;
-                }
-                getDevice.IsActive = true;
-                getDevice.IsOnline = true;
-                getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
-                await _deviceItemsRepositories.Update(getDevice);
-                string IoTToken = Authentication.CreateIoTToken(getDevice.Id, getDevice.Serial, userId.ToString());
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceId);
 
-                return new ResultModel<IoTToken>()
+                if (getDevice == null)
+                    throw new Exception("Device not found!");
+
+                if (getDevice.UserId == null || !getDevice.UserId.Equals(userId))
+                    throw new Exception("Access denied");
+
+                if (!getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) &&
+                    !getDevice.Status.Equals(DeviceItemStatusEnum.ReadyForPlanting.ToString()))
+                    throw new Exception("Invalid device status");
+
+                if (getDevice.IsActive)
                 {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new IoTToken()
+                    // Toggle to DEACTIVE
+                    getDevice.IsActive = false;
+                    getDevice.IsOnline = false;
+                    getDevice.Status = DeviceItemStatusEnum.Available.ToString();
+                    getDevice.LastSeen = null;
+
+                    await _deviceItemsRepositories.Update(getDevice);
+
+                    return new ResultModel<IoTToken>()
                     {
-                        Token = IoTToken,
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = null // no token returned when deactivated
+                    };
+                }
+                else
+                {
+                    // Toggle to ACTIVE
+                    var plant = await _plantRepositories.GetSingle(x =>
+                        x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+
+                    if (plant != null)
+                    {
+                        getDevice.PlantId = plant.Id;
                     }
-                };
+
+                    getDevice.IsActive = true;
+                    getDevice.IsOnline = true;
+                    getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
+
+                    await _deviceItemsRepositories.Update(getDevice);
+
+                    string IoTToken = Authentication.CreateIoTToken(getDevice.Id, getDevice.Serial, userId.ToString());
+
+                    return new ResultModel<IoTToken>()
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new IoTToken() { Token = IoTToken }
+                    };
+                }
             }
             catch (Exception ex)
             {
                 throw new CustomException(ex.Message);
             }
         }
+
 
         public async Task<ResultModel<DataResultModel<DeviceItemDetailResModel>>> GetDeviceItemDetail(Guid deviceItemId)
         {
