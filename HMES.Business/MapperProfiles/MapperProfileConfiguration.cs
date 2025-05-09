@@ -340,6 +340,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<DeviceItem, ListMyDeviceResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
