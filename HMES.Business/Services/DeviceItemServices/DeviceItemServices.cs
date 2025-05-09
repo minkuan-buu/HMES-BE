@@ -221,9 +221,9 @@ namespace HMES.Business.Services.DeviceItemServices
             {
                 var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
                 var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
-                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == false || getDevice.IsOnline == false)
                 {
-                    throw new Exception("Can't Active Device!");
+                    throw new Exception("Can't Deactive Device!");
                 }
                 else if (getDevice == null)
                 {
