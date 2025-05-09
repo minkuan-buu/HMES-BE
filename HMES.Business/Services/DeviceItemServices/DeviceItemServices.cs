@@ -145,71 +145,49 @@ namespace HMES.Business.Services.DeviceItemServices
             return await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.IsActive);
         }
 
-        public async Task<ResultModel<IoTToken>> ToggleDeviceActiveState(string token, Guid deviceId)
+        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId)
         {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceId);
-
-                if (getDevice == null)
-                    throw new Exception("Device not found!");
-
-                if (getDevice.UserId == null || !getDevice.UserId.Equals(userId))
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                {
+                    throw new Exception("Can't Active Device!");
+                }
+                else if (!getDevice.UserId.Equals(userId))
+                {
                     throw new Exception("Access denied");
-
-                if (!getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) &&
-                    !getDevice.Status.Equals(DeviceItemStatusEnum.ReadyForPlanting.ToString()))
-                    throw new Exception("Invalid device status");
-
-                if (getDevice.IsActive)
-                {
-                    // Toggle to DEACTIVE
-                    getDevice.IsActive = false;
-                    getDevice.IsOnline = false;
-                    getDevice.Status = DeviceItemStatusEnum.Available.ToString();
-                    getDevice.LastSeen = null;
-
-                    await _deviceItemsRepositories.Update(getDevice);
-
-                    return new ResultModel<IoTToken>()
-                    {
-                        StatusCodes = (int)HttpStatusCode.OK,
-                        Response = null // no token returned when deactivated
-                    };
                 }
-                else
+                else if (getDevice == null)
                 {
-                    // Toggle to ACTIVE
-                    var plant = await _plantRepositories.GetSingle(x =>
-                        x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+                    throw new Exception("Device not found!");
+                }
+                else if (plant != null)
+                {
+                    getDevice.PlantId = plant.Id;
+                }
+                getDevice.IsActive = true;
+                getDevice.IsOnline = true;
+                getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
+                await _deviceItemsRepositories.Update(getDevice);
+                string IoTToken = Authentication.CreateIoTToken(getDevice.Id, getDevice.Serial, userId.ToString());
 
-                    if (plant != null)
+                return new ResultModel<IoTToken>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new IoTToken()
                     {
-                        getDevice.PlantId = plant.Id;
+                        Token = IoTToken,
                     }
-
-                    getDevice.IsActive = true;
-                    getDevice.IsOnline = true;
-                    getDevice.Status = DeviceItemStatusEnum.ReadyForPlanting.ToString();
-
-                    await _deviceItemsRepositories.Update(getDevice);
-
-                    string IoTToken = Authentication.CreateIoTToken(getDevice.Id, getDevice.Serial, userId.ToString());
-
-                    return new ResultModel<IoTToken>()
-                    {
-                        StatusCodes = (int)HttpStatusCode.OK,
-                        Response = new IoTToken() { Token = IoTToken }
-                    };
-                }
+                };
             }
             catch (Exception ex)
             {
                 throw new CustomException(ex.Message);
             }
         }
-
 
         public async Task<ResultModel<DataResultModel<DeviceItemDetailResModel>>> GetDeviceItemDetail(Guid deviceItemId)
         {
@@ -229,6 +207,45 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = dataResult
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId)
+        {
+            try
+            {
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                {
+                    throw new Exception("Can't Active Device!");
+                }
+                else if (getDevice == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (plant != null)
+                {
+                    getDevice.PlantId = plant.Id;
+                }
+                getDevice.IsActive = false;
+                getDevice.IsOnline = false;
+                getDevice.Status = DeviceItemStatusEnum.Available.ToString();
+                getDevice.LastSeen = null;
+                await _deviceItemsRepositories.Update(getDevice);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Deactive Device successfully!",
+                    }
                 };
             }
             catch (Exception ex)
