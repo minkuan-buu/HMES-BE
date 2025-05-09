@@ -118,7 +118,7 @@ namespace HMES.API.Controllers
         public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _deviceItemServices.ToggleDeviceActiveState(token, Id);
+            var result = await _deviceItemServices.ActiveDevice(token, Id);
             return Ok(result);
         }
 
@@ -126,8 +126,7 @@ namespace HMES.API.Controllers
         [Authorize(AuthenticationSchemes = "HMESIoTAuthentication")]
         public async Task<IActionResult> Deactive([FromBody] Guid Id)
         {
-            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _deviceItemServices.ToggleDeviceActiveState(token, Id);
+            var result = await _deviceItemServices.DeactiveDevice(Id);
             return Ok(result);
         }
 

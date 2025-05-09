@@ -13,7 +13,8 @@ namespace HMES.Business.Services.DeviceItemServices
 
         Task<ResultModel<MessageResultModel>> SetPlantForDevice(Guid deviceItemId, Guid plantId, string token);
 
-        Task<ResultModel<IoTToken>> ToggleDeviceActiveState(string token, Guid DeviceId);
+        Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId);
+        Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId);
         Task<DeviceItem> GetDeviceItemById(Guid deviceItemId);
         Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId); //From Mobile App
         Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, Guid DeviceId); //From IoT
