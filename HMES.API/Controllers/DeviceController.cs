@@ -74,7 +74,7 @@ namespace HMES.API.Controllers
                 }
 
                 [HttpPut]
-                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
                 public async Task<IActionResult> UpdateDevice([FromForm] DeviceUpdateReqModel model)
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
