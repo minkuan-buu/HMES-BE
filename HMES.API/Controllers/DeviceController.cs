@@ -40,7 +40,7 @@ namespace HMES.API.Controllers
                 }
 
                 [HttpDelete("{Id}")]
-                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
                 public async Task<IActionResult> DeleteDeviceById(Guid Id)
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
