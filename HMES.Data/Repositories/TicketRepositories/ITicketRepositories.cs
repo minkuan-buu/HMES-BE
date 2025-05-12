@@ -13,4 +13,7 @@ public interface ITicketRepositories: IGenericRepositories<Ticket>
     public Task<Ticket?> GetByIdAsync(Guid id);
     Task<(List<Ticket> tickets, int totalItems)> GetTicketsByTokenAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize);
     Task<(List<Ticket> tickets, int totalItems)> GetTicketsRequestTransferByTokenAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize);
+    
+    Task<bool> CheckTicketInPendingOrProgressing(Guid userId, Guid? deviceItemId);
+    
 }
