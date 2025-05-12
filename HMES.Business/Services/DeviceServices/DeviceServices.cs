@@ -214,5 +214,63 @@ namespace HMES.Business.Services.DeviceServices
                 throw new CustomException(ex.Message);
             }
         }
+        public async Task<ResultModel<MessageResultModel>> UpdateDevice(DeviceUpdateReqModel DeviceReqModel, string token)
+        {
+            try
+            {
+                // Lấy thông tin thiết bị từ cơ sở dữ liệu
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(DeviceReqModel.Id));
+                if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (deviceDetail.Status.Equals(DeviceStatusEnum.Deactive.ToString()))
+                {
+                    throw new Exception("Can't update this device!");
+                }
+
+                // Kiểm tra và cập nhật từng trường
+                deviceDetail.Name = !string.IsNullOrEmpty(DeviceReqModel.Name)
+                    ? DeviceReqModel.Name
+                    : deviceDetail.Name;
+
+                deviceDetail.Description = !string.IsNullOrEmpty(DeviceReqModel.Description)
+                    ? DeviceReqModel.Description
+                    : deviceDetail.Description;
+
+                if (DeviceReqModel.Price.HasValue)
+                {
+                    deviceDetail.Price = DeviceReqModel.Price.Value;
+                }
+
+                if (DeviceReqModel.Quantity.HasValue)
+                {
+                    deviceDetail.Quantity = DeviceReqModel.Quantity.Value;
+                }
+
+                if (DeviceReqModel.Attachment != null)
+                {
+                    string filePath = $"device/{deviceDetail.Id}/attachments";
+                    var attachments = await _cloudServices.UploadSingleFile(DeviceReqModel.Attachment, filePath);
+                    deviceDetail.Attachment = attachments;
+                }
+
+                // Cập nhật thiết bị trong cơ sở dữ liệu
+                await _deviceRepositories.Update(deviceDetail);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is updated!"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
     }
 }

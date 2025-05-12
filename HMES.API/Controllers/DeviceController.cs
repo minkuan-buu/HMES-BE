@@ -73,6 +73,14 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
+                [HttpPut]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> UpdateDevice([FromForm] DeviceUpdateReqModel model)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceServices.UpdateDevice(model, token);
+                        return Ok(result);
+                }
 
         }
 }

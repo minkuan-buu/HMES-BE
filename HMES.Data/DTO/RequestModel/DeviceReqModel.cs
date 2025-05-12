@@ -20,6 +20,16 @@ namespace HMES.Data.DTO.RequestModel
         public int Quantity { get; set; }
     }
 
+    public class DeviceUpdateReqModel
+    {
+        public Guid Id { get; set; }
+        public string? Name { get; set; } = null!;
+        public string? Description { get; set; } = null!;
+        public IFormFile? Attachment { get; set; } = null!;
+        public decimal? Price { get; set; }
+        public int? Quantity { get; set; }
+    }
+
     public class SetPlantReqModel
     {
         public Guid DeviceItemId { get; set; }
