@@ -128,41 +128,37 @@ namespace HMES.Business.Services.DeviceServices
             }
         }
 
-        // public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
-        // {
-        //     try
-        //     {
-        //         Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        //         var getDevice = await _deviceRepositories.GetSingle(x => x.Id == DeviceId);
-        //         if (getDevice.UserId == null || getDevice.Status.Equals(DeviceStatusEnum.Active.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
-        //         {
-        //             throw new Exception("Cann't Delete Device!");
-        //         }
-        //         else if (!getDevice.UserId.Equals(userId))
-        //         {
-        //             throw new Exception("Access denied");
-        //         }
-        //         else if (getDevice == null)
-        //         {
-        //             throw new Exception("Device not found!");
-        //         }
+        public async Task<ResultModel<MessageResultModel>> DeleteDeviceById(Guid DeviceId, string token)
+        {
+            try
+            {
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(DeviceId));
+                if (deviceDetail == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (deviceDetail.Status.Equals(DeviceStatusEnum.Deactive.ToString()))
+                {
+                    throw new Exception("Can't delete this device!");
+                }
 
-        //         await _deviceRepositories.Delete(getDevice);
+                deviceDetail.Status = DeviceStatusEnum.Deactive.ToString();
+                await _deviceRepositories.Update(deviceDetail);
 
-        //         return new ResultModel<MessageResultModel>()
-        //         {
-        //             StatusCodes = (int)HttpStatusCode.OK,
-        //             Response = new MessageResultModel()
-        //             {
-        //                 Message = "Device is deleted!"
-        //             }
-        //         };
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new CustomException(ex.Message);
-        //     }
-        // }
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Device is deleted!"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
 
         public async Task<ResultModel<ListDataResultModel<ListDeviceDetailResModel>>> GetListDevice()
         {

@@ -39,14 +39,14 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-                // [HttpDelete("{Id}")]
-                // [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                // public async Task<IActionResult> DeleteDeviceById(Guid Id)
-                // {
-                //         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                //         var result = await _deviceServices.DeleteDeviceById(Id, token);
-                //         return Ok(result);
-                // }
+                [HttpDelete("{Id}")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> DeleteDeviceById(Guid Id)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceServices.DeleteDeviceById(Id, token);
+                        return Ok(result);
+                }
 
                 [HttpGet]
                 public async Task<IActionResult> GetListDevice()
