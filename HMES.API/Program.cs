@@ -176,7 +176,7 @@ builder.Services.AddAuthentication("HMESAuthentication")
     .AddScheme<AuthenticationSchemeOptions, AuthorizeMiddleware>("HMESAuthentication", null).AddScheme<AuthenticationSchemeOptions, IoTAuthorizeMiddleware>("HMESIoTAuthentication", null);
 
 //=========================================== FIREBASE ============================================
-Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"meowwoofsocial.json");
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"hmes.json");
 builder.Services.AddSingleton<ICloudServices>(s => new CloudServices(StorageClient.Create()));
 
 //========================================== MIDDLEWARE ===========================================

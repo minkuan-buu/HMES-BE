@@ -35,10 +35,10 @@ jobs:
           dotnet build -c Release
           dotnet publish -c Release -r linux-x64 -o ./publish
 
-          # Copy file meowwoofsocial.json vào thư mục publish
-          cp /www/wwwroot/api.hmes.site/HMES-BE/meowwoofsocial.json /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          # Copy file hmes.json vào thư mục publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/hmes.json /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
           cp /www/wwwroot/api.hmes.site/HMES-BE/.env /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
-          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/MeowWoofLogo.webp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
+          cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/HMES.webp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
           cp /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/ResetPassword.html /www/wwwroot/api.hmes.site/HMES-BE/HMES.API/publish
 
           # Cấp quyền cho thư mục publish

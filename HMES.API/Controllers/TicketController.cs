@@ -1,6 +1,7 @@
 using HMES.Business.Services.TicketServices;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HMES.API.Controllers;
@@ -18,6 +19,7 @@ public class TicketController : ControllerBase
 
     // GET: api/ticket
     [HttpGet]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> GetAllTickets(
         [FromQuery] string? keyword,
         [FromQuery] TicketTypeEnums? type,
@@ -32,6 +34,7 @@ public class TicketController : ControllerBase
 
     // GET: api/ticket/assigned
     [HttpGet("assigned")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> GetTicketsByToken(
         [FromQuery] string? keyword,
         [FromQuery] TicketTypeEnums? type,
@@ -46,6 +49,7 @@ public class TicketController : ControllerBase
 
     // GET: api/ticket/{id}
     [HttpGet("{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> GetTicketById(string id)
     {
         var result = await _ticketServices.GetTicketById(id);
@@ -54,6 +58,7 @@ public class TicketController : ControllerBase
 
     // POST: api/ticket
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> AddTicket([FromForm] TicketCreateDto ticketDto)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
@@ -63,6 +68,7 @@ public class TicketController : ControllerBase
 
     // POST: api/ticket/response
     [HttpPost("response")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> ResponseTicket([FromForm] TicketResponseDto ticketDto)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
@@ -72,6 +78,7 @@ public class TicketController : ControllerBase
 
     // PUT: api/ticket/assign/{ticketId}
     [HttpPut("assign/{ticketId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> AssignTicket(string ticketId)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
@@ -81,6 +88,7 @@ public class TicketController : ControllerBase
 
     // PUT: api/ticket/status/{ticketId}
     [HttpPut("status/{ticketId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> ChangeTicketStatus(
         string ticketId,
         [FromForm] TicketStatusEnums status)
@@ -92,6 +100,7 @@ public class TicketController : ControllerBase
     
     // PUT: api/ticket/transfer/{ticketId}
     [HttpPut("transfer/{ticketId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> TransferTicket(
         Guid ticketId,
         [FromForm] Guid transferTo)
@@ -103,6 +112,7 @@ public class TicketController : ControllerBase
     
     // GET: api/ticket/transfer
     [HttpGet("transfer")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> LoadListRequestTransferTicket(
         [FromQuery] string? keyword,
         [FromQuery] int pageIndex = 1,
@@ -115,12 +125,22 @@ public class TicketController : ControllerBase
     
     // PUT: api/ticket/transfer/{ticketId}
     [HttpPut("transfer/{ticketId}/decision")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]
     public async Task<IActionResult> ManageTransferTicket(
         Guid ticketId,
         [FromForm] bool decision)
     {
         var token = Request.Headers.Authorization.ToString().Split(" ")[1];
         var result = await _ticketServices.ManageTransferTicket(ticketId, decision, token);
+        return Ok(result);
+    }
+    
+    // GET: api/ticket/device/{serial}
+    [HttpGet("device/{id}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication")]       
+    public async Task<IActionResult> GetDeviceItemById(string id)
+    {
+        var result = await _ticketServices.GetDeviceItemById(id);
         return Ok(result);
     }
     

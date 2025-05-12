@@ -40,4 +40,6 @@ public interface ITicketServices
         int pageSize);
     Task<ResultModel<MessageResultModel>> ManageTransferTicket(Guid ticketId, bool decision, string token);
     
+    Task<ResultModel<DataResultModel<TicketDeviceItemDto>>> GetDeviceItemById(string serial);
+    
 }

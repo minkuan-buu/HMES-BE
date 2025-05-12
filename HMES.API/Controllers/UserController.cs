@@ -122,12 +122,29 @@ namespace HMES.API.Controllers
             return Ok(result);
         }
 
+        [HttpPost("me/iot/devices/deactive")]
+        [Authorize(AuthenticationSchemes = "HMESIoTAuthentication")]
+        public async Task<IActionResult> Deactive([FromBody] Guid Id)
+        {
+            var result = await _deviceItemServices.DeactiveDevice(Id);
+            return Ok(result);
+        }
+
         [HttpPatch("me/devices/{id}/refresh-cycle")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateRefreshCycleHours(Guid id, [FromBody] UpdateRefreshCycleHoursReqModel updateModel)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
             var result = await _deviceItemServices.UpdateRefreshCycleHours(updateModel.RefreshCycleHours, id, token);
+            return Ok(result);
+        }
+
+        [HttpGet("me/devices/{id}/history-log")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetDeviceHistoryLog(Guid id)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _deviceItemServices.GetHistoryLog(id, token);
             return Ok(result);
         }
     }

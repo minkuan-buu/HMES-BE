@@ -75,6 +75,7 @@ namespace HMES.Business.MapperProfiles
             CreateMap<DeviceItem, ListActiveDeviceResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Plant.Name)))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
                 .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
@@ -166,17 +167,26 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.HandledBy, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Technician.Name ?? "")))
-                .ForMember(dest => dest.BriefDescription, opt => opt.MapFrom(src => src.Description.Length > 100 ? TextConvert.ConvertFromUnicodeEscape(src.Description.Substring(0, 100)) : TextConvert.ConvertFromUnicodeEscape(src.Description)));
+                .ForMember(dest => dest.BriefDescription, opt =>
+                    opt.MapFrom(src =>
+                        TextConvert.ConvertFromUnicodeEscape(src.Description)
+                            .Length > 100
+                            ? TextConvert.ConvertFromUnicodeEscape(src.Description).Substring(0, 100)
+                            : TextConvert.ConvertFromUnicodeEscape(src.Description)
+                    )
+                );
 
+            CreateMap<DeviceItem, TicketDeviceItemDto>();
             CreateMap<Ticket, TicketDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.TicketAttachments.Select(ta => ta.Attachment)))
-                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) // Map trực tiếp từ TicketResponses
+                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) 
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.DeviceItemSerial, opt => opt.MapFrom(src => src.DeviceItem.Serial));
 
             CreateMap<TicketResponse, TicketResponseDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
@@ -330,11 +340,15 @@ namespace HMES.Business.MapperProfiles
             CreateMap<DeviceItem, ListMyDeviceResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.IsOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
-
+            CreateMap<DeviceItem, HistoryLogIoTResModel>()
+                .ForMember(dest => dest.DeviceItemId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.DeviceItemName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.IoTData, opt => opt.Ignore());
 
 
 

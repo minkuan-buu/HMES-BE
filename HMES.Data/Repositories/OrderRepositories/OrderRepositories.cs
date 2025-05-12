@@ -17,10 +17,11 @@ namespace HMES.Data.Repositories.OrderRepositories
                 .Include(o => o.User)
                 .OrderByDescending(o => o.CreatedAt)
                 .AsQueryable();
+            
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(o => o.User.Name.Contains(keyword));
+                query = query.Where(o => o.User.Name.Contains(keyword) || o.Id.ToString().Contains(keyword.ToUpper()));
             }
 
             if (minPrice.HasValue)
@@ -95,6 +96,7 @@ namespace HMES.Data.Repositories.OrderRepositories
 
             var totalItems = await query.CountAsync();
             var orders = await query
+                .OrderByDescending(o => o.CreatedAt)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -114,6 +116,11 @@ namespace HMES.Data.Repositories.OrderRepositories
                 .FirstOrDefaultAsync(o => o.Id == orderId);
             return order;
 
+        }
+
+        public async Task<Order?> GetOrderByOrderCode(string orderCode)
+        {
+            return await Context.Orders.FirstOrDefaultAsync(o => o.ShippingOrderCode == orderCode);
         }
     }
 }

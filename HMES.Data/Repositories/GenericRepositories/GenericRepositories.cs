@@ -70,9 +70,14 @@ namespace HMES.Data.Repositories.GenericRepositories
             Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
             string includeProperties = "",
             int? pageIndex = null,
-            int? pageSize = null)
+            int? pageSize = null,
+            bool asNoTracking = true // thêm flag để chủ động chọn
+        )
         {
             var query = GetQueryable(filter, orderBy, includeProperties, pageIndex, pageSize);
+            if (asNoTracking)
+                query = query.AsNoTracking();
+
             return await query.ToListAsync();
         }
 

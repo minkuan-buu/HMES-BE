@@ -2,12 +2,14 @@ using System.Net;
 using System.Text.Json;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.DeviceItemsRepositories;
+using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
 using HMES.Data.Repositories.PlantRepositories;
@@ -21,11 +23,13 @@ namespace HMES.Business.Services.DeviceItemServices
         private readonly INutritionReportRepositories _nutritionReportRepositories;
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IPlantRepositories _plantRepositories;
+        private readonly INotificationRepositories _notificationRepositories;
         private readonly IMapper _mapper;
         private readonly IMqttService _mqttService;
 
-        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories)
+        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories)
         {
+            _notificationRepositories = notificationRepositories;
             _nutritionRDRepositories = nutritionRDRepositories;
             _nutritionReportRepositories = nutritionReportRepositories;
             _deviceItemsRepositories = deviceItemsRepositories;
@@ -47,14 +51,18 @@ namespace HMES.Business.Services.DeviceItemServices
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
 
                 var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
-                var newIoTResModel = new IoTResModel
+                if (nutritionReport != null)
                 {
-                    Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
-                    SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
-                    Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
-                    WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
-                };
-                result.IoTData = newIoTResModel;
+                    var newIoTResModel = new IoTResModel
+                    {
+                        Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                        SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                        Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                        WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                    };
+                    result.IoTData = newIoTResModel;
+                }
+
                 var dataResult = new DataResultModel<DeviceItemDetailResModel>
                 {
                     Data = result
@@ -207,6 +215,45 @@ namespace HMES.Business.Services.DeviceItemServices
             }
         }
 
+        public async Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId)
+        {
+            try
+            {
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
+                if (getDevice.UserId == null || getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == false || getDevice.IsOnline == false)
+                {
+                    throw new Exception("Can't Deactive Device!");
+                }
+                else if (getDevice == null)
+                {
+                    throw new Exception("Device not found!");
+                }
+                else if (plant != null)
+                {
+                    getDevice.PlantId = plant.Id;
+                }
+                getDevice.IsActive = false;
+                getDevice.IsOnline = false;
+                getDevice.Status = DeviceItemStatusEnum.Available.ToString();
+                getDevice.LastSeen = null;
+                await _deviceItemsRepositories.Update(getDevice);
+
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Deactive Device successfully!",
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
         public async Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId)
         {
             try
@@ -282,7 +329,21 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
-                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", new
+                Notification notification = new Notification()
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
+                    CreatedAt = DateTime.Now,
+                    Message = TextConvert.ConvertToUnicodeEscape(messageWarning),
+                    NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
+                    IsRead = false,
+                    ReadAt = null,
+                    ReferenceId = getDevice.Id,
+                    SenderId = null,
+                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                };
+                await _notificationRepositories.Insert(notification);
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", new
                 {
                     message = messageWarning,
                 });
@@ -376,7 +437,21 @@ namespace HMES.Business.Services.DeviceItemServices
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
-                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId}", JsonSerializer.Serialize(new
+                Notification notification = new Notification()
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = getDevice.UserId ?? throw new Exception("UserId is null"),
+                    CreatedAt = DateTime.Now,
+                    Message = TextConvert.ConvertToUnicodeEscape(messageWarning),
+                    NotificationType = NotificationTypeEnums.DeviceItems.ToString(),
+                    IsRead = false,
+                    ReadAt = null,
+                    ReferenceId = getDevice.Id,
+                    SenderId = null,
+                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                };
+                await _notificationRepositories.Insert(notification);
+                await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", JsonSerializer.Serialize(new
                 {
                     message = messageWarning,
                 }));
@@ -388,6 +463,49 @@ namespace HMES.Business.Services.DeviceItemServices
                     {
                         Message = "Update log successfully"
                     }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<DataResultModel<HistoryLogIoTResModel>>> GetHistoryLog(Guid deviceItemId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails.TargetValue,Device");
+                if (deviceItem == null)
+                {
+                    throw new Exception("Device item not found");
+                }
+                var result = _mapper.Map<HistoryLogIoTResModel>(deviceItem);
+                var nutritionReports = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).ToList();
+                var nutritionReportDetails = new List<IoTHistoryResModel>();
+                foreach (var nutritionReport in nutritionReports)
+                {
+                    var nutritionReportDetail = new IoTHistoryResModel
+                    {
+                        NutrionId = nutritionReport.Id,
+                        SoluteConcentration = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "SoluteConcentration")?.RecordValue ?? 0,
+                        Temperature = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Temperature")?.RecordValue ?? 0,
+                        Ph = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "Ph")?.RecordValue ?? 0,
+                        WaterLevel = nutritionReport.NutritionReportDetails.FirstOrDefault(x => x.TargetValue.Type == "WaterLevel")?.RecordValue ?? 0,
+                        CreatedAt = nutritionReport.CreatedAt,
+                    };
+                    nutritionReportDetails.Add(nutritionReportDetail);
+                }
+                result.IoTData = nutritionReportDetails;
+                var dataResult = new DataResultModel<HistoryLogIoTResModel>
+                {
+                    Data = result
+                };
+                return new ResultModel<DataResultModel<HistoryLogIoTResModel>>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = dataResult
                 };
             }
             catch (Exception ex)

@@ -12,11 +12,15 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     
     public async Task<(List<Ticket> tickets, int TotalItems)> GetAllTicketsAsync(string? keyword, string? type, string? status, int pageIndex, int pageSize)
     {
-        var query = Context.Tickets.Include(t => t.User).AsQueryable();
+        var query = Context.Tickets
+            .Include(t => t.User)
+            .Include(t => t.Technician)
+            .OrderByDescending(t => t.CreatedAt)
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            query = query.Where(t => t.Description.Contains(keyword));
+            query = query.Where(t => t.Description.Contains(keyword) || t.Id.ToString().Contains(keyword.ToUpper()));
         }
 
         if (!string.IsNullOrEmpty(type))
@@ -41,13 +45,14 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
     public async Task<(List<Ticket> tickets, int TotalItems)> GetAllOwnTicketsAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize)
     {
         var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
             .Include(t => t.User)
             .Include(t => t.Technician)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            query = query.Where(t => t.Description.Contains(keyword));
+            query = query.Where(t => t.Description.Contains(keyword) || t.Id.ToString().Contains(keyword.ToUpper()));
         }
 
         if (!string.IsNullOrEmpty(type))
@@ -76,21 +81,25 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
             .Include(t => t.User)
             .Include(t => t.TicketResponses)
                 .ThenInclude(tr => tr.TicketResponseAttachments)
-            .Include(t => t.TicketResponses)
+            .Include(t => t.TicketResponses.OrderBy(tr => tr.CreatedAt))
                 .ThenInclude(tr => tr.User) // Include User in TicketResponse
             .Include(t => t.TicketAttachments)
+            .Include(t => t.DeviceItem)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
     public async Task<(List<Ticket> tickets, int totalItems)> GetTicketsByTokenAsync(string? keyword, string? type, string? status, Guid userId, int pageIndex, int pageSize)
     {
-        var query = Context.Tickets.Include(t => t.User).Include(t => t.Technician).AsQueryable();
+        var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
+            .Include(t => t.User)
+            .Include(t => t.Technician).AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            query = query.Where(t => t.Description.Contains(keyword));
+            query = query.Where(t => t.Description.Contains(keyword) || t.Id.ToString().Contains(keyword.ToUpper()));
         }
-
+        
         if (!string.IsNullOrEmpty(type))
         {
             query = query.Where(t => t.Type == type);
@@ -115,14 +124,16 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
         int pageSize)
     {
         var query = Context.Tickets
+            .OrderByDescending(t => t.CreatedAt)
             .Include(t => t.User)
             .Include(t => t.Technician)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            query = query.Where(t => t.Description.Contains(keyword));
+            query = query.Where(t => t.Description.Contains(keyword) || t.Id.ToString().Contains(keyword.ToUpper()));
         }
+
 
         if (!string.IsNullOrEmpty(type))
         {

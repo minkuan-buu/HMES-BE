@@ -8,7 +8,7 @@ namespace HMES.API.Controllers
 {
     [Route("api/useraddress")]
     [ApiController]
-     public class UserAddressController : ControllerBase
+    public class UserAddressController : ControllerBase
     {
         private readonly IUserAddressServices _userAddressServices;
 
@@ -21,12 +21,12 @@ namespace HMES.API.Controllers
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> CreateUserAddress([FromBody] UserAddressCreateReqModel userAddressReq)
         {
-                var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                var result = await _userAddressServices.CreateUserAddress(userAddressReq, token);
-                return Ok(result);
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _userAddressServices.CreateUserAddress(userAddressReq, token);
+            return Ok(result);
         }
 
-        [HttpPut]
+        [HttpPut("{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> UpdateUserAddress(Guid id, [FromBody] UserAddressUpdateReqModel userAddressReq)
         {
@@ -34,8 +34,8 @@ namespace HMES.API.Controllers
             var result = await _userAddressServices.UpdateUserAddress(id, userAddressReq, token);
             return Ok(result);
         }
-        
-        [HttpDelete]
+
+        [HttpPut("soft-delete/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> DeleteUserAddress(Guid id)
         {
@@ -43,7 +43,7 @@ namespace HMES.API.Controllers
             var result = await _userAddressServices.DeleteUserAddress(id, token);
             return Ok(result);
         }
-        
+
         [HttpGet]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetUserAddress()
@@ -52,7 +52,7 @@ namespace HMES.API.Controllers
             var result = await _userAddressServices.GetUserAddress(token);
             return Ok(result);
         }
-        
+
         [HttpPut("address/default/{id}")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> SetDefaultUserAddress(Guid id)

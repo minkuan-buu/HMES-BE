@@ -21,6 +21,7 @@ namespace HMES.API.Controllers
         }
 
         [HttpPost("mod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
         public async Task<IActionResult> Login([FromBody] CreateModUserModel UserReq)
         {
             var result = await _userServices.CreateModUser(UserReq);
@@ -28,6 +29,7 @@ namespace HMES.API.Controllers
         }
         
         [HttpGet("users")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
         public async Task<IActionResult> GetAllUsers([FromQuery] string? keyword,
             [FromQuery] AccountStatusEnums? status, [FromQuery] RoleEnums? role, [FromQuery] int pageIndex = 1,
             [FromQuery] int pageSize = 10)
@@ -38,5 +40,14 @@ namespace HMES.API.Controllers
                 pageSize);
             return Ok(result);
         }
+        
+        [HttpGet("users/count")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+        public async Task<IActionResult> GetAllUsersCount()
+        {
+            var result = await _userServices.GetUserCount();
+            return Ok(result);
+        }
+        
     }
 }
