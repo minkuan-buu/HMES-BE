@@ -757,7 +757,7 @@ namespace HMES.Business.Services.OrderServices
 
         public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetOrderList(string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
         {
-            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(TextConvert.ConvertToUnicodeEscape(keyword ?? string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -780,7 +780,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, TextConvert.ConvertToUnicodeEscape(keyword??string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, TextConvert.ConvertToUnicodeEscape(keyword ?? string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -1023,6 +1023,21 @@ namespace HMES.Business.Services.OrderServices
                 };
                 await _transactionRepositories.Insert(NewTransaction);
 
+                // Trừ số lượng Product và Device trong kho
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        orderDetail.Product.Amount -= orderDetail.Quantity;
+                        await _productRepositories.Update(orderDetail.Product);
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        orderDetail.Device.Quantity -= orderDetail.Quantity;
+                        await _deviceRepositories.Update(orderDetail.Device);
+                    }
+                }
+
                 var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
                 if (cart != null)
                 {
@@ -1171,14 +1186,15 @@ namespace HMES.Business.Services.OrderServices
                 order.Status = OrderEnums.Success.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
-            }else if (callbackData.Status.ToLower().Equals("returned"))
+            }
+            else if (callbackData.Status.ToLower().Equals("returned"))
             {
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
             }
         }
-        
+
 
         private async Task CancelShipping(Order order)
         {
