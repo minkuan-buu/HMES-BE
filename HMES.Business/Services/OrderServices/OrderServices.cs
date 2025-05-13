@@ -1007,7 +1007,7 @@ namespace HMES.Business.Services.OrderServices
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
-                order.Status = OrderEnums.Delivering.ToString();
+                order.Status = OrderEnums.IsWaiting.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
                 var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
@@ -1278,6 +1278,34 @@ namespace HMES.Business.Services.OrderServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
             };
+        }
+        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(Guid orderId, string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                if (order == null)
+                {
+                    throw new CustomException("Order not found");
+                }
+                if (order.Status != OrderEnums.IsWaiting.ToString())
+                {
+                    throw new CustomException("Order is not in pending status");
+                }
+                order.Status = OrderEnums.Delivering.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel { Message = "Confirm order successfully." }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
         }
     }
 }

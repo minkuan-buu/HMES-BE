@@ -7,6 +7,7 @@ namespace HMES.Data.Enums
         PendingPayment,
         Delivering,
         AllowRepayment,
-        Cancelled
+        Cancelled,
+        IsWaiting,
     }
 }

@@ -81,6 +81,14 @@ namespace HMES.API.Controllers
             await _orderServices.HandleGhnCallback(callbackData);
             return Ok();
         }
-        
+
+        [HttpPost("confirm-cod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Consultant")]
+        public async Task<IActionResult> ConfirmOrderCOD([FromBody] Guid orderId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.ConfirmOrderCOD(orderId, token);
+            return Ok(result);
+        }
     }
 }
