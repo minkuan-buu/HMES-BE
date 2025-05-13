@@ -22,6 +22,6 @@ namespace HMES.Business.Services.DeviceServices
 
         Task<ResultModel<ListDataResultModel<ListActiveDeviceResModel>>> GetListActiveDeviceByUserId(string token);
 
-        Task<ResultModel<MessageResultModel>> UpdateDevice(DeviceUpdateReqModel DeviceReqModel, string token);
+        Task<ResultModel<MessageResultModel>> UpdateDevice(DeviceUpdateReqModel DeviceReqModel, string token, Guid Id);
     }
 }

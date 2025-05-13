@@ -214,12 +214,12 @@ namespace HMES.Business.Services.DeviceServices
                 throw new CustomException(ex.Message);
             }
         }
-        public async Task<ResultModel<MessageResultModel>> UpdateDevice(DeviceUpdateReqModel DeviceReqModel, string token)
+        public async Task<ResultModel<MessageResultModel>> UpdateDevice(DeviceUpdateReqModel DeviceReqModel, string token, Guid Id)
         {
             try
             {
                 // Lấy thông tin thiết bị từ cơ sở dữ liệu
-                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(DeviceReqModel.Id));
+                var deviceDetail = await _deviceRepositories.GetSingle(x => x.Id.Equals(Id));
                 if (deviceDetail == null)
                 {
                     throw new Exception("Device not found!");
