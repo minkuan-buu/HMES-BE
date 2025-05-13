@@ -231,11 +231,11 @@ namespace HMES.Business.Services.DeviceServices
 
                 // Kiểm tra và cập nhật từng trường
                 deviceDetail.Name = !string.IsNullOrEmpty(DeviceReqModel.Name)
-                    ? DeviceReqModel.Name
+                    ? TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Name)
                     : deviceDetail.Name;
 
                 deviceDetail.Description = !string.IsNullOrEmpty(DeviceReqModel.Description)
-                    ? DeviceReqModel.Description
+                    ? TextConvert.ConvertToUnicodeEscape(DeviceReqModel.Description)
                     : deviceDetail.Description;
 
                 if (DeviceReqModel.Price.HasValue)
