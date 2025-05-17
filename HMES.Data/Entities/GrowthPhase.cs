@@ -13,6 +13,8 @@ public partial class GrowthPhase
 
     public string Status { get; set; } = null!;
 
+    public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
+
     public virtual ICollection<PlantOfPhase> PlantOfPhases { get; set; } = new List<PlantOfPhase>();
 
     public virtual User? User { get; set; }

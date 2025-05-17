@@ -17,8 +17,8 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<TargetValue?> GetTargetValueByPlantId(Guid plantId)
     {
         var targetValue = await Context.TargetValues
-            .Include(t => t.TargetOfPlants)
-            .FirstOrDefaultAsync(t => t.TargetOfPlants.Any(tp => tp.PlantId == plantId));
+            .Include(t => t.TargetOfPhases)
+            .FirstOrDefaultAsync(t => t.TargetOfPhases.Any(tp => tp.PlantOfPhaseId == plantId));
         return targetValue;
     }
 
@@ -39,8 +39,9 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<TargetValue?> GetTargetValueById(Guid id)
     {
         var targetValue = await Context.TargetValues
-            .Include(t => t.TargetOfPlants)
-            .ThenInclude(tp => tp.Plant)
+            .Include(t => t.TargetOfPhases)
+            .ThenInclude(tp => tp.PlantOfPhase)
+            .ThenInclude(pp => pp.Plant)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
         return targetValue;

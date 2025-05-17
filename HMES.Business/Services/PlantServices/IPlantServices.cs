@@ -16,11 +16,11 @@ public interface IPlantServices
     
     Task<ResultModel<MessageResultModel>> DeletePlantAsync(Guid id);
     
-    Task<ResultModel<MessageResultModel>> SetValueForPlant(Guid plantId, Guid targetId);
+    Task<ResultModel<MessageResultModel>> SetValueForPlant(Guid plantId, Guid targetId, Guid phaseId);
     
-    Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId);
+    Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId, Guid phaseId);
     
-    Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId);
+    Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId, Guid phaseId);
     
     Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type);
 

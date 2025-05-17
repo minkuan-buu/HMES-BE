@@ -244,7 +244,31 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => src.TargetOfPlants.Select(top => top.TargetValue)));
+                .ForMember(dest => dest.phases, opt => opt.MapFrom(src => 
+                    src.PlantOfPhases
+                        .Select(pop => new TargetInPhaseDto
+                        {
+                            PhaseId = pop.PhaseId,
+                            PhaseName = TextConvert.ConvertFromUnicodeEscape(pop.Phase.Name),
+                            Target = pop.TargetOfPhases
+                                .Select(top => new TargetResModel
+                                {
+                                    Id = top.TargetValueId,
+                                    Type = top.TargetValue.Type,
+                                    MinValue = top.TargetValue.MinValue,
+                                    MaxValue = top.TargetValue.MaxValue
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                ));
+            // Phase
+            CreateMap<GrowthPhase, PhaseResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+            
+            
             // Target value
             CreateMap<TargetValue, TargetResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -263,7 +287,17 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
-                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => src.TargetOfPlants.Select(t => t.Plant)));
+                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => 
+                    src.TargetOfPhases
+                        .Select(top => new PlantAndPhaseForTargetListDto
+                        {
+                            PlantId = top.PlantOfPhase.PlantId,
+                            PlantName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Plant.Name),
+                            PhaseId = top.PlantOfPhase.PhaseId,
+                            PhaseName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Phase.Name)
+                        })
+                        .ToList()
+                ));
             // Order
 
             CreateMap<Order, OrderResModel>()

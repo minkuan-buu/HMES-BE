@@ -33,17 +33,23 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
     public async Task<Plant?> GetByIdAsync(Guid id)
     {
         var plant = await Context.Plants
-            .Include(p => p.TargetOfPlants)
+            .Include(p => p.PlantOfPhases)
+            .ThenInclude(pp => pp.Phase)
+            .Include(p => p.PlantOfPhases)
+            .ThenInclude(pp => pp.TargetOfPhases)
             .ThenInclude(tp => tp.TargetValue)
             .FirstOrDefaultAsync(p => p.Id == id);
         return plant;
     }
 
-    public async Task<bool> PlantHasTargetValueType(Guid plantId, string targetType)
+    public async Task<bool> PlantHasTargetValueType(Guid plantId, string targetType, Guid phaseId)
     {
         return await Context.Plants
             .Where(p => p.Id == plantId)
-            .SelectMany(p => p.TargetOfPlants)
+            .SelectMany(p => p.PlantOfPhases.Where(pop => 
+                pop.PhaseId == phaseId && 
+                Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null)))
+            .SelectMany(pop => pop.TargetOfPhases)
             .Select(top => top.TargetValue)
             .AnyAsync(tv => tv.Type == targetType);
     }
@@ -51,7 +57,10 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
     public async Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type)
     {
         return await Context.Plants
-            .Where(p => p.TargetOfPlants.All(top => top.TargetValue.Type != type))
+            .Where(p => !p.PlantOfPhases
+                .Where(pop => Context.GrowthPhases
+                    .Any(gp => gp.Id == pop.PhaseId && gp.UserId == null))
+                .Any(pop => pop.TargetOfPhases.Any(top => top.TargetValue.Type == type)))
             .ToListAsync();
     }
 }

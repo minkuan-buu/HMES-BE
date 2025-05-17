@@ -35,11 +35,15 @@ public partial class DeviceItem
 
     public DateTime? UpdatedAt { get; set; }
 
+    public Guid? PhaseId { get; set; }
+
     public virtual Device Device { get; set; } = null!;
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
 
     public virtual Order Order { get; set; } = null!;
+
+    public virtual GrowthPhase? Phase { get; set; }
 
     public virtual Plant? Plant { get; set; }
 
