@@ -74,5 +74,21 @@ namespace HMES.API.Controllers
             var result = await _orderServices.UpdateOrderAddress(request.OrderId, request.UserAddressId, token);
             return Ok(result);
         }
+
+        [HttpPost("callback")]
+        public async Task<IActionResult> HandleCallback([FromBody] GHNReqModel callbackData)
+        {
+            await _orderServices.HandleGhnCallback(callbackData);
+            return Ok();
+        }
+
+        [HttpPost("confirm-cod")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Consultant")]
+        public async Task<IActionResult> ConfirmOrderCOD([FromBody] Guid orderId)
+        {
+            var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+            var result = await _orderServices.ConfirmOrderCOD(orderId, token);
+            return Ok(result);
+        }
     }
 }

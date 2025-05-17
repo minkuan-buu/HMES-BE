@@ -13,7 +13,14 @@ public class DeviceItemsRepositories : GenericRepositories<DeviceItem>, IDeviceI
 
     public async Task<DeviceItem?> GetDeviceItemByDeviceItemIdAndUserId(Guid deviceItemId, Guid userId)
     {
-        return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == deviceItemId && x.UserId == userId);
+        return await Context.DeviceItems
+            .Include(d => d.Order)
+            .FirstOrDefaultAsync(x => x.Id == deviceItemId && x.UserId == userId);
+    }
+
+    public async Task<DeviceItem?> GetDeviceItemById(Guid id)
+    {
+        return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == id); 
     }
 
     public async Task<List<DeviceItem>> GetOnlineDevicesAsync()

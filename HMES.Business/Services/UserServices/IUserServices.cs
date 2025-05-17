@@ -18,4 +18,5 @@ public interface IUserServices
     Task<ResultModel<MessageResultModel>> CreateModUser(CreateModUserModel ReqModel);
     Task<ResultModel<ListDataResultModel<UserProfileResModel>>> GetUsers(string token, string? keyword, string? role, string? status, int pageIndex, int pageSize);
     Task<User> GetUserById(Guid id);
+    Task<int> GetUserCount();
 }

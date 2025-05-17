@@ -757,7 +757,7 @@ namespace HMES.Business.Services.OrderServices
 
         public async Task<ResultModel<ListDataResultModel<OrderResModel>>> GetOrderList(string? keyword, decimal? minPrice, decimal? maxPrice, DateTime? startDate, DateTime? endDate, string? status, int pageIndex = 1, int pageSize = 10)
         {
-            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetAllOrdersAsync(TextConvert.ConvertToUnicodeEscape(keyword ?? string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -780,7 +780,7 @@ namespace HMES.Business.Services.OrderServices
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
-            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, keyword, minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
+            var (orders, totalItems) = await _orderRepositories.GetSelfOrdersAsync(userId, TextConvert.ConvertToUnicodeEscape(keyword ?? string.Empty), minPrice, maxPrice, startDate, endDate, status, pageIndex, pageSize);
 
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -1007,7 +1007,7 @@ namespace HMES.Business.Services.OrderServices
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
-                order.Status = OrderEnums.Delivering.ToString();
+                order.Status = OrderEnums.IsWaiting.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
                 var OrderPaymentRefId = int.Parse(GenerateRandomRefId());
@@ -1022,6 +1022,21 @@ namespace HMES.Business.Services.OrderServices
                     CreatedAt = DateTime.Now,
                 };
                 await _transactionRepositories.Insert(NewTransaction);
+
+                // Trừ số lượng Product và Device trong kho
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        orderDetail.Product.Amount -= orderDetail.Quantity;
+                        await _productRepositories.Update(orderDetail.Product);
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        orderDetail.Device.Quantity -= orderDetail.Quantity;
+                        await _deviceRepositories.Update(orderDetail.Device);
+                    }
+                }
 
                 var cart = await _cartRepositories.GetSingle(x => x.UserId.Equals(userId), includeProperties: "CartItems");
                 if (cart != null)
@@ -1156,6 +1171,31 @@ namespace HMES.Business.Services.OrderServices
             }
         }
 
+        public async Task HandleGhnCallback(GHNReqModel callbackData)
+        {
+            if (callbackData == null)
+                throw new CustomException("Invalid callback data");
+
+            var orderCode = callbackData.OrderCode;
+            var order = await _orderRepositories.GetOrderByOrderCode(orderCode);
+            if (order == null)
+                throw new CustomException("Order not found");
+
+            if (callbackData.Status.ToLower().Equals("delivered"))
+            {
+                order.Status = OrderEnums.Success.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+            }
+            else if (callbackData.Status.ToLower().Equals("returned"))
+            {
+                order.Status = OrderEnums.Cancelled.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+            }
+        }
+
+
         private async Task CancelShipping(Order order)
         {
             try
@@ -1238,6 +1278,34 @@ namespace HMES.Business.Services.OrderServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
             };
+        }
+        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(Guid orderId, string token)
+        {
+            try
+            {
+                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                if (order == null)
+                {
+                    throw new CustomException("Order not found");
+                }
+                if (order.Status != OrderEnums.IsWaiting.ToString())
+                {
+                    throw new CustomException("Order is not in pending status");
+                }
+                order.Status = OrderEnums.Delivering.ToString();
+                order.UpdatedAt = DateTime.Now;
+                await _orderRepositories.Update(order);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel { Message = "Confirm order successfully." }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
         }
     }
 }

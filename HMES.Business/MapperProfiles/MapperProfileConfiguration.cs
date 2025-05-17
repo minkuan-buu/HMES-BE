@@ -54,6 +54,14 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
 
+            CreateMap<DeviceUpdateReqModel, Device>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertToUnicodeEscape(src.Description)))
+                .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment))
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price));
+
             CreateMap<Device, DeviceDetailResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
@@ -175,11 +183,13 @@ namespace HMES.Business.MapperProfiles
                             : TextConvert.ConvertFromUnicodeEscape(src.Description)
                     )
                 );
+
+            CreateMap<DeviceItem, TicketDeviceItemDto>();
             CreateMap<Ticket, TicketDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.TicketAttachments.Select(ta => ta.Attachment)))
-                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) // Map trực tiếp từ TicketResponses
+                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) 
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
