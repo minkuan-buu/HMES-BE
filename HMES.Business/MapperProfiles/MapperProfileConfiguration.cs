@@ -291,6 +291,7 @@ namespace HMES.Business.MapperProfiles
                     src.TargetOfPhases
                         .Select(top => new PlantAndPhaseForTargetListDto
                         {
+                            PlantOfPhaseId = top.PlantOfPhase.Id,
                             PlantId = top.PlantOfPhase.PlantId,
                             PlantName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Plant.Name),
                             PhaseId = top.PlantOfPhase.PhaseId,

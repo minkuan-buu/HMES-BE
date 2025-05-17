@@ -317,6 +317,112 @@ public class PlantServices : IPlantServices
         };
     }
 
+    public async Task<ResultModel<MessageResultModel>> SetValueForCustomPhase(Guid plantId, Guid targetId, Guid phaseId)
+    {
+        var plant = await _plantRepositories.GetByIdAsync(plantId);
+        
+        if (plant == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant not found"
+                }
+            };
+        }
+        
+        var target = await _targetValueRepositories.GetTargetValueById(targetId);
+        
+        if (target == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Target value not found"
+                }
+            };
+        }
+        
+        
+        if(await _plantRepositories.PlantHasTargetValueType(plantId, target.Type, phaseId))
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant already has this target value type"
+                }
+            };
+        }
+        
+        var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        
+        if (plantPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant does not have this phase"
+                }
+            };
+        }
+        
+        var targetOfPhase = await _targetOfPhaseRepository.GetTargetOfPlantByPlantIdAndValueId(plantPhase.Id, targetId);
+
+        if (targetOfPhase != null)
+        {
+            targetOfPhase.TargetValueId = targetId;
+            try
+            {
+                await _targetOfPhaseRepository.Update(targetOfPhase);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Set target value for plant successfully"
+                    }
+                };
+            }
+            catch (Exception e)
+            {
+                throw new CustomException(e.Message);
+            }
+        }
+        
+        var newTargetOfPhase = new TargetOfPhase
+        {
+            Id = Guid.NewGuid(),
+            PlantOfPhaseId = plantPhase.Id,
+            TargetValueId = targetId
+        };
+        
+        try
+        {
+            await _targetOfPhaseRepository.Insert(newTargetOfPhase);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Set target value for plant successfully"
+            }
+        };
+    }
+
     public async Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId, Guid phaseId)
     {
         var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);

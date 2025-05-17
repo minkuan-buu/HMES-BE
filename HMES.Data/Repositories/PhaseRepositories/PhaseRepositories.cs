@@ -15,6 +15,18 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
     public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesAsync()
     {
         var query = Context.GrowthPhases
+            .Where(g => g.UserId == null)
+            .AsQueryable();
+
+        var totalItems = await query.CountAsync();
+        var phases = await query.ToListAsync();
+
+        return (phases, totalItems);
+    }
+
+    public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesIncludeUserAsync()
+    {
+        var query = Context.GrowthPhases
             .AsQueryable();
 
         var totalItems = await query.CountAsync();

@@ -12,6 +12,8 @@ namespace HMES.Business.Services.DeviceItemServices
         Task<ResultModel<MessageResultModel>> UpdateRefreshCycleHours(int refreshCycleHours, Guid deviceItemId, string Token);
 
         Task<ResultModel<MessageResultModel>> SetPlantForDevice(Guid deviceItemId, Guid plantId, string token);
+        Task<ResultModel<MessageResultModel>> SetPhaseForDevice(Guid deviceItemId, Guid phaseId, string token);
+        
 
         Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId);
         Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId);

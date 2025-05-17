@@ -49,6 +49,7 @@ public class TargetResModelWithPlants
 
 public class PlantAndPhaseForTargetListDto
 {
+    public Guid PlantOfPhaseId { get; set; }
     public Guid PlantId { get; set; }
     public string PlantName { get; set; } = null!;
     public Guid? PhaseId { get; set; }

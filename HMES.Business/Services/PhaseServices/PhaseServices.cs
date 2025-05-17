@@ -8,24 +8,54 @@ using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
 using HMES.Data.Repositories.PhaseRepositories;
+using HMES.Data.Repositories.PlantOfPhaseRepositories;
+using HMES.Data.Repositories.PlantRepositories;
 
 namespace HMES.Business.Services.PhaseServices;
 
 public class PhaseServices: IPhaseServices
 {
     private readonly IPhaseRepositories _phaseRepository;
+    private readonly IPlantRepositories _plantRepositories;
+    private readonly IPlantOfPhaseRepositories _plantOfPhaseRepository;
     private readonly IMapper _mapper;
     
-    public PhaseServices(IPhaseRepositories phaseRepository, IMapper mapper)
+    public PhaseServices(IPhaseRepositories phaseRepository, IMapper mapper, IPlantOfPhaseRepositories plantOfPhaseRepository, IPlantRepositories plantRepositories)
     {
+        
         _phaseRepository = phaseRepository;
         _mapper = mapper;
+        _plantOfPhaseRepository = plantOfPhaseRepository;
+        _plantRepositories = plantRepositories;
     }
 
 
     public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesAsync()
     {
         var (phases, totalItems) = await _phaseRepository.GetAllPhasesAsync();
+        
+        var totalPages = (int)Math.Ceiling((double)totalItems / 10);
+        
+        var result = new ListDataResultModel<PhaseResModel>
+        {
+            Data = _mapper.Map<List<PhaseResModel>>(phases),
+            CurrentPage = 1,
+            TotalPages = totalPages,
+            TotalItems = totalItems,
+            PageSize = 10
+        };
+        return new ResultModel<ListDataResultModel<PhaseResModel>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = result
+        };
+    }
+
+    public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesIncludeUserAsync(Guid plantId,string token)
+    {
+        var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+        
+        var (phases, totalItems) = await _plantOfPhaseRepository.GetPhasesByPlantId(plantId, userId);
         
         var totalPages = (int)Math.Ceiling((double)totalItems / 10);
         
@@ -85,20 +115,21 @@ public class PhaseServices: IPhaseServices
             {
                 existedUserPhase.Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim());
                 await _phaseRepository.Update(existedUserPhase);
-                return new ResultModel<DataResultModel<PhaseResModel>>
-                {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new DataResultModel<PhaseResModel>
-                    {
-                        Data = _mapper.Map<PhaseResModel>(existedUserPhase)
-                    }
-                };
             }
             else
             {
                 phase.UserId = userId;
                 await _phaseRepository.Insert(phase);
             }
+
+            return new ResultModel<DataResultModel<PhaseResModel>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<PhaseResModel>
+                {
+                    Data = _mapper.Map<PhaseResModel>(existedUserPhase)
+                }
+            };
         }
         
         // Check if the Phase with the same name already exists
@@ -172,5 +203,54 @@ public class PhaseServices: IPhaseServices
                 Data = phaseDto
             }
         };
+    }
+
+    public async Task<ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>> SetPhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        
+        var plant = await _plantRepositories.GetByIdAsync(plantId);
+        if (plant == null)
+        {
+            throw new CustomException("Plant not found");
+        }
+        
+        var phase = await _phaseRepository.GetGrowthPhaseById(phaseId);
+        if (phase == null)
+        {
+            throw new CustomException("Phase not found");
+        }
+        
+        var existingPlantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        if (existingPlantOfPhase != null)
+        {
+            throw new CustomException("Phase already exists for this plant");
+        }
+        
+        var plantOfPhase = new PlantOfPhase
+        {
+            Id = Guid.NewGuid(),
+            PlantId = plantId,
+            PhaseId = phaseId
+        };
+        await _plantOfPhaseRepository.Insert(plantOfPhase);
+        
+        var plantAndPhase = new PlantAndPhaseForTargetListDto
+        {
+            PlantOfPhaseId = plantOfPhase.Id,
+            PlantId = plant.Id,
+            PlantName = plant.Name,
+            PhaseId = phase.Id,
+            PhaseName = phase.Name,
+        };
+        
+        return new ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new DataResultModel<PlantAndPhaseForTargetListDto>
+            {
+                Data = plantAndPhase
+            }
+        };
+        
     }
 }

@@ -17,6 +17,7 @@ public interface IPlantServices
     Task<ResultModel<MessageResultModel>> DeletePlantAsync(Guid id);
     
     Task<ResultModel<MessageResultModel>> SetValueForPlant(Guid plantId, Guid targetId, Guid phaseId);
+    Task<ResultModel<MessageResultModel>> SetValueForCustomPhase(Guid plantId, Guid targetId, Guid phaseId);
     
     Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId, Guid phaseId);
     

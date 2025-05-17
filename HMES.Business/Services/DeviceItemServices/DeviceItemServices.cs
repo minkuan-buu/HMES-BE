@@ -143,6 +143,34 @@ namespace HMES.Business.Services.DeviceItemServices
             }
         }
 
+        public async Task<ResultModel<MessageResultModel>> SetPhaseForDevice(Guid deviceItemId, Guid phaseId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetDeviceItemByDeviceItemIdAndUserId(deviceItemId, userId);
+
+                if (deviceItem is not { IsActive: true })
+                {
+                    throw new Exception("Device item not found or not active");
+                }
+                deviceItem.PhaseId = phaseId;
+                await _deviceItemsRepositories.Update(deviceItem);
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Phase set successfully"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
         public async Task<DeviceItem> GetDeviceItemById(Guid deviceItemId)
         {
             return await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.IsActive);
