@@ -15,5 +15,5 @@ public partial class TargetValue
 
     public virtual ICollection<NutritionReportDetail> NutritionReportDetails { get; set; } = new List<NutritionReportDetail>();
 
-    public virtual ICollection<TargetOfPlant> TargetOfPlants { get; set; } = new List<TargetOfPlant>();
+    public virtual ICollection<TargetOfPhase> TargetOfPhases { get; set; } = new List<TargetOfPhase>();
 }

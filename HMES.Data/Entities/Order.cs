@@ -13,15 +13,15 @@ public partial class Order
 
     public decimal TotalPrice { get; set; }
 
+    public decimal? ShippingFee { get; set; }
+
+    public string? ShippingOrderCode { get; set; }
+
     public string Status { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
-    public string? ShippingOrderCode { get; set; }
-
-    public decimal? ShippingFee { get; set; }
 
     public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
 

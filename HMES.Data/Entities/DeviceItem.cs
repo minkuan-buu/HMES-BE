@@ -23,17 +23,17 @@ public partial class DeviceItem
 
     public DateTime? WarrantyExpiryDate { get; set; }
 
-    public string Status { get; set; } = null!;
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
     public DateTime? LastSeen { get; set; }
 
     public int RefreshCycleHours { get; set; }
 
     public Guid OrderId { get; set; }
+
+    public string Status { get; set; } = null!;
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Device Device { get; set; } = null!;
 
