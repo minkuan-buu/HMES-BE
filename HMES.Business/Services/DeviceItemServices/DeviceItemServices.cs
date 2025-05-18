@@ -12,6 +12,7 @@ using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
+using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.PlantRepositories;
 using Org.BouncyCastle.Math.EC.Rfc7748;
 
@@ -24,11 +25,13 @@ namespace HMES.Business.Services.DeviceItemServices
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IPlantRepositories _plantRepositories;
         private readonly INotificationRepositories _notificationRepositories;
+        private readonly IPlantOfPhaseRepositories _plantOfPhaseRepositories;
         private readonly IMapper _mapper;
         private readonly IMqttService _mqttService;
 
-        public DeviceItemServices(IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories)
+        public DeviceItemServices(IPlantOfPhaseRepositories plantOfPhaseRepositories, IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories)
         {
+            _plantOfPhaseRepositories = plantOfPhaseRepositories;
             _notificationRepositories = notificationRepositories;
             _nutritionRDRepositories = nutritionRDRepositories;
             _nutritionReportRepositories = nutritionReportRepositories;
@@ -131,6 +134,34 @@ namespace HMES.Business.Services.DeviceItemServices
                     Response = new MessageResultModel()
                     {
                         Message = "Plant set successfully"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> SetPhaseForDevice(Guid deviceItemId, Guid phaseId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetDeviceItemByDeviceItemIdAndUserId(deviceItemId, userId);
+
+                if (deviceItem is not { IsActive: true })
+                {
+                    throw new Exception("Device item not found or not active");
+                }
+                deviceItem.PhaseId = phaseId;
+                await _deviceItemsRepositories.Update(deviceItem);
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Phase set successfully"
                     }
                 };
             }
@@ -269,8 +300,15 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     throw new Exception("Active device before update log!");
                 }
+                
+                var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(getDevice.PlantId, getDevice.PhaseId);
 
-                var targetValues = getDevice.Plant.TargetOfPlants.Where(x => x.PlantId == getDevice.PlantId)
+                if (plantPhase == null)
+                {
+                    throw new Exception("Set plant and phase before update log!");
+                }
+
+                var targetValues = plantPhase.TargetOfPhases
                 .Select(x => new
                 {
                     x.TargetValue.Id,
@@ -378,7 +416,14 @@ namespace HMES.Business.Services.DeviceItemServices
                     throw new Exception("Active device before update log!");
                 }
 
-                var targetValues = getDevice.Plant.TargetOfPlants.Where(x => x.PlantId == getDevice.PlantId)
+                var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(getDevice.PlantId, getDevice.PhaseId);
+
+                if (plantPhase == null)
+                {
+                    throw new Exception("Set plant and phase before update log!");
+                }
+
+                var targetValues = plantPhase.TargetOfPhases
                 .Select(x => new
                 {
                     x.TargetValue.Id,

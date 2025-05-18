@@ -38,12 +38,15 @@ using HMES.Business.Services.DeviceItemServices;
 using HMES.Business.Services.NotificationServices;
 using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.PlantRepositories;
-using HMES.Data.Repositories.TargetOfPlantRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 using HMES.Business.Utilities.Email;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
 using HMES.Business.Services.GHNService;
+using HMES.Business.Services.PhaseServices;
+using HMES.Data.Repositories.PhaseRepositories;
+using HMES.Data.Repositories.PlantOfPhaseRepositories;
+using HMES.Data.Repositories.TargetOfPhaseRepositories;
 
 DotNetEnv.Env.Load();
 
@@ -203,10 +206,12 @@ builder.Services.AddScoped<ITicketResponseRepositories, TicketResponseRepositori
 builder.Services.AddScoped<IDeviceItemsRepositories, DeviceItemsRepositories>();
 builder.Services.AddScoped<IPlantRepositories, PlantRepositories>();
 builder.Services.AddScoped<ITargetValueRepositories, TargetValueRepositories>();
-builder.Services.AddScoped<ITargetOfPlantRepository, TargetOfPlantRepositories>();
+builder.Services.AddScoped<ITargetOfPhaseRepository, TargetOfPhaseRepositories>();
 builder.Services.AddScoped<INotificationRepositories, NotificationRepositories>();
 builder.Services.AddScoped<INutritionRDRepositories, NutritionRDRepositories>();
 builder.Services.AddScoped<INutritionReportRepositories, NutritionReportRepositories>();
+builder.Services.AddScoped<IPhaseRepositories, PhaseRepositories>();
+builder.Services.AddScoped<IPlantOfPhaseRepositories, PlantOfPhaseRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();
@@ -228,6 +233,7 @@ builder.Services.AddScoped<IPlantServices, PlantServices>();
 builder.Services.AddScoped<ITargetValueServices, TargetValueServices>();
 builder.Services.AddScoped<INotificationServices, NotificationServices>();
 builder.Services.AddScoped<IGHNService, GHNService>();
+builder.Services.AddScoped<IPhaseServices, PhaseServices>();
 
 //=========================================== CORS ================================================
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
