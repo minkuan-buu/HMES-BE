@@ -297,6 +297,7 @@ namespace HMES.Business.MapperProfiles
                             PhaseId = top.PlantOfPhase.PhaseId,
                             PhaseName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Phase.Name)
                         })
+                        .OrderBy(p => p.PlantName)
                         .ToList()
                 ));
             // Order

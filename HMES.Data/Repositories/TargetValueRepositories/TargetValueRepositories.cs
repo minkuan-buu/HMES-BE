@@ -42,6 +42,9 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
             .Include(t => t.TargetOfPhases)
             .ThenInclude(tp => tp.PlantOfPhase)
             .ThenInclude(pp => pp.Plant)
+            .Include(t => t.TargetOfPhases)
+            .ThenInclude(tp => tp.PlantOfPhase)
+            .ThenInclude(pp => pp.Phase)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
         return targetValue;

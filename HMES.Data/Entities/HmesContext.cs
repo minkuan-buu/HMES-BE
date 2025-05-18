@@ -600,14 +600,12 @@ public partial class HmesContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-            entity.Property(e => e.Password).HasMaxLength(1);
             entity.Property(e => e.Phone)
                 .HasMaxLength(12)
                 .IsUnicode(false);
             entity.Property(e => e.Role)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.Salt).HasMaxLength(1);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false);

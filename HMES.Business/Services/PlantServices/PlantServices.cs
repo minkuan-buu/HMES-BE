@@ -546,13 +546,13 @@ public class PlantServices : IPlantServices
         };
     }
 
-    public async Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type)
+    public async Task<ResultModel<List<PlantResModelWithTarget>>> GetPlantNotSetValueOfType(string type)
     {
         var plants = await _plantRepositories.GetPlantsWithoutTargetValueOfType(type);
-        return new ResultModel<List<PlantResModel>>
+        return new ResultModel<List<PlantResModelWithTarget>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
-            Response = _mapper.Map<List<PlantResModel>>(plants)
+            Response = _mapper.Map<List<PlantResModelWithTarget>>(plants)
         };
     }
 }

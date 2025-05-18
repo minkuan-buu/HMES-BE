@@ -23,7 +23,7 @@ public interface IPlantServices
     
     Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId, Guid phaseId);
     
-    Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type);
+    Task<ResultModel<List<PlantResModelWithTarget>>> GetPlantNotSetValueOfType(string type);
 
 
     

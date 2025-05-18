@@ -56,11 +56,27 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
 
     public async Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type)
     {
-        return await Context.Plants
-            .Where(p => !p.PlantOfPhases
-                .Where(pop => Context.GrowthPhases
-                    .Any(gp => gp.Id == pop.PhaseId && gp.UserId == null))
-                .Any(pop => pop.TargetOfPhases.Any(top => top.TargetValue.Type == type)))
+        // First, get all plants that have at least one phase without the target type
+        var plantsWithQualifyingPhases = await Context.Plants
+            .Where(p => p.PlantOfPhases.Any(pop => 
+                // Standard phase check
+                Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null) &&
+                // Phase doesn't have the specified target type
+                !pop.TargetOfPhases.Any(top => top.TargetValue.Type == type)
+            ))
+            .Select(p => p.Id)
             .ToListAsync();
+
+        // Then get those plants with filtered phases
+        var plants = await Context.Plants
+            .Where(p => plantsWithQualifyingPhases.Contains(p.Id))
+            .Include(p => p.PlantOfPhases.Where(pop => 
+                Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null) &&
+                !pop.TargetOfPhases.Any(top => top.TargetValue.Type == type)
+            ))
+            .ThenInclude(pop => pop.Phase)
+            .ToListAsync();
+
+        return plants;
     }
 }
