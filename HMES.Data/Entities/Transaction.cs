@@ -15,13 +15,13 @@ public partial class Transaction
 
     public string Status { get; set; } = null!;
 
+    public string PaymentMethod { get; set; } = null!;
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? FinishedTransactionAt { get; set; }
 
     public string? TransactionReference { get; set; }
-
-    public string PaymentMethod { get; set; } = null!;
 
     public virtual Order Order { get; set; } = null!;
 }

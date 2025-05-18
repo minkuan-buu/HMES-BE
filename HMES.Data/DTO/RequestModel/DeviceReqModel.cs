@@ -34,6 +34,11 @@ namespace HMES.Data.DTO.RequestModel
         public Guid DeviceItemId { get; set; }
         public Guid PlantId { get; set; }
     }
+    public class SetPhaseReqModel
+    {
+        public Guid DeviceItemId { get; set; }
+        public Guid phaseId { get; set; }
+    }
 
     public class UpdateRefreshCycleHoursReqModel
     {

@@ -28,5 +28,11 @@ public class ChangeTargetReqModel
 {
     public Guid PlantId { get; set; }
     public Guid TargetId { get; set; }
+    public Guid PhaseId { get; set; }
     public Guid NewTargetId { get; set; }
+}
+
+public class AddNewPhaseDto
+{
+    public string Name { get; set; } = null!;
 }
