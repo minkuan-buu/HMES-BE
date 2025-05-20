@@ -7,4 +7,5 @@ public interface IPlantOfPhaseRepositories : IGenericRepositories<PlantOfPhase>
 {
     Task<PlantOfPhase?> GetPlantOfPhasesByPlantIdAndPhaseId(Guid? plantId, Guid? phaseId);
     Task<(List<PlantOfPhase> plants, int TotalItems)> GetPhasesByPlantId(Guid plantId, Guid userId);
+    Task<PlantOfPhase?> GetPlantOfPhasesByPlantIdAndPhaseNumber(Guid plantId, int phaseNumber);
 }

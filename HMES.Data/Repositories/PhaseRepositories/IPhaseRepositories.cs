@@ -14,6 +14,7 @@ public interface IPhaseRepositories : IGenericRepositories<GrowthPhase>
     Task<GrowthPhase?> GetGrowthPhaseByUserId(Guid id);
     Task<GrowthPhase?> GetGrowthPhaseById(Guid id);
     Task<GrowthPhase?> GetGrowthPhaseByName(string name);
+    Task<int> CountGrowthPhase();
 
     
 }
