@@ -27,5 +27,13 @@ public class PlantOfPhaseRepositories(HmesContext context)
 
         return (plants, totalItems);
     }
+
+    public async Task<PlantOfPhase?> GetPlantOfPhasesByPlantIdAndPhaseNumber(Guid plantId, int phaseNumber)
+    {
+        return await Context.PlantOfPhases
+            .Include(x => x.Phase)
+            .Where(x => x.PlantId == plantId && x.Phase.PhaseNumber == phaseNumber)
+            .FirstOrDefaultAsync();
+    }
 }
     

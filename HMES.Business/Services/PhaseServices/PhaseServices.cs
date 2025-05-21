@@ -138,7 +138,28 @@ public class PhaseServices: IPhaseServices
         {
             throw new CustomException("Phase with the same name already exists");
         }
-
+        
+        var count = await _phaseRepository.CountGrowthPhase();
+        switch (count)
+        {
+            case 0:
+                phase.IsDefault = true;
+                phase.PhaseNumber = 1;
+                break;
+            case 1:
+                phase.IsDefault = true;
+                phase.PhaseNumber = 2;
+                break;
+            case 2:
+                phase.IsDefault = true;
+                phase.PhaseNumber = 3;
+                break;
+            default:
+                phase.IsDefault = false;
+                phase.PhaseNumber = count + 1;
+                break;
+        }
+        
         await _phaseRepository.Insert(phase);
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
 
