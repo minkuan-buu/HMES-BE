@@ -196,6 +196,7 @@ public partial class HmesContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__GrowthPh__3214EC070E882127");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.IsDefault).HasDefaultValue(false);
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .IsUnicode(false);
