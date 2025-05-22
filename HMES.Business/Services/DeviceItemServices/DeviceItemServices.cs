@@ -12,6 +12,7 @@ using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.NotificationRepositories;
 using HMES.Data.Repositories.NutritionRDRepositories;
 using HMES.Data.Repositories.NutritionReportRepositories;
+using HMES.Data.Repositories.PhaseRepositories;
 using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.PlantRepositories;
 using Org.BouncyCastle.Math.EC.Rfc7748;
@@ -26,10 +27,11 @@ namespace HMES.Business.Services.DeviceItemServices
         private readonly IPlantRepositories _plantRepositories;
         private readonly INotificationRepositories _notificationRepositories;
         private readonly IPlantOfPhaseRepositories _plantOfPhaseRepositories;
+        private readonly IPhaseRepositories _phaseRepositories;
         private readonly IMapper _mapper;
         private readonly IMqttService _mqttService;
 
-        public DeviceItemServices(IPlantOfPhaseRepositories plantOfPhaseRepositories, IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories)
+        public DeviceItemServices(IPlantOfPhaseRepositories plantOfPhaseRepositories, IDeviceItemsRepositories deviceItemsRepositories, IMapper mapper, IMqttService mqttService, IPlantRepositories plantRepositories, INutritionRDRepositories nutritionRDRepositories, INutritionReportRepositories nutritionReportRepositories, INotificationRepositories notificationRepositories, IPhaseRepositories phaseRepositories)
         {
             _plantOfPhaseRepositories = plantOfPhaseRepositories;
             _notificationRepositories = notificationRepositories;
@@ -39,6 +41,7 @@ namespace HMES.Business.Services.DeviceItemServices
             _plantRepositories = plantRepositories;
             _mapper = mapper;
             _mqttService = mqttService;
+            _phaseRepositories = phaseRepositories;
         }
 
         public async Task<ResultModel<DataResultModel<DeviceItemDetailResModel>>> GetDeviceItemDetailById(Guid deviceItemId, string Token)
@@ -47,12 +50,22 @@ namespace HMES.Business.Services.DeviceItemServices
             {
                 var userId = Guid.Parse(Authentication.DecodeToken(Token, "userid"));
                 var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive, includeProperties: "Plant,NutritionReports.NutritionReportDetails.TargetValue,Device");
+                if (deviceItem.PlantId == null)
+                {
+                    throw new Exception("Device item does not have a PlantId assigned.");
+                }
+                var phase = await _phaseRepositories.GetList(x => x.PlantOfPhases.Any(p => p.PlantId == deviceItem.PlantId) && (x.UserId == null || x.UserId == userId), includeProperties: "PlantOfPhases.Plant");
                 if (deviceItem == null)
                 {
                     throw new Exception("Device item not found");
                 }
                 var result = _mapper.Map<DeviceItemDetailResModel>(deviceItem);
-
+                result.Phase = phase.ToList().Select(x => new PhaseDeviceDetailModel
+                {
+                    Id = x.Id,
+                    PhaseName = TextConvert.ConvertFromUnicodeEscape(x.Name),
+                    IsSelected = x.Id == deviceItem.PhaseId,
+                }).ToList();
                 var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
                 if (nutritionReport != null)
                 {
@@ -126,7 +139,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     throw new Exception("Device item not found or not active");
                 }
-                
+
                 var phase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseNumber(plantId, 1);
                 if (phase == null)
                 {
@@ -307,7 +320,7 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     throw new Exception("Active device before update log!");
                 }
-                
+
                 var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(getDevice.PlantId, getDevice.PhaseId);
 
                 if (plantPhase == null)
@@ -558,6 +571,33 @@ namespace HMES.Business.Services.DeviceItemServices
                 {
                     StatusCodes = (int)HttpStatusCode.OK,
                     Response = dataResult
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+        }
+
+        public async Task<ResultModel<MessageResultModel>> UpdateNameDeviceItem(UpdateNameDeviceItem request, Guid deviceItemId, string token)
+        {
+            try
+            {
+                var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
+                var deviceItem = await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.UserId == userId && x.IsActive);
+                if (deviceItem == null)
+                {
+                    throw new Exception("Device item not found");
+                }
+                deviceItem.Name = TextConvert.ConvertToUnicodeEscape(request.DeviceItemName);
+                await _deviceItemsRepositories.Update(deviceItem);
+                return new ResultModel<MessageResultModel>()
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Update name device item successfully"
+                    }
                 };
             }
             catch (Exception ex)

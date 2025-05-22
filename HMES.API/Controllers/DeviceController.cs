@@ -78,15 +78,15 @@ namespace HMES.API.Controllers
                         var result = await _deviceItemServices.SetPlantForDevice(model.DeviceItemId, model.PlantId, token);
                         return Ok(result);
                 }
-                
+
                 [HttpGet("phase/{plantId}")]
                 public async Task<IActionResult> GetPhasesOfPlantAsync(Guid plantId)
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _phaseServices.GetAllPhasesIncludeUserAsync(plantId,token);
+                        var result = await _phaseServices.GetAllPhasesIncludeUserAsync(plantId, token);
                         return Ok(result);
                 }
-                
+
                 [HttpPut("set-phase")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> SetPhaseForDeviceDevice([FromBody] SetPhaseReqModel model)
@@ -95,24 +95,24 @@ namespace HMES.API.Controllers
                         var result = await _deviceItemServices.SetPhaseForDevice(model.DeviceItemId, model.phaseId, token);
                         return Ok(result);
                 }
-                
+
                 [HttpPost("{plantId}/target/{targetId}/phase/{phaseId}")]
-                public async Task<IActionResult> SetValueForCustomPhase(Guid plantId, Guid targetId,Guid phaseId)
+                public async Task<IActionResult> SetValueForCustomPhase(Guid plantId, Guid targetId, Guid phaseId)
                 {
                         var result = await _plantServices.SetValueForCustomPhase(plantId, targetId, phaseId);
                         return Ok(result);
                 }
-                
+
                 // Use for create and update (name)
                 [HttpPost("init-custom-phase")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> CreatePhase([FromForm] AddNewPhaseDto phaseDto)
+                public async Task<IActionResult> CreatePhase([FromBody] AddNewPhaseDto phaseDto)
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _phaseServices.CreateNewPhaseAsync(phaseDto,token);
+                        var result = await _phaseServices.CreateNewPhaseAsync(phaseDto, token);
                         return Ok(result);
                 }
-                
+
                 [HttpPost("{plantId}/phase/{phaseId}")]
                 public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
                 {

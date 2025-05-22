@@ -189,7 +189,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.TicketAttachments.Select(ta => ta.Attachment)))
-                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) 
+                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
@@ -244,7 +244,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.phases, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.phases, opt => opt.MapFrom(src =>
                     src.PlantOfPhases
                         .Select(pop => new TargetInPhaseDto
                         {
@@ -267,8 +267,8 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
-            
-            
+
+
             // Target value
             CreateMap<TargetValue, TargetResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -287,7 +287,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
-                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src =>
                     src.TargetOfPhases
                         .Select(top => new PlantAndPhaseForTargetListDto
                         {
