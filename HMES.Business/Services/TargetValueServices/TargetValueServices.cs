@@ -5,7 +5,7 @@ using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
-using HMES.Data.Repositories.TargetOfPlantRepositories;
+using HMES.Data.Repositories.TargetOfPhaseRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 
 namespace HMES.Business.Services.TargetValueServices;
@@ -14,13 +14,13 @@ public class TargetValueServices : ITargetValueServices
 {
     
     private readonly ITargetValueRepositories _targetValueRepositories;
-    private readonly ITargetOfPlantRepository _targetOfPlantRepository;
+    private readonly ITargetOfPhaseRepository _targetOfPhaseRepository;
     private readonly IMapper _mapper;
     
-    public TargetValueServices(ITargetOfPlantRepository targetOfPlantRepository ,ITargetValueRepositories targetValueRepositories, IMapper mapper)
+    public TargetValueServices(ITargetOfPhaseRepository targetOfPhaseRepository ,ITargetValueRepositories targetValueRepositories, IMapper mapper)
     {
         _targetValueRepositories = targetValueRepositories;
-        _targetOfPlantRepository = targetOfPlantRepository;
+        _targetOfPhaseRepository = targetOfPhaseRepository;
         _mapper = mapper;
     }
     
@@ -209,13 +209,13 @@ public class TargetValueServices : ITargetValueServices
             };
         }
 
-        var targetValueOfPlants = targetValue.TargetOfPlants.ToList();
+        var targetValueOfPlants = targetValue.TargetOfPhases.ToList();
         
         try
         {
             if (targetValueOfPlants.Count != 0)
             {
-                await _targetOfPlantRepository.DeleteRange(targetValueOfPlants);
+                await _targetOfPhaseRepository.DeleteRange(targetValueOfPlants);
             }
             await _targetValueRepositories.Delete(targetValue);
         }

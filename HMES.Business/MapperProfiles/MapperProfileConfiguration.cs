@@ -189,7 +189,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.TicketAttachments.Select(ta => ta.Attachment)))
-                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses)) 
+                .ForMember(dest => dest.TicketResponses, opt => opt.MapFrom(src => src.TicketResponses))
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.UserId.ToString()))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
@@ -244,7 +244,31 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.Target, opt => opt.MapFrom(src => src.TargetOfPlants.Select(top => top.TargetValue)));
+                .ForMember(dest => dest.phases, opt => opt.MapFrom(src =>
+                    src.PlantOfPhases
+                        .Select(pop => new TargetInPhaseDto
+                        {
+                            PhaseId = pop.PhaseId,
+                            PhaseName = TextConvert.ConvertFromUnicodeEscape(pop.Phase.Name),
+                            Target = pop.TargetOfPhases
+                                .Select(top => new TargetResModel
+                                {
+                                    Id = top.TargetValueId,
+                                    Type = top.TargetValue.Type,
+                                    MinValue = top.TargetValue.MinValue,
+                                    MaxValue = top.TargetValue.MaxValue
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                ));
+            // Phase
+            CreateMap<GrowthPhase, PhaseResModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+
             // Target value
             CreateMap<TargetValue, TargetResModel>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -263,7 +287,19 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.MinValue, opt => opt.MapFrom(src => src.MinValue))
                 .ForMember(dest => dest.MaxValue, opt => opt.MapFrom(src => src.MaxValue))
-                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src => src.TargetOfPlants.Select(t => t.Plant)));
+                .ForMember(dest => dest.Plants, opt => opt.MapFrom(src =>
+                    src.TargetOfPhases
+                        .Select(top => new PlantAndPhaseForTargetListDto
+                        {
+                            PlantOfPhaseId = top.PlantOfPhase.Id,
+                            PlantId = top.PlantOfPhase.PlantId,
+                            PlantName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Plant.Name),
+                            PhaseId = top.PlantOfPhase.PhaseId,
+                            PhaseName = TextConvert.ConvertFromUnicodeEscape(top.PlantOfPhase.Phase.Name)
+                        })
+                        .OrderBy(p => p.PlantName)
+                        .ToList()
+                ));
             // Order
 
             CreateMap<Order, OrderResModel>()

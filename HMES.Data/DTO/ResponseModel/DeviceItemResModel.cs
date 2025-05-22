@@ -9,9 +9,17 @@ public class DeviceItemDetailResModel
     public int RefreshCycleHours { get; set; }
     public bool isOnline { get; set; }
     public string Serial { get; set; } = null!;
+    public List<PhaseDeviceDetailModel> Phase { get; set; } = new List<PhaseDeviceDetailModel>();
     public IoTResModel IoTData { get; set; } = new IoTResModel();
     public DateTime WarrantyExpiryDate { get; set; }
     public DateTime LastUpdatedDate { get; set; }
+}
+
+public class PhaseDeviceDetailModel
+{
+    public Guid Id { get; set; }
+    public string PhaseName { get; set; } = null!;
+    public bool IsSelected { get; set; }
 }
 
 public class HistoryLogIoTResModel

@@ -5,8 +5,11 @@ using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
+using HMES.Data.Enums;
+using HMES.Data.Repositories.PhaseRepositories;
+using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.PlantRepositories;
-using HMES.Data.Repositories.TargetOfPlantRepositories;
+using HMES.Data.Repositories.TargetOfPhaseRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 
 namespace HMES.Business.Services.PlantServices;
@@ -15,17 +18,21 @@ public class PlantServices : IPlantServices
 {
     
     private readonly IPlantRepositories _plantRepositories;
-    private readonly ITargetOfPlantRepository _targetOfPlantRepository;
+    private readonly ITargetOfPhaseRepository _targetOfPhaseRepository;
     private readonly ITargetValueRepositories _targetValueRepositories;
+    private readonly IPhaseRepositories _phaseRepositories;
+    private readonly IPlantOfPhaseRepositories _plantOfPhaseRepositories;
 
     private readonly IMapper _mapper;
     
-    public PlantServices(IPlantRepositories plantRepositories, ITargetValueRepositories targetValueRepositories, IMapper mapper, ITargetOfPlantRepository targetOfPlantRepository)
+    public PlantServices(IPlantOfPhaseRepositories plantOfPhaseRepositories  ,IPhaseRepositories phaseRepositories,IPlantRepositories plantRepositories, ITargetValueRepositories targetValueRepositories, IMapper mapper, ITargetOfPhaseRepository targetOfPhaseRepository)
     {
         _plantRepositories = plantRepositories;
         _mapper = mapper;
-        _targetOfPlantRepository = targetOfPlantRepository;
+        _targetOfPhaseRepository = targetOfPhaseRepository;
         _targetValueRepositories = targetValueRepositories;
+        _phaseRepositories = phaseRepositories;
+        _plantOfPhaseRepositories = plantOfPhaseRepositories;
     }
     
     
@@ -91,6 +98,23 @@ public class PlantServices : IPlantServices
         }
         
         var plant = _mapper.Map<Plant>(plantReqModel);
+
+        var phases = await _phaseRepositories.GetGrowthPhasesNoUser();
+
+        List<PlantOfPhase> plantOfPhases = new List<PlantOfPhase>();
+        foreach (var phase in phases)
+        {
+            var plantOfPhase = new PlantOfPhase
+            {
+                Id = Guid.NewGuid(),
+                PlantId = plant.Id,
+                PhaseId = phase.Id
+            };
+            plantOfPhases.Add(plantOfPhase);
+        }
+        
+        plant.PlantOfPhases = plantOfPhases;
+        
         try
         {
             await _plantRepositories.Insert(plant);
@@ -185,14 +209,14 @@ public class PlantServices : IPlantServices
         }
         try
         {
-            var targetsOfPlant = plant.TargetOfPlants.ToList();
-
-            if (targetsOfPlant.Count > 0)
-            {
-                await _targetOfPlantRepository.DeleteRange(targetsOfPlant);
-            }
-
-            await _plantRepositories.Delete(plant);
+            // var targetsOfPlant = plant.TargetOfPlants.ToList();
+            //
+            // if (targetsOfPlant.Count > 0)
+            // {
+            //     await _targetOfPlantRepository.DeleteRange(targetsOfPlant);
+            // }
+            plant.Status = PlantStatusEnums.Inactive.ToString();
+            await _plantRepositories.Update(plant);
         }
         catch (Exception e)
         {
@@ -210,7 +234,7 @@ public class PlantServices : IPlantServices
         };
     }
 
-    public async Task<ResultModel<MessageResultModel>> SetValueForPlant(Guid plantId, Guid targetId)
+    public async Task<ResultModel<MessageResultModel>> SetValueForPlant(Guid plantId, Guid targetId, Guid phaseId)
     {
         var plant = await _plantRepositories.GetByIdAsync(plantId);
         
@@ -241,7 +265,7 @@ public class PlantServices : IPlantServices
         }
         
         
-        if(await _plantRepositories.PlantHasTargetValueType(plantId, target.Type))
+        if(await _plantRepositories.PlantHasTargetValueType(plantId, target.Type, phaseId))
         {
             return new ResultModel<MessageResultModel>
             {
@@ -253,16 +277,30 @@ public class PlantServices : IPlantServices
             };
         }
         
-        var targetOfPlant = new TargetOfPlant
+        var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        
+        if (plantPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant does not have this phase"
+                }
+            };
+        }
+        
+        var targetOfPhase = new TargetOfPhase
         {
             Id = Guid.NewGuid(),
-            PlantId = plantId,
+            PlantOfPhaseId = plantPhase.Id,
             TargetValueId = targetId
         };
         
         try
         {
-            await _targetOfPlantRepository.Insert(targetOfPlant);
+            await _targetOfPhaseRepository.Insert(targetOfPhase);
         }
         catch (Exception e)
         {
@@ -279,11 +317,130 @@ public class PlantServices : IPlantServices
         };
     }
 
-    public async Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId)
+    public async Task<ResultModel<MessageResultModel>> SetValueForCustomPhase(Guid plantId, Guid targetId, Guid phaseId)
     {
-        var targetOfPlant = await _targetOfPlantRepository.GetTargetOfPlantByPlantIdAndValueId(plantId, targetId);
+        var plant = await _plantRepositories.GetByIdAsync(plantId);
         
-        if (targetOfPlant == null)
+        if (plant == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant not found"
+                }
+            };
+        }
+        
+        var target = await _targetValueRepositories.GetTargetValueById(targetId);
+        
+        if (target == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Target value not found"
+                }
+            };
+        }
+        
+        
+        if(await _plantRepositories.PlantHasTargetValueType(plantId, target.Type, phaseId))
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant already has this target value type"
+                }
+            };
+        }
+        
+        var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        
+        if (plantPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant does not have this phase"
+                }
+            };
+        }
+        
+        var targetOfPhase = await _targetOfPhaseRepository.GetTargetOfPlantByPlantIdAndValueId(plantPhase.Id, targetId);
+
+        if (targetOfPhase != null)
+        {
+            targetOfPhase.TargetValueId = targetId;
+            try
+            {
+                await _targetOfPhaseRepository.Update(targetOfPhase);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.OK,
+                    Response = new MessageResultModel()
+                    {
+                        Message = "Set target value for plant successfully"
+                    }
+                };
+            }
+            catch (Exception e)
+            {
+                throw new CustomException(e.Message);
+            }
+        }
+        
+        var newTargetOfPhase = new TargetOfPhase
+        {
+            Id = Guid.NewGuid(),
+            PlantOfPhaseId = plantPhase.Id,
+            TargetValueId = targetId
+        };
+        
+        try
+        {
+            await _targetOfPhaseRepository.Insert(newTargetOfPhase);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Set target value for plant successfully"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId, Guid phaseId)
+    {
+        var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        if (plantPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant does not have this phase"
+                }
+            };
+        }
+        
+        var targetOfPhase = await _targetOfPhaseRepository.GetTargetOfPlantByPlantIdAndValueId(plantPhase.Id, targetId);
+        
+        if (targetOfPhase == null)
         {
             return new ResultModel<MessageResultModel>
             {
@@ -297,7 +454,7 @@ public class PlantServices : IPlantServices
         
         try
         {
-            await _targetOfPlantRepository.Delete(targetOfPlant);
+            await _targetOfPhaseRepository.Delete(targetOfPhase);
         }
         catch (Exception e)
         {
@@ -314,11 +471,25 @@ public class PlantServices : IPlantServices
         
     }
 
-    public async Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId)
+    public async Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId, Guid phaseId )
     {
-        var targetOfPlantExist = await _targetOfPlantRepository.GetTargetOfPlantByPlantIdAndValueId(plantId, targetId);
         
-        if (targetOfPlantExist == null)
+        var plantPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        if (plantPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel()
+                {
+                    Message = "Plant does not have this phase"
+                }
+            };
+        }
+        
+        var targetOfPhaseExist = await _targetOfPhaseRepository.GetTargetOfPlantByPlantIdAndValueId(plantPhase.Id ,targetId);
+        
+        if (targetOfPhaseExist == null)
         {
             return new ResultModel<MessageResultModel>
             {
@@ -343,7 +514,7 @@ public class PlantServices : IPlantServices
             };
         }
         
-        if(target.Type != targetOfPlantExist.TargetValue.Type)
+        if(target.Type != targetOfPhaseExist.TargetValue.Type)
         {
             return new ResultModel<MessageResultModel>
             {
@@ -355,11 +526,11 @@ public class PlantServices : IPlantServices
             };
         }
         
-        targetOfPlantExist.TargetValueId = newTargetId;
+        targetOfPhaseExist.TargetValueId = newTargetId;
         
         try
         {
-            await _targetOfPlantRepository.Update(targetOfPlantExist);
+            await _targetOfPhaseRepository.Update(targetOfPhaseExist);
         }
         catch (Exception e)
         {
@@ -375,13 +546,13 @@ public class PlantServices : IPlantServices
         };
     }
 
-    public async Task<ResultModel<List<PlantResModel>>> GetPlantNotSetValueOfType(string type)
+    public async Task<ResultModel<List<PlantResModelWithTarget>>> GetPlantNotSetValueOfType(string type)
     {
         var plants = await _plantRepositories.GetPlantsWithoutTargetValueOfType(type);
-        return new ResultModel<List<PlantResModel>>
+        return new ResultModel<List<PlantResModelWithTarget>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
-            Response = _mapper.Map<List<PlantResModel>>(plants)
+            Response = _mapper.Map<List<PlantResModelWithTarget>>(plants)
         };
     }
 }
