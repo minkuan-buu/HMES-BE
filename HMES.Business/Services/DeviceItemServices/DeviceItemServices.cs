@@ -65,6 +65,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     Id = x.Id,
                     PhaseName = TextConvert.ConvertFromUnicodeEscape(x.Name),
                     IsSelected = x.Id == deviceItem.PhaseId,
+                    IsDefault = x.UserId == null,
                 }).ToList();
                 var nutritionReport = deviceItem.NutritionReports.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
                 if (nutritionReport != null)
