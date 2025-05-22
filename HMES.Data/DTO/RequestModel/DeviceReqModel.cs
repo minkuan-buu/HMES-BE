@@ -52,4 +52,9 @@ namespace HMES.Data.DTO.RequestModel
         public decimal Ph { get; set; } = 0;
         public decimal WaterLevel { get; set; } = 0;
     }
+
+    public class UpdateNameDeviceItem
+    {
+        public string DeviceItemName { get; set; } = null!;
+    }
 }

@@ -970,7 +970,7 @@ namespace HMES.Business.Services.OrderServices
                                 IsOnline = false,
                                 Serial = Authentication.GenerateRandomSerial(16),
                                 WarrantyExpiryDate = DateTime.Now.AddYears(2),
-                                Status = DeviceItemStatusEnum.Available.ToString(),
+                                Status = DeviceItemStatusEnum.NotAvailable.ToString(),
                                 CreatedAt = DateTime.Now,
                                 OrderId = order.Id,
                             };
@@ -1232,9 +1232,9 @@ namespace HMES.Business.Services.OrderServices
             {
                 throw new CustomException("Order not found");
             }
-            if (order.Status != OrderEnums.Delivering.ToString())
+            if (order.Status != OrderEnums.IsWaiting.ToString())
             {
-                throw new CustomException("Order is not in pending status");
+                throw new CustomException("Order is not in waiting status");
             }
             var orderResModel = new OrderPaymentResModel()
             {
