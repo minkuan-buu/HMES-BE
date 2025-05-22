@@ -13,16 +13,16 @@ using HMES.Data.Repositories.PlantRepositories;
 
 namespace HMES.Business.Services.PhaseServices;
 
-public class PhaseServices: IPhaseServices
+public class PhaseServices : IPhaseServices
 {
     private readonly IPhaseRepositories _phaseRepository;
     private readonly IPlantRepositories _plantRepositories;
     private readonly IPlantOfPhaseRepositories _plantOfPhaseRepository;
     private readonly IMapper _mapper;
-    
+
     public PhaseServices(IPhaseRepositories phaseRepository, IMapper mapper, IPlantOfPhaseRepositories plantOfPhaseRepository, IPlantRepositories plantRepositories)
     {
-        
+
         _phaseRepository = phaseRepository;
         _mapper = mapper;
         _plantOfPhaseRepository = plantOfPhaseRepository;
@@ -33,9 +33,9 @@ public class PhaseServices: IPhaseServices
     public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesAsync()
     {
         var (phases, totalItems) = await _phaseRepository.GetAllPhasesAsync();
-        
+
         var totalPages = (int)Math.Ceiling((double)totalItems / 10);
-        
+
         var result = new ListDataResultModel<PhaseResModel>
         {
             Data = _mapper.Map<List<PhaseResModel>>(phases),
@@ -51,14 +51,14 @@ public class PhaseServices: IPhaseServices
         };
     }
 
-    public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesIncludeUserAsync(Guid plantId,string token)
+    public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesIncludeUserAsync(Guid plantId, string token)
     {
         var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-        
+
         var (phases, totalItems) = await _plantOfPhaseRepository.GetPhasesByPlantId(plantId, userId);
-        
+
         var totalPages = (int)Math.Ceiling((double)totalItems / 10);
-        
+
         var result = new ListDataResultModel<PhaseResModel>
         {
             Data = _mapper.Map<List<PhaseResModel>>(phases),
@@ -77,9 +77,9 @@ public class PhaseServices: IPhaseServices
     public async Task<ResultModel<ListDataResultModel<PhaseResModel>>> GetAllPhasesOfPlantAsync(Guid plantId)
     {
         var (phases, totalItems) = await _phaseRepository.GetAllPhasesOfPlantAsync(plantId);
-        
+
         var totalPages = (int)Math.Ceiling((double)totalItems / 10);
-        
+
         var result = new ListDataResultModel<PhaseResModel>
         {
             Data = _mapper.Map<List<PhaseResModel>>(phases),
@@ -97,7 +97,7 @@ public class PhaseServices: IPhaseServices
 
     public async Task<ResultModel<DataResultModel<PhaseResModel>>> CreateNewPhaseAsync(AddNewPhaseDto newPhase, string? token)
     {
-        
+
         // Create a new Phase entity
         var phase = new GrowthPhase()
         {
@@ -105,11 +105,11 @@ public class PhaseServices: IPhaseServices
             Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim()),
             Status = PhaseStatusEnums.Active.ToString(),
         };
-        
-        if(token != null)
+
+        if (token != null)
         {
             Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-            
+
             var existedUserPhase = await _phaseRepository.GetGrowthPhaseByUserId(userId);
             if (existedUserPhase != null)
             {
@@ -131,35 +131,32 @@ public class PhaseServices: IPhaseServices
                 }
             };
         }
-        
+
         // Check if the Phase with the same name already exists
         var existingPhase = await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim()));
         if (existingPhase != null)
         {
             throw new CustomException("Phase with the same name already exists");
         }
-        
+
         var count = await _phaseRepository.CountGrowthPhase();
-        switch (count)
-        {
-            case 0:
-                phase.IsDefault = true;
-                phase.PhaseNumber = 1;
-                break;
-            case 1:
-                phase.IsDefault = true;
-                phase.PhaseNumber = 2;
-                break;
-            case 2:
-                phase.IsDefault = true;
-                phase.PhaseNumber = 3;
-                break;
-            default:
-                phase.IsDefault = false;
-                phase.PhaseNumber = count + 1;
-                break;
-        }
-        
+        phase.PhaseNumber = count + 1;
+        // switch (count)
+        // {
+        //     case 0:
+        //         phase.PhaseNumber = 1;
+        //         break;
+        //     case 1:
+        //         phase.PhaseNumber = 2;
+        //         break;
+        //     case 2:
+        //         phase.PhaseNumber = 3;
+        //         break;
+        //     default:
+        //         phase.PhaseNumber = count + 1;
+        //         break;
+        // }
+
         await _phaseRepository.Insert(phase);
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
 
@@ -171,8 +168,8 @@ public class PhaseServices: IPhaseServices
                 Data = phaseDto
             }
         };
-        
-        
+
+
     }
 
     public async Task<ResultModel<DataResultModel<PhaseResModel>>> GetPhaseByIdAsync(Guid id)
@@ -182,9 +179,9 @@ public class PhaseServices: IPhaseServices
         {
             throw new CustomException("Phase not found");
         }
-        
+
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
-        
+
         return new ResultModel<DataResultModel<PhaseResModel>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
@@ -202,7 +199,7 @@ public class PhaseServices: IPhaseServices
         {
             throw new CustomException("Phase not found");
         }
-        
+
         // Check if the Phase with the same name already exists
         var existingPhase = await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim()));
         if (existingPhase != null && existingPhase.Id != id)
@@ -211,11 +208,11 @@ public class PhaseServices: IPhaseServices
         }
 
         phase.Name = TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim());
-        
+
         await _phaseRepository.Update(phase);
-        
+
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
-        
+
         return new ResultModel<DataResultModel<PhaseResModel>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
@@ -228,25 +225,25 @@ public class PhaseServices: IPhaseServices
 
     public async Task<ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>> SetPhaseForPlant(Guid plantId, Guid phaseId)
     {
-        
+
         var plant = await _plantRepositories.GetByIdAsync(plantId);
         if (plant == null)
         {
             throw new CustomException("Plant not found");
         }
-        
+
         var phase = await _phaseRepository.GetGrowthPhaseById(phaseId);
         if (phase == null)
         {
             throw new CustomException("Phase not found");
         }
-        
+
         var existingPlantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
         if (existingPlantOfPhase != null)
         {
             throw new CustomException("Phase already exists for this plant");
         }
-        
+
         var plantOfPhase = new PlantOfPhase
         {
             Id = Guid.NewGuid(),
@@ -254,7 +251,7 @@ public class PhaseServices: IPhaseServices
             PhaseId = phaseId
         };
         await _plantOfPhaseRepository.Insert(plantOfPhase);
-        
+
         var plantAndPhase = new PlantAndPhaseForTargetListDto
         {
             PlantOfPhaseId = plantOfPhase.Id,
@@ -263,7 +260,7 @@ public class PhaseServices: IPhaseServices
             PhaseId = phase.Id,
             PhaseName = phase.Name,
         };
-        
+
         return new ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>
         {
             StatusCodes = (int)HttpStatusCode.OK,
@@ -272,6 +269,6 @@ public class PhaseServices: IPhaseServices
                 Data = plantAndPhase
             }
         };
-        
+
     }
 }
