@@ -19,6 +19,7 @@ public class PhaseDeviceDetailModel
 {
     public Guid Id { get; set; }
     public string PhaseName { get; set; } = null!;
+    public bool IsDefault { get; set; }
     public bool IsSelected { get; set; }
 }
 
