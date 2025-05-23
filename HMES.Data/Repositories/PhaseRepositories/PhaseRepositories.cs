@@ -9,7 +9,7 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
 {
     public async Task<List<GrowthPhase>> GetGrowthPhasesNoUser()
     {
-        return await Context.GrowthPhases.Where(g => g.UserId == null && g.IsDefault == true).ToListAsync();
+        return await Context.GrowthPhases.Where(g => g.UserId == null).ToListAsync();
     }
 
     public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesAsync()
@@ -46,7 +46,7 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
         var totalItems = await query.CountAsync();
         var phases = await query.ToListAsync();
         return (phases, totalItems);
-        
+
     }
 
     public async Task<GrowthPhase?> GetGrowthPhaseByUserId(Guid id)
@@ -66,11 +66,11 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
 
     public async Task<GrowthPhase?> GetGrowthPhaseByName(string name)
     {
-        return  await Context.GrowthPhases
+        return await Context.GrowthPhases
             .Include(g => g.PlantOfPhases)
             .ThenInclude(p => p.Plant)
             .AsNoTracking()
-            .FirstOrDefaultAsync(g => g.Name == name.Trim()); 
+            .FirstOrDefaultAsync(g => g.Name == name.Trim());
     }
 
     public async Task<int> CountGrowthPhase()
