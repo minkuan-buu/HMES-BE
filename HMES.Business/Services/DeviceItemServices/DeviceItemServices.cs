@@ -141,13 +141,13 @@ namespace HMES.Business.Services.DeviceItemServices
                     throw new Exception("Device item not found or not active");
                 }
 
-                var phase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseNumber(plantId, 1);
-                if (phase == null)
-                {
-                    throw new Exception("Plant not has default phase");
-                }
+                // var phase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseNumber(plantId, 1);
+                // if (phase == null)
+                // {
+                //     throw new Exception("Plant not has default phase");
+                // }
                 deviceItem.PlantId = plantId;
-                deviceItem.PhaseId = phase.PhaseId;
+                deviceItem.PhaseId = null;
                 await _deviceItemsRepositories.Update(deviceItem);
                 return new ResultModel<MessageResultModel>()
                 {
