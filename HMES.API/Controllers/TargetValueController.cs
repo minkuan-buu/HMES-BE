@@ -59,7 +59,12 @@ public class TargetValueController : ControllerBase
         return Ok(result);
     }
     
-    
+    [HttpGet("{plantId}/{phaseId}")]
+    public async Task<IActionResult> GetValueForDeviceItem(Guid plantId, Guid phaseId)
+    {
+        var result = await _targetValueServices.GetValueByPlantAndPhase(plantId, phaseId);
+        return Ok(result);
+    }
     
     
 }
