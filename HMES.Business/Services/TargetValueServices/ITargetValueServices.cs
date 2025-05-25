@@ -18,5 +18,8 @@ public interface ITargetValueServices
     Task<ResultModel<MessageResultModel>> UpdateTargetValueAsync(Guid id, TargetReqModel targetReqModel);
     
     Task<ResultModel<MessageResultModel>> DeleteTargetValueAsync(Guid id);
-    
+
+    Task<ResultModel<MessageResultModel>> SetValueForDevice(SetValueReqModel model);
+    Task<ResultModel<MessageResultModel>> UpdateValueForDevice(SetValueReqModel model);
+    Task<ResultModel<DataResultModel<TargetInPhaseDto>>> GetValueByPlantAndPhase(Guid plantId, Guid phaseId);
 }

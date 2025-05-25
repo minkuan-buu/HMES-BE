@@ -53,6 +53,8 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<(List<TargetValue> values, int TotalItems)> GetAllValuesAsync(string? type, decimal? minValue, decimal? maxValue, int pageIndex, int pageSize)
     {
         var query = Context.TargetValues
+            .Where(tv => !tv.TargetOfPhases.Any(top => 
+                Context.GrowthPhases.Any(gp => gp.Id == top.PlantOfPhase.PhaseId && gp.UserId != null)))
             .OrderBy(t => t.Type)
             .AsQueryable();
 
@@ -78,4 +80,5 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
             .ToListAsync();
         return (values, totalItems);
     }
+    
 }
