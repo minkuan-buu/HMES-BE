@@ -95,14 +95,16 @@ public class PhaseServices : IPhaseServices
         };
     }
 
-    public async Task<ResultModel<DataResultModel<PhaseResModel>>> CreateNewPhaseAsync(AddNewPhaseDto newPhase, string? token)
+    public async Task<ResultModel<DataResultModel<PhaseResModel>>> CreateNewPhaseAsync(AddNewPhaseDto? newPhase, string? token)
     {
 
         // Create a new Phase entity
         var phase = new GrowthPhase()
         {
             Id = Guid.NewGuid(),
-            Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim()),
+            Name = (newPhase != null && !string.IsNullOrWhiteSpace(newPhase.Name))
+                ? TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim())
+                : null,
             Status = PhaseStatusEnums.Active.ToString(),
         };
 
@@ -111,14 +113,10 @@ public class PhaseServices : IPhaseServices
             Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
             var existedUserPhase = await _phaseRepository.GetGrowthPhaseByUserId(userId);
-            if (existedUserPhase != null)
-            {
-                existedUserPhase.Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim());
-                await _phaseRepository.Update(existedUserPhase);
-            }
-            else
+            if (existedUserPhase == null)
             {
                 phase.UserId = userId;
+                phase.Name = null;
                 await _phaseRepository.Insert(phase);
             }
 
@@ -127,7 +125,7 @@ public class PhaseServices : IPhaseServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = new DataResultModel<PhaseResModel>
                 {
-                    Data = _mapper.Map<PhaseResModel>(existedUserPhase)
+                    Data = _mapper.Map<PhaseResModel>(existedUserPhase ?? phase)
                 }
             };
         }
@@ -141,21 +139,6 @@ public class PhaseServices : IPhaseServices
 
         var count = await _phaseRepository.CountGrowthPhase();
         phase.PhaseNumber = count + 1;
-        // switch (count)
-        // {
-        //     case 0:
-        //         phase.PhaseNumber = 1;
-        //         break;
-        //     case 1:
-        //         phase.PhaseNumber = 2;
-        //         break;
-        //     case 2:
-        //         phase.PhaseNumber = 3;
-        //         break;
-        //     default:
-        //         phase.PhaseNumber = count + 1;
-        //         break;
-        // }
 
         await _phaseRepository.Insert(phase);
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
@@ -168,8 +151,6 @@ public class PhaseServices : IPhaseServices
                 Data = phaseDto
             }
         };
-
-
     }
 
     public async Task<ResultModel<DataResultModel<PhaseResModel>>> GetPhaseByIdAsync(Guid id)
@@ -192,29 +173,8 @@ public class PhaseServices : IPhaseServices
         };
     }
 
-    public async Task<ResultModel<DataResultModel<PhaseResModel>>> UpdatePhaseAsync(Guid id, AddNewPhaseDto updatePhase, string? token)
+    public async Task<ResultModel<DataResultModel<PhaseResModel>>> UpdatePhaseAsync(Guid id, AddNewPhaseDto updatePhase)
     {
-        if (token != null)
-        {
-            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-
-            var existedUserPhase = await _phaseRepository.GetSingle(x => x.UserId == userId && x.Id == id);
-            if (existedUserPhase != null)
-            {
-                existedUserPhase.Name = TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim());
-                await _phaseRepository.Update(existedUserPhase);
-                return new ResultModel<DataResultModel<PhaseResModel>>
-                {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new DataResultModel<PhaseResModel>
-                    {
-                        Data = _mapper.Map<PhaseResModel>(existedUserPhase)
-                    }
-                };
-            }
-            throw new CustomException("Phase not found for the user");
-        }
-
         var phase = await _phaseRepository.GetGrowthPhaseById(id);
         if (phase == null)
         {
@@ -222,7 +182,8 @@ public class PhaseServices : IPhaseServices
         }
 
         // Check if the Phase with the same name already exists
-        var existingPhase = await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim()));
+        var existingPhase =
+            await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim()));
         if (existingPhase != null && existingPhase.Id != id)
         {
             throw new CustomException("Phase with the same name already exists");

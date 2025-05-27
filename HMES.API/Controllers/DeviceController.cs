@@ -112,19 +112,10 @@ namespace HMES.API.Controllers
                 // Use for creating and update (name)
                 [HttpPost("init-custom-phase")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> CreatePhase([FromBody] AddNewPhaseDto phaseDto)
+                public async Task<IActionResult> CreatePhase()
                 {
                         var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _phaseServices.CreateNewPhaseAsync(phaseDto, token);
-                        return Ok(result);
-                }
-
-                [HttpPut("update-custom-phase/{id}")]
-                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> UpdatePhase([FromBody] AddNewPhaseDto phaseDto, Guid id)
-                {
-                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto, token);
+                        var result = await _phaseServices.CreateNewPhaseAsync(null, token);
                         return Ok(result);
                 }
 
