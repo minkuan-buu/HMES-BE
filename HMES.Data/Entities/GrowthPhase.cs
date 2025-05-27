@@ -15,6 +15,8 @@ public partial class GrowthPhase
 
     public int? PhaseNumber { get; set; }
 
+    public bool? IsDefault { get; set; }
+
     public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
 
     public virtual ICollection<PlantOfPhase> PlantOfPhases { get; set; } = new List<PlantOfPhase>();
