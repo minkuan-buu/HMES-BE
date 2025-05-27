@@ -2,6 +2,7 @@
 using HMES.Business.Services.DeviceServices;
 using HMES.Business.Services.PhaseServices;
 using HMES.Business.Services.PlantServices;
+using HMES.Business.Services.TargetValueServices;
 using HMES.Business.Services.UserServices;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
@@ -19,13 +20,15 @@ namespace HMES.API.Controllers
                 private readonly IDeviceItemServices _deviceItemServices;
                 private readonly IPhaseServices _phaseServices;
                 private readonly IPlantServices _plantServices;
+                private readonly ITargetValueServices _targetValueServices;
 
-                public DeviceController(IPhaseServices phaseServices, IDeviceServices deviceServices, IDeviceItemServices deviceItemServices, IPlantServices plantServices)
+                public DeviceController(ITargetValueServices targetValueServices,IPhaseServices phaseServices, IDeviceServices deviceServices, IDeviceItemServices deviceItemServices, IPlantServices plantServices)
                 {
                         _deviceServices = deviceServices;
                         _deviceItemServices = deviceItemServices;
                         _phaseServices = phaseServices;
                         _plantServices = plantServices;
+                        _targetValueServices = targetValueServices;
                 }
 
                 [HttpPost]
@@ -60,7 +63,10 @@ namespace HMES.API.Controllers
                         var result = await _deviceServices.GetListDevice();
                         return Ok(result);
                 }
-
+                
+                //========================================================================
+                // Device Item of device owner endpoint
+                
                 [HttpGet("me")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> GetMyDevices()
@@ -103,7 +109,7 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-                // Use for create and update (name)
+                // Use for creating and update (name)
                 [HttpPost("init-custom-phase")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> CreatePhase([FromBody] AddNewPhaseDto phaseDto)
@@ -119,6 +125,21 @@ namespace HMES.API.Controllers
                         var result = await _phaseServices.SetPhaseForPlant(plantId, phaseId);
                         return Ok(result);
                 }
+                [HttpPost("set-value")]
+                public async Task<IActionResult> SetValueForCustomPhase([FromBody] SetValueReqModel model)
+                {
+                        var result = await _targetValueServices.SetValueForDevice(model);
+                        return Ok(result);
+                }
+
+                [HttpPut("update-value")]
+                public async Task<IActionResult> UpdateValueForCustomPhase([FromBody] SetValueReqModel model)
+                {
+                        var result = await _targetValueServices.UpdateValueForDevice(model);
+                        return Ok(result);
+                }
+                
+                //=============================================================================
 
                 [HttpPut("{Id}")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]

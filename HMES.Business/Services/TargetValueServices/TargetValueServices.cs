@@ -1,10 +1,13 @@
 using System.Net;
 using AutoMapper;
+using HMES.Business.Utilities.Converter;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.DeviceItemsRepositories;
+using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.TargetOfPhaseRepositories;
 using HMES.Data.Repositories.TargetValueRepositories;
 
@@ -15,13 +18,19 @@ public class TargetValueServices : ITargetValueServices
     
     private readonly ITargetValueRepositories _targetValueRepositories;
     private readonly ITargetOfPhaseRepository _targetOfPhaseRepository;
+    private readonly IDeviceItemsRepositories _deviceItemRepository;
+    private readonly IPlantOfPhaseRepositories _plantOfPhaseRepository;
     private readonly IMapper _mapper;
     
-    public TargetValueServices(ITargetOfPhaseRepository targetOfPhaseRepository ,ITargetValueRepositories targetValueRepositories, IMapper mapper)
+    public TargetValueServices(ITargetOfPhaseRepository targetOfPhaseRepository ,ITargetValueRepositories targetValueRepositories, IMapper mapper, 
+        IDeviceItemsRepositories deviceItemRepository, IPlantOfPhaseRepositories plantOfPhaseRepository)
     {
         _targetValueRepositories = targetValueRepositories;
         _targetOfPhaseRepository = targetOfPhaseRepository;
+        _deviceItemRepository = deviceItemRepository;
+        _plantOfPhaseRepository = plantOfPhaseRepository;
         _mapper = mapper;
+        
     }
     
     
@@ -241,5 +250,201 @@ public class TargetValueServices : ITargetValueServices
             }
         };
     }
-    
+
+    public async Task<ResultModel<MessageResultModel>> SetValueForDevice(SetValueReqModel model)
+    {
+        var deviceItem = await _deviceItemRepository.GetDeviceItemById(model.DeviceItemId);
+        if (deviceItem == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Device item not found"
+                }
+            };
+        }
+        var plantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(deviceItem.PlantId, model.PhaseId);
+        if (plantOfPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Plant of phase not found"
+                }
+            };
+        }
+        foreach (var value in model.Values)
+        {
+            if (value.MinValue >= value.MaxValue)
+            {
+                throw new CustomException("Min value must be less than max value");
+            }
+
+            if (value.Type.Equals(ValueTypeEnums.Ph))
+            {
+                if (value.MaxValue > 14 || value.MinValue <= 0)
+                {
+                    throw new CustomException("pH must be between 0 and 14");
+                }
+            }
+            try
+            {
+                var targetValue = _mapper.Map<TargetValue>(value);
+                await _targetValueRepositories.Insert(targetValue);
+
+                var targetOfPhase = new TargetOfPhase
+                {
+                    Id = Guid.NewGuid(),
+                    PlantOfPhaseId = plantOfPhase.Id,
+                    TargetValueId = targetValue.Id
+                };
+                await _targetOfPhaseRepository.Insert(targetOfPhase);
+            }catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.BadRequest,
+                    Response = new MessageResultModel
+                    {
+                        Message = e.Message,
+                    }
+                };
+            }
+        }
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Set value for device successfully"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> UpdateValueForDevice(SetValueReqModel model)
+    {
+        var deviceItem = await _deviceItemRepository.GetDeviceItemById(model.DeviceItemId);
+        if (deviceItem == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Device item not found"
+                }
+            };
+        }
+        var plantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(deviceItem.PlantId, deviceItem.PhaseId);
+        if (plantOfPhase == null)
+        {
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = new MessageResultModel
+                {
+                    Message = "Plant of phase not found"
+                }
+            };
+        }
+        foreach (var value in model.Values)
+        {
+            if (value.MinValue >= value.MaxValue)
+            {
+                throw new CustomException("Min value must be less than max value");
+            }
+
+            if (value.Type.Equals(ValueTypeEnums.Ph))
+            {
+                if (value.MaxValue > 14 || value.MinValue <= 0)
+                {
+                    throw new CustomException("pH must be between 0 and 14");
+                }
+            }
+            var targetOfPhase = await _targetOfPhaseRepository.GetTargetOfPhaseByPlantOfPhaseAndType(plantOfPhase.Id, value.Type.ToString());
+            if (targetOfPhase == null)
+            {
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.NotFound,
+                    Response = new MessageResultModel
+                    {
+                        Message = "Target of phase not found"
+                    }
+                };
+            }
+            var targetValue = targetOfPhase.TargetValue;
+            
+            targetValue.Type = value.Type.ToString();
+            targetValue.MinValue = value.MinValue;
+            targetValue.MaxValue = value.MaxValue;
+            
+            try
+            {
+                await _targetValueRepositories.Update(targetValue);
+            }catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return new ResultModel<MessageResultModel>
+                {
+                    StatusCodes = (int)HttpStatusCode.BadRequest,
+                    Response = new MessageResultModel
+                    {
+                        Message = e.Message,
+                    }
+                };
+            }
+        }
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Update value for custom phase successfully"
+            }
+        };
+    }
+
+    public async Task<ResultModel<DataResultModel<TargetInPhaseDto>>> GetValueByPlantAndPhase(Guid plantId, Guid phaseId)
+    {
+        var plantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        if (plantOfPhase == null)
+        {
+            return new ResultModel<DataResultModel<TargetInPhaseDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = null
+            };
+        }
+        var targetOfPhases = await _targetOfPhaseRepository.GetTargetOfPhasesByPlantOfPhaseId(plantOfPhase.Id);
+        if (targetOfPhases.Count == 0)
+        {
+            return new ResultModel<DataResultModel<TargetInPhaseDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.NotFound,
+                Response = null
+            };
+        }
+        
+        var targetInPhaseDto = new TargetInPhaseDto
+        {
+            PhaseId = plantOfPhase.PhaseId,
+            PhaseName = TextConvert.ConvertFromUnicodeEscape(plantOfPhase.Phase.Name),
+            Target = _mapper.Map<List<TargetResModel>>(targetOfPhases.Select(t => t.TargetValue).ToList())
+        };
+      
+        return new ResultModel<DataResultModel<TargetInPhaseDto>>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new DataResultModel<TargetInPhaseDto>
+            {
+                Data = targetInPhaseDto
+            }
+        };
+    }
 }
