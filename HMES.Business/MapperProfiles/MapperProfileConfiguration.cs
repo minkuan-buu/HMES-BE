@@ -220,6 +220,7 @@ namespace HMES.Business.MapperProfiles
                 .ForMember(dest => dest.DeviceItemId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.DeviceItemName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Name)))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Device.Name)))
+                .ForMember(dest => dest.PlantId, opt => opt.MapFrom(src => src.PlantId))
                 .ForMember(dest => dest.PlantName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Plant != null ? src.Plant.Name : string.Empty)))
                 .ForMember(dest => dest.isOnline, opt => opt.MapFrom(src => src.IsOnline))
                 .ForMember(dest => dest.Serial, opt => opt.MapFrom(src => src.Serial))
