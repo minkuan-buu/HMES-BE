@@ -39,6 +39,8 @@ public partial class DeviceItem
 
     public virtual Device Device { get; set; } = null!;
 
+    public virtual ICollection<DeviceItemDetail> DeviceItemDetails { get; set; } = new List<DeviceItemDetail>();
+
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
 
     public virtual Order Order { get; set; } = null!;

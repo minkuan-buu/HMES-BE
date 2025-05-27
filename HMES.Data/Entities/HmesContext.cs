@@ -25,6 +25,8 @@ public partial class HmesContext : DbContext
 
     public virtual DbSet<DeviceItem> DeviceItems { get; set; }
 
+    public virtual DbSet<DeviceItemDetail> DeviceItemDetails { get; set; }
+
     public virtual DbSet<GrowthPhase> GrowthPhases { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
@@ -189,6 +191,27 @@ public partial class HmesContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.DeviceItems)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__DeviceIte__UserI__7B5B524B");
+        });
+
+        modelBuilder.Entity<DeviceItemDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__DeviceIt__3214EC0727A54D4B");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Name)
+                .HasMaxLength(300)
+                .IsUnicode(false);
+            entity.Property(e => e.Serial)
+                .HasMaxLength(24)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.DeviceItem).WithMany(p => p.DeviceItemDetails)
+                .HasForeignKey(d => d.DeviceItemId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__DeviceIte__Devic__29221CFB");
         });
 
         modelBuilder.Entity<GrowthPhase>(entity =>
