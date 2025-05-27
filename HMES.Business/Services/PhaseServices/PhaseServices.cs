@@ -223,7 +223,15 @@ public class PhaseServices : IPhaseServices
         var existingPlantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
         if (existingPlantOfPhase != null)
         {
-            throw new CustomException("Phase already exists for this plant");
+            // throw new CustomException("Phase already exists for this plant");
+            return new ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>
+            {
+                StatusCodes = (int)HttpStatusCode.OK,
+                Response = new DataResultModel<PlantAndPhaseForTargetListDto>
+                {
+                    Data = null
+                }
+            };
         }
 
         var plantOfPhase = new PlantOfPhase
