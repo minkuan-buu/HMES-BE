@@ -22,7 +22,7 @@ namespace HMES.API.Controllers
                 private readonly IPlantServices _plantServices;
                 private readonly ITargetValueServices _targetValueServices;
 
-                public DeviceController(ITargetValueServices targetValueServices,IPhaseServices phaseServices, IDeviceServices deviceServices, IDeviceItemServices deviceItemServices, IPlantServices plantServices)
+                public DeviceController(ITargetValueServices targetValueServices, IPhaseServices phaseServices, IDeviceServices deviceServices, IDeviceItemServices deviceItemServices, IPlantServices plantServices)
                 {
                         _deviceServices = deviceServices;
                         _deviceItemServices = deviceItemServices;
@@ -63,10 +63,10 @@ namespace HMES.API.Controllers
                         var result = await _deviceServices.GetListDevice();
                         return Ok(result);
                 }
-                
+
                 //========================================================================
                 // Device Item of device owner endpoint
-                
+
                 [HttpGet("me")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> GetMyDevices()
@@ -119,6 +119,15 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
+                [HttpPut("update-custom-phase/{id}")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> UpdatePhase([FromBody] AddNewPhaseDto phaseDto, Guid id)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto, token);
+                        return Ok(result);
+                }
+
                 [HttpPost("{plantId}/phase/{phaseId}")]
                 public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
                 {
@@ -138,7 +147,7 @@ namespace HMES.API.Controllers
                         var result = await _targetValueServices.UpdateValueForDevice(model);
                         return Ok(result);
                 }
-                
+
                 //=============================================================================
 
                 [HttpPut("{Id}")]
