@@ -95,14 +95,16 @@ public class PhaseServices : IPhaseServices
         };
     }
 
-    public async Task<ResultModel<DataResultModel<PhaseResModel>>> CreateNewPhaseAsync(AddNewPhaseDto newPhase, string? token)
+    public async Task<ResultModel<DataResultModel<PhaseResModel>>> CreateNewPhaseAsync(AddNewPhaseDto? newPhase, string? token)
     {
 
         // Create a new Phase entity
         var phase = new GrowthPhase()
         {
             Id = Guid.NewGuid(),
-            Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim()),
+            Name = (newPhase != null && !string.IsNullOrWhiteSpace(newPhase.Name))
+                ? TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim())
+                : null,
             Status = PhaseStatusEnums.Active.ToString(),
         };
 
@@ -111,15 +113,10 @@ public class PhaseServices : IPhaseServices
             Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
 
             var existedUserPhase = await _phaseRepository.GetGrowthPhaseByUserId(userId);
-            if (existedUserPhase != null)
-            {
-                existedUserPhase.Name = "";
-                await _phaseRepository.Update(existedUserPhase);
-            }
-            else
+            if (existedUserPhase == null)
             {
                 phase.UserId = userId;
-                phase.Name = "";
+                phase.Name = null;
                 await _phaseRepository.Insert(phase);
             }
 
