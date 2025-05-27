@@ -113,12 +113,13 @@ public class PhaseServices : IPhaseServices
             var existedUserPhase = await _phaseRepository.GetGrowthPhaseByUserId(userId);
             if (existedUserPhase != null)
             {
-                existedUserPhase.Name = TextConvert.ConvertToUnicodeEscape(newPhase.Name.Trim());
+                existedUserPhase.Name = "";
                 await _phaseRepository.Update(existedUserPhase);
             }
             else
             {
                 phase.UserId = userId;
+                phase.Name = "";
                 await _phaseRepository.Insert(phase);
             }
 
@@ -141,21 +142,6 @@ public class PhaseServices : IPhaseServices
 
         var count = await _phaseRepository.CountGrowthPhase();
         phase.PhaseNumber = count + 1;
-        // switch (count)
-        // {
-        //     case 0:
-        //         phase.PhaseNumber = 1;
-        //         break;
-        //     case 1:
-        //         phase.PhaseNumber = 2;
-        //         break;
-        //     case 2:
-        //         phase.PhaseNumber = 3;
-        //         break;
-        //     default:
-        //         phase.PhaseNumber = count + 1;
-        //         break;
-        // }
 
         await _phaseRepository.Insert(phase);
         var phaseDto = _mapper.Map<PhaseResModel>(phase);
@@ -168,8 +154,6 @@ public class PhaseServices : IPhaseServices
                 Data = phaseDto
             }
         };
-
-
     }
 
     public async Task<ResultModel<DataResultModel<PhaseResModel>>> GetPhaseByIdAsync(Guid id)
@@ -201,7 +185,8 @@ public class PhaseServices : IPhaseServices
         }
 
         // Check if the Phase with the same name already exists
-        var existingPhase = await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim()));
+        var existingPhase =
+            await _phaseRepository.GetGrowthPhaseByName(TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim()));
         if (existingPhase != null && existingPhase.Id != id)
         {
             throw new CustomException("Phase with the same name already exists");
