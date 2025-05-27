@@ -47,6 +47,7 @@ using HMES.Business.Services.PhaseServices;
 using HMES.Data.Repositories.PhaseRepositories;
 using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.TargetOfPhaseRepositories;
+using System.Text.Json.Serialization;
 
 DotNetEnv.Env.Load();
 
@@ -173,6 +174,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 //======================================= AUTHENTICATION ==========================================
 builder.Services.AddAuthentication("HMESAuthentication")

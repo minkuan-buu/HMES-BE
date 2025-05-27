@@ -5,6 +5,7 @@ public class DeviceItemDetailResModel
     public Guid DeviceItemId { get; set; }
     public string DeviceItemName { get; set; } = null!;
     public string Type { get; set; } = null!;
+    public Guid PlantId { get; set; }
     public string? PlantName { get; set; } = string.Empty;
     public int RefreshCycleHours { get; set; }
     public bool isOnline { get; set; }
