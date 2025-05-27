@@ -45,7 +45,7 @@ public class PhaseController : ControllerBase
         Guid id,
         [FromForm] AddNewPhaseDto phaseDto)
     {
-        var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto, null);
+        var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto);
         return Ok(result);
     }
 

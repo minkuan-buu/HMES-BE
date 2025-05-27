@@ -119,15 +119,6 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
-                [HttpPut("update-custom-phase/{id}")]
-                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-                public async Task<IActionResult> UpdatePhase([FromBody] AddNewPhaseDto phaseDto, Guid id)
-                {
-                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-                        var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto, token);
-                        return Ok(result);
-                }
-
                 [HttpPost("{plantId}/phase/{phaseId}")]
                 public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
                 {

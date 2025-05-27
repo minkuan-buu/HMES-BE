@@ -127,7 +127,7 @@ public class PhaseServices : IPhaseServices
                 StatusCodes = (int)HttpStatusCode.OK,
                 Response = new DataResultModel<PhaseResModel>
                 {
-                    Data = _mapper.Map<PhaseResModel>(existedUserPhase)
+                    Data = _mapper.Map<PhaseResModel>(existedUserPhase ?? phase)
                 }
             };
         }
@@ -192,29 +192,8 @@ public class PhaseServices : IPhaseServices
         };
     }
 
-    public async Task<ResultModel<DataResultModel<PhaseResModel>>> UpdatePhaseAsync(Guid id, AddNewPhaseDto updatePhase, string? token)
+    public async Task<ResultModel<DataResultModel<PhaseResModel>>> UpdatePhaseAsync(Guid id, AddNewPhaseDto updatePhase)
     {
-        if (token != null)
-        {
-            Guid userId = new Guid(Authentication.DecodeToken(token, "userid"));
-
-            var existedUserPhase = await _phaseRepository.GetSingle(x => x.UserId == userId && x.Id == id);
-            if (existedUserPhase != null)
-            {
-                existedUserPhase.Name = TextConvert.ConvertToUnicodeEscape(updatePhase.Name.Trim());
-                await _phaseRepository.Update(existedUserPhase);
-                return new ResultModel<DataResultModel<PhaseResModel>>
-                {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new DataResultModel<PhaseResModel>
-                    {
-                        Data = _mapper.Map<PhaseResModel>(existedUserPhase)
-                    }
-                };
-            }
-            throw new CustomException("Phase not found for the user");
-        }
-
         var phase = await _phaseRepository.GetGrowthPhaseById(id);
         if (phase == null)
         {
