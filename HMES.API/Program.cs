@@ -48,6 +48,7 @@ using HMES.Data.Repositories.PhaseRepositories;
 using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.TargetOfPhaseRepositories;
 using System.Text.Json.Serialization;
+using HMES.Data.Repositories.DeviceItemDetailRepositories;
 
 DotNetEnv.Env.Load();
 
@@ -218,6 +219,7 @@ builder.Services.AddScoped<INutritionRDRepositories, NutritionRDRepositories>();
 builder.Services.AddScoped<INutritionReportRepositories, NutritionReportRepositories>();
 builder.Services.AddScoped<IPhaseRepositories, PhaseRepositories>();
 builder.Services.AddScoped<IPlantOfPhaseRepositories, PlantOfPhaseRepositories>();
+builder.Services.AddScoped<IDeviceItemDetailRepositories, DeviceItemDetailRepositories>();
 
 //=========================================== SERVICE =============================================
 builder.Services.AddScoped<IUserServices, UserServices>();

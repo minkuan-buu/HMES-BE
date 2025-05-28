@@ -83,7 +83,7 @@ namespace HMES.API.Controllers
         }
 
         [HttpPost("confirm-cod")]
-        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Consultant")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Consultant,Admin")]
         public async Task<IActionResult> ConfirmOrderCOD([FromBody] OrderConfirmReqModel orderConfirm)
         {
             var result = await _orderServices.ConfirmOrderCOD(orderConfirm);

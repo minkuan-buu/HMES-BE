@@ -1145,6 +1145,8 @@ namespace HMES.Business.Services.OrderServices
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                 await _deviceItemsRepositories.DeleteRange(deviceItems);
                 await _orderRepositories.Update(order);
                 await _transactionRepositories.Update(transaction);
@@ -1248,7 +1250,7 @@ namespace HMES.Business.Services.OrderServices
         public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token)
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems,Transaction");
             if (order == null)
             {
                 throw new CustomException("Order not found");
@@ -1304,7 +1306,7 @@ namespace HMES.Business.Services.OrderServices
         {
             try
             {
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems,Transactions");
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
@@ -1347,6 +1349,8 @@ namespace HMES.Business.Services.OrderServices
                         order.Status = OrderEnums.Cancelled.ToString();
                         order.UpdatedAt = DateTime.Now;
                         var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                         await _deviceItemsRepositories.DeleteRange(deviceItems);
                         await _orderRepositories.Update(order);
                         await _transactionRepositories.Update(transaction);
