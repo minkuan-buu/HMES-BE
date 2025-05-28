@@ -1313,19 +1313,66 @@ namespace HMES.Business.Services.OrderServices
                 {
                     throw new CustomException("Order is not in waiting status");
                 }
-                order.Status = orderConfirm.Status.ToString();
-                order.UpdatedAt = DateTime.Now;
-                await _orderRepositories.Update(order);
-                return new ResultModel<MessageResultModel>
+                if (order.Transactions.FirstOrDefault(x =>
+                        x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
+                    throw new CustomException("Order is not Cash on Delivery.");
+
+                if (orderConfirm.Status.Equals(OrderEnums.Delivering))
                 {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new MessageResultModel { Message = "Confirm order successfully." }
-                };
+                    order.Status = orderConfirm.Status.ToString();
+                    order.UpdatedAt = DateTime.Now;
+                    await _orderRepositories.Update(order);
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Confirm order successfully." }
+                    };
+                }
+
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
+                {
+                    try
+                    {
+                        var transaction = order.Transactions.FirstOrDefault(x =>
+                            x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
+                            x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                        if (transaction == null)
+                        {
+                            throw new CustomException("Order is not Cash on Delivery.");
+                        }
+
+                        // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                        transaction.Status = TransactionEnums.CANCELLED.ToString();
+                        order.Status = OrderEnums.Cancelled.ToString();
+                        order.UpdatedAt = DateTime.Now;
+                        var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        await _deviceItemsRepositories.DeleteRange(deviceItems);
+                        await _orderRepositories.Update(order);
+                        await _transactionRepositories.Update(transaction);
+                        await CancelShipping(order);
+
+                        return new ResultModel<MessageResultModel>
+                        {
+                            StatusCodes = (int)HttpStatusCode.OK,
+                            Response = new MessageResultModel { Message = "Order cancelled successfully." }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new CustomException(ex.Message);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 throw new CustomException(ex.Message);
             }
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel { Message = "Invalid order status." }
+            };
         }
     }
 }
