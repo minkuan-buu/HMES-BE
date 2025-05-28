@@ -1,3 +1,4 @@
+using HMES.Data.Enums;
 using Microsoft.AspNetCore.Http;
 
 
@@ -31,5 +32,11 @@ namespace HMES.Data.DTO.RequestModel
         public Guid Id { get; set; }
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
+    }
+    
+    public class OrderConfirmReqModel
+    {
+        public Guid OrderId { get; set; }
+        public OrderEnums Status { get; set; }
     }
 }
