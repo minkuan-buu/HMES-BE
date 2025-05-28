@@ -9,7 +9,7 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
 {
     public async Task<List<GrowthPhase>> GetGrowthPhasesNoUser()
     {
-        return await Context.GrowthPhases.Where(g => g.UserId == null).ToListAsync();
+        return await Context.GrowthPhases.Where(g => g.UserId == null && g.IsDefault == true).ToListAsync();
     }
 
     public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesAsync()
