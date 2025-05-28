@@ -7,9 +7,11 @@ using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.PhaseRepositories;
 using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.PlantRepositories;
+using HMES.Data.Repositories.TargetOfPhaseRepositories;
 
 namespace HMES.Business.Services.PhaseServices;
 
@@ -18,15 +20,18 @@ public class PhaseServices : IPhaseServices
     private readonly IPhaseRepositories _phaseRepository;
     private readonly IPlantRepositories _plantRepositories;
     private readonly IPlantOfPhaseRepositories _plantOfPhaseRepository;
+    private readonly IDeviceItemsRepositories _deviceItemsRepositories;
+    private readonly ITargetOfPhaseRepository _targetOfPhaseRepository;
     private readonly IMapper _mapper;
 
-    public PhaseServices(IPhaseRepositories phaseRepository, IMapper mapper, IPlantOfPhaseRepositories plantOfPhaseRepository, IPlantRepositories plantRepositories)
+    public PhaseServices(ITargetOfPhaseRepository targetOfPhaseRepository, IDeviceItemsRepositories deviceItemsRepositories, IPhaseRepositories phaseRepository, IMapper mapper, IPlantOfPhaseRepositories plantOfPhaseRepository, IPlantRepositories plantRepositories)
     {
-
         _phaseRepository = phaseRepository;
         _mapper = mapper;
         _plantOfPhaseRepository = plantOfPhaseRepository;
         _plantRepositories = plantRepositories;
+        _deviceItemsRepositories = deviceItemsRepositories;
+        _targetOfPhaseRepository = targetOfPhaseRepository;
     }
 
 
@@ -78,7 +83,7 @@ public class PhaseServices : IPhaseServices
     {
         var (phases, totalItems) = await _phaseRepository.GetAllPhasesOfPlantAsync(plantId);
 
-        var totalPages = (int)Math.Ceiling((double)totalItems / 10);
+        var totalPages = (int)Math.Ceiling((double)totalItems / 1000);
 
         var result = new ListDataResultModel<PhaseResModel>
         {
@@ -86,7 +91,7 @@ public class PhaseServices : IPhaseServices
             CurrentPage = 1,
             TotalPages = totalPages,
             TotalItems = totalItems,
-            PageSize = 10
+            PageSize = 1000
         };
         return new ResultModel<ListDataResultModel<PhaseResModel>>
         {
@@ -241,7 +246,6 @@ public class PhaseServices : IPhaseServices
         var existingPlantOfPhase = await _plantOfPhaseRepository.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
         if (existingPlantOfPhase != null)
         {
-            // throw new CustomException("Phase already exists for this plant");
             return new ResultModel<DataResultModel<PlantAndPhaseForTargetListDto>>
             {
                 StatusCodes = (int)HttpStatusCode.OK,
@@ -278,5 +282,85 @@ public class PhaseServices : IPhaseServices
             }
         };
 
+    }
+
+    public async Task<ResultModel<MessageResultModel>> DeletePhaseAsync(Guid id)
+    {
+        var phase = await _phaseRepository.GetGrowthPhaseByIdWithTargetValue(id);
+        if (phase == null)
+        {
+            throw new CustomException("Phase not found");
+        }
+
+        // Check if the phase is default
+        if (phase.IsDefault != null)
+        {
+            if ((bool)phase.IsDefault)
+            {
+                throw new CustomException("Cannot delete default phase");
+            }
+        }
+        
+        // Check if the phase is used by any plant
+        if (await _deviceItemsRepositories.CheckDeviceItemByPhaseId(id))
+        {
+            throw new CustomException("Cannot delete because there are device items using this phase");
+        }
+        try
+        {
+            if (phase.PlantOfPhases.Count > 0)
+            {
+                var plantOfPhasesToDelete = phase.PlantOfPhases.ToList();
+                foreach (var plantOfPhase in plantOfPhasesToDelete)
+                {
+                    if (plantOfPhase.TargetOfPhases.Count > 0)
+                    {
+                        await _targetOfPhaseRepository.DeleteRange(plantOfPhase.TargetOfPhases);
+                    }
+                    await _plantOfPhaseRepository.Delete(plantOfPhase);
+                }
+            }
+            await _phaseRepository.Delete(phase);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Phase deleted successfully"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> UpdateStatusPhaseAsync(Guid id)
+    {
+        var phase = await _phaseRepository.GetGrowthPhaseById(id);
+        if (phase == null)
+        {
+            throw new CustomException("Phase not found");
+        }
+        if (phase.IsDefault != null)
+        {
+            if ((bool)phase.IsDefault)
+            {
+                throw new CustomException("Cannot update status of default phase");
+            }
+        }
+        phase.Status = phase.Status == PhaseStatusEnums.Active.ToString() ? PhaseStatusEnums.Inactive.ToString() : PhaseStatusEnums.Active.ToString();
+        
+        await _phaseRepository.Update(phase);
+
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel
+            {
+                Message = "Phase status updated successfully"
+            }
+        };
     }
 }
