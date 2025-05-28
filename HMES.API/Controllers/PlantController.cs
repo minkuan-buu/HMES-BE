@@ -99,6 +99,22 @@ public class PlantController: ControllerBase
         var result = await _plantServices.GetPlantNotSetValueOfType(type);
         return Ok(result);
     }
+    [HttpPost("{plantId}/set-phase/{phaseId}")] 
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        var result = await _plantServices.SetPhaseForPlant(plantId, phaseId);
+        return Ok(result);
+    }
+    [HttpDelete("{plantId}/remove-phase/{phaseId}")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> RemovePhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        var result = await _plantServices.RemovePhaseForPlant(plantId, phaseId);
+        return Ok(result);
+    }
+    
+    
     
     
     

@@ -48,6 +48,28 @@ public class PhaseController : ControllerBase
         var result = await _phaseServices.UpdatePhaseAsync(id, phaseDto);
         return Ok(result);
     }
+    [HttpGet("plant/{plantId}")]
+    public async Task<IActionResult> GetPhasesNotSetAsync( Guid plantId)
+    {
+        var result = await _phaseServices.GetAllPhasesOfPlantAsync(plantId);
+        return Ok(result);
+    }
+    
+    [HttpDelete("{id}")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> DeletePhase(Guid id)
+    {
+        var result = await _phaseServices.DeletePhaseAsync(id);
+        return Ok(result);
+    }
 
+    [HttpPut("status/{id}")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> UpdatePhase(
+        Guid id)
+    {
+        var result = await _phaseServices.UpdateStatusPhaseAsync(id);
+        return Ok(result);
+    }
 
 }

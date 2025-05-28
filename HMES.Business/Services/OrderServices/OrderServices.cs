@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
@@ -1279,21 +1280,20 @@ namespace HMES.Business.Services.OrderServices
                 Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
             };
         }
-        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(Guid orderId, string token)
+        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(OrderConfirmReqModel orderConfirm)
         {
             try
             {
-                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
                 }
                 if (order.Status != OrderEnums.IsWaiting.ToString())
                 {
-                    throw new CustomException("Order is not in pending status");
+                    throw new CustomException("Order is not in waiting status");
                 }
-                order.Status = OrderEnums.Delivering.ToString();
+                order.Status = orderConfirm.Status.ToString();
                 order.UpdatedAt = DateTime.Now;
                 await _orderRepositories.Update(order);
                 return new ResultModel<MessageResultModel>

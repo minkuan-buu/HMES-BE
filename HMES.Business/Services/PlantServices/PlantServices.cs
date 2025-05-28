@@ -6,6 +6,7 @@ using HMES.Data.DTO.RequestModel;
 using HMES.Data.DTO.ResponseModel;
 using HMES.Data.Entities;
 using HMES.Data.Enums;
+using HMES.Data.Repositories.DeviceItemsRepositories;
 using HMES.Data.Repositories.PhaseRepositories;
 using HMES.Data.Repositories.PlantOfPhaseRepositories;
 using HMES.Data.Repositories.PlantRepositories;
@@ -22,10 +23,11 @@ public class PlantServices : IPlantServices
     private readonly ITargetValueRepositories _targetValueRepositories;
     private readonly IPhaseRepositories _phaseRepositories;
     private readonly IPlantOfPhaseRepositories _plantOfPhaseRepositories;
+    private readonly IDeviceItemsRepositories _deviceItemsRepositories;
 
     private readonly IMapper _mapper;
     
-    public PlantServices(IPlantOfPhaseRepositories plantOfPhaseRepositories  ,IPhaseRepositories phaseRepositories,IPlantRepositories plantRepositories, ITargetValueRepositories targetValueRepositories, IMapper mapper, ITargetOfPhaseRepository targetOfPhaseRepository)
+    public PlantServices(IDeviceItemsRepositories deviceItemsRepositories,IPlantOfPhaseRepositories plantOfPhaseRepositories  ,IPhaseRepositories phaseRepositories,IPlantRepositories plantRepositories, ITargetValueRepositories targetValueRepositories, IMapper mapper, ITargetOfPhaseRepository targetOfPhaseRepository)
     {
         _plantRepositories = plantRepositories;
         _mapper = mapper;
@@ -33,6 +35,7 @@ public class PlantServices : IPlantServices
         _targetValueRepositories = targetValueRepositories;
         _phaseRepositories = phaseRepositories;
         _plantOfPhaseRepositories = plantOfPhaseRepositories;
+        _deviceItemsRepositories = deviceItemsRepositories;
     }
     
     
@@ -553,6 +556,85 @@ public class PlantServices : IPlantServices
         {
             StatusCodes = (int)HttpStatusCode.OK,
             Response = _mapper.Map<List<PlantResModelWithTarget>>(plants)
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> SetPhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        var plant = await _plantRepositories.GetByIdAsync(plantId);
+        
+        if (plant == null)
+        {
+            throw new CustomException("Plant not found");
+        }
+        var phase = await _phaseRepositories.GetGrowthPhaseById(phaseId);
+        if (phase == null)
+        {
+            throw new CustomException("Phase not found");
+        }
+        if (await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId) != null)
+        {
+            throw new CustomException("Plant already has this phase");
+        }
+        var plantOfPhase = new PlantOfPhase
+        {
+            Id = Guid.NewGuid(),
+            PlantId = plantId,
+            PhaseId = phaseId
+        };
+        try
+        {
+            await _plantOfPhaseRepositories.Insert(plantOfPhase);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Set phase for plant successfully"
+            }
+        };
+    }
+
+    public async Task<ResultModel<MessageResultModel>> RemovePhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        if (await _plantRepositories.GetByIdAsync(plantId) == null)
+        {
+            throw new CustomException("Plant not found");
+        }
+        
+        var plantOfPhase = await _plantOfPhaseRepositories.GetPlantOfPhasesByPlantIdAndPhaseId(plantId, phaseId);
+        
+        if (plantOfPhase == null)
+        {
+            throw new CustomException("Plant does not have this phase");
+        }
+        
+        if (await _deviceItemsRepositories.CheckDeviceItemByPlantIdAndPhaseId(plantId, phaseId))
+        {
+            throw new CustomException("Cannot remove phase for plant because there are device items using this phase");
+        }
+        try
+        {
+            await _targetOfPhaseRepository.DeleteRange(plantOfPhase.TargetOfPhases);
+            await _plantOfPhaseRepositories.Delete(plantOfPhase);
+        }
+        catch (Exception e)
+        {
+            throw new CustomException(e.Message);
+        }
+        
+        return new ResultModel<MessageResultModel>
+        {
+            StatusCodes = (int)HttpStatusCode.OK,
+            Response = new MessageResultModel()
+            {
+                Message = "Remove phase for plant successfully"
+            }
         };
     }
 }
