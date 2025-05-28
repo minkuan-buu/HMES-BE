@@ -1145,6 +1145,8 @@ namespace HMES.Business.Services.OrderServices
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                 await _deviceItemsRepositories.DeleteRange(deviceItems);
                 await _orderRepositories.Update(order);
                 await _transactionRepositories.Update(transaction);
@@ -1347,6 +1349,8 @@ namespace HMES.Business.Services.OrderServices
                         order.Status = OrderEnums.Cancelled.ToString();
                         order.UpdatedAt = DateTime.Now;
                         var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                         await _deviceItemsRepositories.DeleteRange(deviceItems);
                         await _orderRepositories.Update(order);
                         await _transactionRepositories.Update(transaction);
