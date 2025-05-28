@@ -1250,7 +1250,7 @@ namespace HMES.Business.Services.OrderServices
         public async Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token)
         {
             var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+            var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems,Transaction");
             if (order == null)
             {
                 throw new CustomException("Order not found");
@@ -1306,7 +1306,7 @@ namespace HMES.Business.Services.OrderServices
         {
             try
             {
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems,Transactions");
                 if (order == null)
                 {
                     throw new CustomException("Order not found");

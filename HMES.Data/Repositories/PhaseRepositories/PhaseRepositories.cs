@@ -17,7 +17,7 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
     {
         var query = Context.GrowthPhases
             .Where(g => g.UserId == null)
-            .OrderByDescending(g => g.IsDefault)
+            .OrderBy(g => g.PhaseNumber)
             .AsQueryable();
 
         var totalItems = await query.CountAsync();
