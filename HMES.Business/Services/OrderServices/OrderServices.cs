@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MimeKit.Text;
 using HMES.Data.Repositories.PlantRepositories;
+using HMES.Data.Repositories.DeviceItemDetailRepositories;
 
 namespace HMES.Business.Services.OrderServices
 {
@@ -45,6 +46,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
         private readonly IPlantRepositories _plantRepositories;
+        private readonly IDeviceItemDetailRepositories _deviceItemDetailRepositories;
         private PayOS _payOS;
         private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
         private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
@@ -53,7 +55,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly string PayOSChecksumKey = Environment.GetEnvironmentVariable("PAY_OS_CHECKSUM_KEY");
         private readonly HttpClient _httpClient;
 
-        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPlantRepositories plantRepositories)
+        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPlantRepositories plantRepositories, IDeviceItemDetailRepositories deviceItemDetailRepositories)
         {
             _logger = logger;
             _userRepositories = userRepositories;
@@ -68,7 +70,7 @@ namespace HMES.Business.Services.OrderServices
             _deviceItemsRepositories = deviceItemsRepositories;
             _cartItemsRepositories = cartItemsRepositories;
             _plantRepositories = plantRepositories;
-
+            _deviceItemDetailRepositories = deviceItemDetailRepositories;
             // Initialize PayOS client
             _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
 
@@ -953,6 +955,8 @@ namespace HMES.Business.Services.OrderServices
             {
                 var DefaultPlant = await _plantRepositories.GetSingle(x => x.Name.Equals("Default"));
                 List<DeviceItem> deviceItems = new List<DeviceItem>();
+                List<DeviceItemDetail> deviceItemDetails = new List<DeviceItemDetail>();
+                var detailNames = Enum.GetNames(typeof(DeviceItemDetailNameEnums));
                 foreach (var orderDetail in order.OrderDetails)
                 {
                     if (orderDetail.DeviceId != null)
@@ -975,10 +979,26 @@ namespace HMES.Business.Services.OrderServices
                                 OrderId = order.Id,
                             };
                             deviceItems.Add(deviceItem);
+
+                            for (int j = 0; j < detailNames.Length; j++)
+                            {
+                                deviceItemDetails.Add(new DeviceItemDetail
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Name = detailNames[j],
+                                    Serial = "Kit" + Authentication.GenerateRandomSerial(7),
+                                    Status = "Available",
+                                    DeviceItemId = deviceItem.Id
+                                });
+                            }
                         }
                     }
                 }
                 await _deviceItemsRepositories.InsertRange(deviceItems);
+                if (deviceItemDetails.Count > 0)
+                {
+                    await _deviceItemDetailRepositories.InsertRange(deviceItemDetails);
+                }
                 return deviceItems;
             }
             catch (Exception ex)
