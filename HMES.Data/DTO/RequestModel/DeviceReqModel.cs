@@ -34,6 +34,18 @@ namespace HMES.Data.DTO.RequestModel
         public Guid DeviceItemId { get; set; }
         public Guid PlantId { get; set; }
     }
+    public class SetPhaseReqModel
+    {
+        public Guid DeviceItemId { get; set; }
+        public Guid phaseId { get; set; }
+    }
+
+    public class SetValueReqModel
+    {
+        public Guid DeviceItemId { get; set; }
+        public Guid? PhaseId { get; set; }
+        public List<TargetReqModel> Values { get; set; } = null!;
+    }
 
     public class UpdateRefreshCycleHoursReqModel
     {
@@ -46,5 +58,10 @@ namespace HMES.Data.DTO.RequestModel
         public decimal SoluteConcentration { get; set; } = 0;
         public decimal Ph { get; set; } = 0;
         public decimal WaterLevel { get; set; } = 0;
+    }
+
+    public class UpdateNameDeviceItem
+    {
+        public string DeviceItemName { get; set; } = null!;
     }
 }

@@ -1,5 +1,8 @@
 ﻿using HMES.Business.Services.DeviceItemServices;
 using HMES.Business.Services.DeviceServices;
+using HMES.Business.Services.PhaseServices;
+using HMES.Business.Services.PlantServices;
+using HMES.Business.Services.TargetValueServices;
 using HMES.Business.Services.UserServices;
 using HMES.Data.DTO.Custom;
 using HMES.Data.DTO.RequestModel;
@@ -15,11 +18,17 @@ namespace HMES.API.Controllers
         {
                 private readonly IDeviceServices _deviceServices;
                 private readonly IDeviceItemServices _deviceItemServices;
+                private readonly IPhaseServices _phaseServices;
+                private readonly IPlantServices _plantServices;
+                private readonly ITargetValueServices _targetValueServices;
 
-                public DeviceController(IDeviceServices deviceServices, IDeviceItemServices deviceItemServices)
+                public DeviceController(ITargetValueServices targetValueServices, IPhaseServices phaseServices, IDeviceServices deviceServices, IDeviceItemServices deviceItemServices, IPlantServices plantServices)
                 {
                         _deviceServices = deviceServices;
                         _deviceItemServices = deviceItemServices;
+                        _phaseServices = phaseServices;
+                        _plantServices = plantServices;
+                        _targetValueServices = targetValueServices;
                 }
 
                 [HttpPost]
@@ -55,6 +64,9 @@ namespace HMES.API.Controllers
                         return Ok(result);
                 }
 
+                //========================================================================
+                // Device Item of device owner endpoint
+
                 [HttpGet("me")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication")]
                 public async Task<IActionResult> GetMyDevices()
@@ -72,6 +84,62 @@ namespace HMES.API.Controllers
                         var result = await _deviceItemServices.SetPlantForDevice(model.DeviceItemId, model.PlantId, token);
                         return Ok(result);
                 }
+
+                [HttpGet("phase/{plantId}")]
+                public async Task<IActionResult> GetPhasesOfPlantAsync(Guid plantId)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _phaseServices.GetAllPhasesIncludeUserAsync(plantId, token);
+                        return Ok(result);
+                }
+
+                [HttpPut("set-phase")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> SetPhaseForDeviceDevice([FromBody] SetPhaseReqModel model)
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _deviceItemServices.SetPhaseForDevice(model.DeviceItemId, model.phaseId, token);
+                        return Ok(result);
+                }
+
+                [HttpPost("{plantId}/target/{targetId}/phase/{phaseId}")]
+                public async Task<IActionResult> SetValueForCustomPhase(Guid plantId, Guid targetId, Guid phaseId)
+                {
+                        var result = await _plantServices.SetValueForCustomPhase(plantId, targetId, phaseId);
+                        return Ok(result);
+                }
+
+                // Use for creating and update (name)
+                [HttpPost("init-custom-phase")]
+                [Authorize(AuthenticationSchemes = "HMESAuthentication")]
+                public async Task<IActionResult> CreatePhase()
+                {
+                        var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
+                        var result = await _phaseServices.CreateNewPhaseAsync(null, token);
+                        return Ok(result);
+                }
+
+                [HttpPost("{plantId}/phase/{phaseId}")]
+                public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
+                {
+                        var result = await _phaseServices.SetPhaseForPlant(plantId, phaseId);
+                        return Ok(result);
+                }
+                [HttpPost("set-value")]
+                public async Task<IActionResult> SetValueForCustomPhase([FromBody] SetValueReqModel model)
+                {
+                        var result = await _targetValueServices.SetValueForDevice(model);
+                        return Ok(result);
+                }
+
+                [HttpPut("update-value")]
+                public async Task<IActionResult> UpdateValueForCustomPhase([FromBody] SetValueReqModel model)
+                {
+                        var result = await _targetValueServices.UpdateValueForDevice(model);
+                        return Ok(result);
+                }
+
+                //=============================================================================
 
                 [HttpPut("{Id}")]
                 [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]

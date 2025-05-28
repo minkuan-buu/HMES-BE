@@ -10,6 +10,6 @@ public interface IPlantRepositories : IGenericRepositories<Plant>
     
     Task<Plant?> GetByIdAsync(Guid id);
 
-    Task<bool> PlantHasTargetValueType(Guid plantId, string targetType);
+    Task<bool> PlantHasTargetValueType(Guid plantId, string targetType, Guid targetId);
     Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type);
 }

@@ -17,8 +17,8 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<TargetValue?> GetTargetValueByPlantId(Guid plantId)
     {
         var targetValue = await Context.TargetValues
-            .Include(t => t.TargetOfPlants)
-            .FirstOrDefaultAsync(t => t.TargetOfPlants.Any(tp => tp.PlantId == plantId));
+            .Include(t => t.TargetOfPhases)
+            .FirstOrDefaultAsync(t => t.TargetOfPhases.Any(tp => tp.PlantOfPhaseId == plantId));
         return targetValue;
     }
 
@@ -39,8 +39,12 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<TargetValue?> GetTargetValueById(Guid id)
     {
         var targetValue = await Context.TargetValues
-            .Include(t => t.TargetOfPlants)
-            .ThenInclude(tp => tp.Plant)
+            .Include(t => t.TargetOfPhases)
+            .ThenInclude(tp => tp.PlantOfPhase)
+            .ThenInclude(pp => pp.Plant)
+            .Include(t => t.TargetOfPhases)
+            .ThenInclude(tp => tp.PlantOfPhase)
+            .ThenInclude(pp => pp.Phase)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
         return targetValue;
@@ -49,6 +53,8 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
     public async Task<(List<TargetValue> values, int TotalItems)> GetAllValuesAsync(string? type, decimal? minValue, decimal? maxValue, int pageIndex, int pageSize)
     {
         var query = Context.TargetValues
+            .Where(tv => !tv.TargetOfPhases.Any(top => 
+                Context.GrowthPhases.Any(gp => gp.Id == top.PlantOfPhase.PhaseId && gp.UserId != null)))
             .OrderBy(t => t.Type)
             .AsQueryable();
 
@@ -74,4 +80,5 @@ public class TargetValueRepositories : GenericRepositories<TargetValue>, ITarget
             .ToListAsync();
         return (values, totalItems);
     }
+    
 }

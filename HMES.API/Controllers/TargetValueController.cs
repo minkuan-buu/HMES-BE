@@ -36,7 +36,7 @@ public class TargetValueController : ControllerBase
     }
     
     [HttpPost]
-    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> CreateTargetValueAsync([FromForm] TargetReqModel targetReqModel)
     {
         var result = await _targetValueServices.CreateTargetValueAsync(targetReqModel);
@@ -44,7 +44,7 @@ public class TargetValueController : ControllerBase
     }
     
     [HttpPut("{id}")]
-    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdateTargetValueAsync(Guid id, [FromForm] TargetReqModel targetReqModel)
     {
         var result = await _targetValueServices.UpdateTargetValueAsync(id, targetReqModel);
@@ -52,14 +52,19 @@ public class TargetValueController : ControllerBase
     }
     
     [HttpDelete("{id}")]
-    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> DeleteTargetValueAsync(Guid id)
     {
         var result = await _targetValueServices.DeleteTargetValueAsync(id);
         return Ok(result);
     }
     
-    
+    [HttpGet("{plantId}/{phaseId}")]
+    public async Task<IActionResult> GetValueForDeviceItem(Guid plantId, Guid phaseId)
+    {
+        var result = await _targetValueServices.GetValueByPlantAndPhase(plantId, phaseId);
+        return Ok(result);
+    }
     
     
 }

@@ -13,6 +13,8 @@ public partial class Ticket
 
     public Guid? TechnicianId { get; set; }
 
+    public Guid? TransferTo { get; set; }
+
     public string? Type { get; set; }
 
     public string Description { get; set; } = null!;
@@ -24,8 +26,6 @@ public partial class Ticket
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
-    public Guid? TransferTo { get; set; }
 
     public virtual DeviceItem? DeviceItem { get; set; }
 

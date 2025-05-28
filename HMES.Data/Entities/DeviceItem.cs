@@ -23,23 +23,29 @@ public partial class DeviceItem
 
     public DateTime? WarrantyExpiryDate { get; set; }
 
-    public string Status { get; set; } = null!;
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime? UpdatedAt { get; set; }
-
     public DateTime? LastSeen { get; set; }
 
     public int RefreshCycleHours { get; set; }
 
     public Guid OrderId { get; set; }
 
+    public string Status { get; set; } = null!;
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public Guid? PhaseId { get; set; }
+
     public virtual Device Device { get; set; } = null!;
+
+    public virtual ICollection<DeviceItemDetail> DeviceItemDetails { get; set; } = new List<DeviceItemDetail>();
 
     public virtual ICollection<NutritionReport> NutritionReports { get; set; } = new List<NutritionReport>();
 
     public virtual Order Order { get; set; } = null!;
+
+    public virtual GrowthPhase? Phase { get; set; }
 
     public virtual Plant? Plant { get; set; }
 

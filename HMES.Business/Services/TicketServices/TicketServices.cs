@@ -143,6 +143,13 @@ public class TicketServices : ITicketServices
     public async Task<ResultModel<DataResultModel<TicketDetailsDto>>> AddTicket(TicketCreateDto ticketDto, string token)
     {
         var userId = new Guid(Authentication.DecodeToken(token, "userid"));
+        
+        var checkTicket = await _ticketRepositories.CheckTicketInPendingOrProgressing(userId, ticketDto.DeviceItemId);
+        if (checkTicket)
+        {
+            throw new Exception("You already have a ticket in pending or progressing status!");
+        }
+        
         if ((ticketDto.DeviceItemId != null && ticketDto.Type == TicketTypeEnums.Technical) ||
             (ticketDto.DeviceItemId == null && ticketDto.Type == TicketTypeEnums.Shopping))
         {
@@ -151,11 +158,15 @@ public class TicketServices : ITicketServices
                  var device = await _deviceItemsRepositories.GetDeviceItemByDeviceItemIdAndUserId((Guid)ticketDto.DeviceItemId, userId);
                  if(device == null)
                  {
-                     return new ResultModel<DataResultModel<TicketDetailsDto>>
-                     {
-                         StatusCodes = (int)HttpStatusCode.NotFound,
-                         Response = null
-                     };
+                     throw new Exception("Device item not found!");
+                 }
+                 if (!device.Order.Status.Equals(nameof(OrderEnums.Success)))
+                 {
+                     throw new CustomException("Device is not in order yet!");
+                 }
+                 if(!device.Status.Equals(nameof(DeviceItemStatusEnum.NotAvailable)))
+                 {
+                     throw new CustomException("Device is not in available yet!");
                  }
             }
             var ticket = _mapper.Map<Ticket>(ticketDto);

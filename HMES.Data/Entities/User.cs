@@ -31,6 +31,8 @@ public partial class User
 
     public virtual ICollection<DeviceItem> DeviceItems { get; set; } = new List<DeviceItem>();
 
+    public virtual ICollection<GrowthPhase> GrowthPhases { get; set; } = new List<GrowthPhase>();
+
     public virtual ICollection<Notification> NotificationSenders { get; set; } = new List<Notification>();
 
     public virtual ICollection<Notification> NotificationUsers { get; set; } = new List<Notification>();

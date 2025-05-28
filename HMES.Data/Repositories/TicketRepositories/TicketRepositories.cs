@@ -1,4 +1,5 @@
 using HMES.Data.Entities;
+using HMES.Data.Enums;
 using HMES.Data.Repositories.GenericRepositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -153,5 +154,25 @@ public class TicketRepositories : GenericRepositories<Ticket>, ITicketRepositori
             .Take(pageSize)
             .ToListAsync();
         return (tickets, totalItems);
+    }
+
+    public async Task<bool> CheckTicketInPendingOrProgressing(Guid userId, Guid? deviceItemId)
+    {
+        if (deviceItemId != null)
+        {
+            var query = Context.Tickets
+                .Where(t => t.UserId == userId && t.DeviceItemId == deviceItemId)
+                .Where(t => t.Status == "Pending" || t.Status == "InProgress")
+                .AsQueryable();
+            return await query.AnyAsync();
+        }
+        else
+        {
+            var query = Context.Tickets
+                .Where(t => t.UserId == userId)
+                .Where(t => t.Status == nameof(TicketStatusEnums.Pending) || t.Status == nameof(TicketStatusEnums.InProgress))
+                .AsQueryable();
+            return await query.AnyAsync();
+        }
     }
 }
