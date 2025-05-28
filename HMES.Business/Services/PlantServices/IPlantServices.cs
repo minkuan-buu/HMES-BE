@@ -22,13 +22,7 @@ public interface IPlantServices
     Task<ResultModel<MessageResultModel>> RemoveValueForPlant(Guid plantId, Guid targetId, Guid phaseId);
     
     Task<ResultModel<MessageResultModel>> UpdateValueForPlant(Guid plantId, Guid targetId, Guid newTargetId, Guid phaseId);
-    
     Task<ResultModel<List<PlantResModelWithTarget>>> GetPlantNotSetValueOfType(string type);
-
-
-    
-    
-    
-    
-    
+    Task<ResultModel<MessageResultModel>> SetPhaseForPlant(Guid plantId, Guid phaseId);
+    Task<ResultModel<MessageResultModel>> RemovePhaseForPlant(Guid plantId, Guid phaseId);
 }

@@ -23,6 +23,18 @@ public class DeviceItemsRepositories : GenericRepositories<DeviceItem>, IDeviceI
         return await Context.DeviceItems.FirstOrDefaultAsync(x => x.Id == id); 
     }
 
+    public async Task<bool> CheckDeviceItemByPlantIdAndPhaseId(Guid plantId, Guid phaseId)
+    {
+        return await Context.DeviceItems
+            .AnyAsync(x => x.PlantId == plantId && x.PhaseId == phaseId);
+    }
+
+    public async Task<bool> CheckDeviceItemByPhaseId(Guid phaseId)
+    {
+        return await Context.DeviceItems
+            .AnyAsync(x => x.PhaseId == phaseId);
+    }
+
     public async Task<List<DeviceItem>> GetOnlineDevicesAsync()
     {
         return await Context.DeviceItems.Where(x => x.IsOnline).ToListAsync();

@@ -56,10 +56,8 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
 
     public async Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type)
     {
-        // First, get all plants that have at least one phase without the target type
         var plantsWithQualifyingPhases = await Context.Plants
             .Where(p => p.PlantOfPhases.Any(pop => 
-                // Standard phase check
                 Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null) &&
                 // Phase doesn't have the specified target type
                 !pop.TargetOfPhases.Any(top => top.TargetValue.Type == type)
