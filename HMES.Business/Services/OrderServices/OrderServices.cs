@@ -1128,9 +1128,12 @@ namespace HMES.Business.Services.OrderServices
                 if (order == null)
                     throw new CustomException("Order not found");
 
-                if (order.Status != OrderEnums.Delivering.ToString())
-                    throw new CustomException("Order is not in Delivering status");
+                if (order.Status != OrderEnums.IsWaiting.ToString())
+                    throw new CustomException("Order is not in Waiting status");
 
+                if (order.Status.Equals(OrderEnums.Delivering.ToString()))
+                    throw new CustomException("Order is delivering, cannot cancel.");
+                    
                 var transaction = orderbytransactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
                 if (transaction == null)
                     throw new CustomException("Order is not Cash on Delivery.");
