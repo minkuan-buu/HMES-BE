@@ -1381,8 +1381,8 @@ namespace HMES.Business.Services.OrderServices
                 Response = new MessageResultModel { Message = "Invalid order status." }
             };
         }
-        
-        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery (OrderDeliveryConfirmReqModel orderConfirm)
+
+        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery(OrderDeliveryConfirmReqModel orderConfirm)
         {
             try
             {
@@ -1391,6 +1391,7 @@ namespace HMES.Business.Services.OrderServices
                     includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
                 );
                 var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
+                var userDeviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
@@ -1407,6 +1408,11 @@ namespace HMES.Business.Services.OrderServices
                     order.UpdatedAt = DateTime.Now;
                     transaction.Status = TransactionEnums.PAID.ToString();
                     transaction.FinishedTransactionAt = DateTime.Now;
+                    foreach (var deviceItem in userDeviceItems)
+                    {
+                        deviceItem.Status = DeviceItemStatusEnum.Available.ToString();
+                    }
+                    await _deviceItemsRepositories.UpdateRange(userDeviceItems.ToList());
                     await _orderRepositories.Update(order);
                     await _transactionRepositories.Update(transaction);
                     return new ResultModel<MessageResultModel>
@@ -1420,7 +1426,7 @@ namespace HMES.Business.Services.OrderServices
                 {
                     try
                     {
-                        var transaction = order.Transactions.FirstOrDefault(x =>
+                        var transaction = orderbytransactions.FirstOrDefault(x =>
                             x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
                             x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
 
@@ -1434,7 +1440,8 @@ namespace HMES.Business.Services.OrderServices
                         order.Status = OrderEnums.Cancelled.ToString();
                         order.UpdatedAt = DateTime.Now;
                         var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
-                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
                         await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                         await _deviceItemsRepositories.DeleteRange(deviceItems);
                         await _orderRepositories.Update(order);
