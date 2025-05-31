@@ -1121,8 +1121,9 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy đơn hàng theo orderId
                 var order = await _orderRepositories.GetSingle(
                     o => o.Id == orderId && o.UserId == userId,
-                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
                 );
+                var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
 
                 if (order == null)
                     throw new CustomException("Order not found");
@@ -1130,22 +1131,32 @@ namespace HMES.Business.Services.OrderServices
                 if (order.Status != OrderEnums.Delivering.ToString())
                     throw new CustomException("Order is not in Delivering status");
 
-                if (order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
-                    throw new CustomException("Order is not Cash on Delivery.");
-
-                var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
-
+                var transaction = orderbytransactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
                 if (transaction == null)
-                {
                     throw new CustomException("Order is not Cash on Delivery.");
-                }
 
                 // Cập nhật trạng thái đơn hàng thành "Cancelled"
                 transaction.Status = TransactionEnums.CANCELLED.ToString();
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
-                var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+
+                // Hoàn trả số lượng sản phẩm & thiết bị nếu đơn hàng bị hủy
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        orderDetail.Product.Amount += orderDetail.Quantity;
+                        await _productRepositories.Update(orderDetail.Product);
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        orderDetail.Device.Quantity += orderDetail.Quantity;
+                        await _deviceRepositories.Update(orderDetail.Device);
+                    }
+                }
                 await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                 await _deviceItemsRepositories.DeleteRange(deviceItems);
                 await _orderRepositories.Update(order);
@@ -1352,7 +1363,21 @@ namespace HMES.Business.Services.OrderServices
                         order.Status = OrderEnums.Cancelled.ToString();
                         order.UpdatedAt = DateTime.Now;
                         var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
-                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+                        foreach (var orderDetail in order.OrderDetails)
+                        {
+                            if (orderDetail.Product != null)
+                            {
+                                orderDetail.Product.Amount += orderDetail.Quantity;
+                                await _productRepositories.Update(orderDetail.Product);
+                            }
+                            if (orderDetail.Device != null)
+                            {
+                                orderDetail.Device.Quantity += orderDetail.Quantity;
+                                await _deviceRepositories.Update(orderDetail.Device);
+                            }
+                        }
                         await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                         await _deviceItemsRepositories.DeleteRange(deviceItems);
                         await _orderRepositories.Update(order);
@@ -1381,8 +1406,8 @@ namespace HMES.Business.Services.OrderServices
                 Response = new MessageResultModel { Message = "Invalid order status." }
             };
         }
-        
-        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery (OrderDeliveryConfirmReqModel orderConfirm)
+
+        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery(OrderDeliveryConfirmReqModel orderConfirm)
         {
             try
             {
@@ -1391,6 +1416,7 @@ namespace HMES.Business.Services.OrderServices
                     includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
                 );
                 var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
+                var userDeviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
@@ -1407,6 +1433,11 @@ namespace HMES.Business.Services.OrderServices
                     order.UpdatedAt = DateTime.Now;
                     transaction.Status = TransactionEnums.PAID.ToString();
                     transaction.FinishedTransactionAt = DateTime.Now;
+                    foreach (var deviceItem in userDeviceItems)
+                    {
+                        deviceItem.Status = DeviceItemStatusEnum.Available.ToString();
+                    }
+                    await _deviceItemsRepositories.UpdateRange(userDeviceItems.ToList());
                     await _orderRepositories.Update(order);
                     await _transactionRepositories.Update(transaction);
                     return new ResultModel<MessageResultModel>
@@ -1420,7 +1451,7 @@ namespace HMES.Business.Services.OrderServices
                 {
                     try
                     {
-                        var transaction = order.Transactions.FirstOrDefault(x =>
+                        var transaction = orderbytransactions.FirstOrDefault(x =>
                             x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
                             x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
 
@@ -1434,7 +1465,21 @@ namespace HMES.Business.Services.OrderServices
                         order.Status = OrderEnums.Cancelled.ToString();
                         order.UpdatedAt = DateTime.Now;
                         var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
-                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+                        foreach (var orderDetail in order.OrderDetails)
+                        {
+                            if (orderDetail.Product != null)
+                            {
+                                orderDetail.Product.Amount += orderDetail.Quantity;
+                                await _productRepositories.Update(orderDetail.Product);
+                            }
+                            if (orderDetail.Device != null)
+                            {
+                                orderDetail.Device.Quantity += orderDetail.Quantity;
+                                await _deviceRepositories.Update(orderDetail.Device);
+                            }
+                        }
                         await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                         await _deviceItemsRepositories.DeleteRange(deviceItems);
                         await _orderRepositories.Update(order);
