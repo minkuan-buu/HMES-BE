@@ -1306,7 +1306,10 @@ namespace HMES.Business.Services.OrderServices
         {
             try
             {
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderConfirm.OrderId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                var order = await _orderRepositories.GetSingle(
+                    o => o.Id == orderConfirm.OrderId,
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                );
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
