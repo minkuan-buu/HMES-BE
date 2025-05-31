@@ -1381,5 +1381,87 @@ namespace HMES.Business.Services.OrderServices
                 Response = new MessageResultModel { Message = "Invalid order status." }
             };
         }
+        
+        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery (OrderDeliveryConfirmReqModel orderConfirm)
+        {
+            try
+            {
+                var order = await _orderRepositories.GetSingle(
+                    o => o.Id == orderConfirm.OrderId,
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                );
+                var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
+                if (order == null)
+                {
+                    throw new CustomException("Order not found");
+                }
+                if (order.Status != OrderEnums.Delivering.ToString())
+                {
+                    throw new CustomException("Order is not in delivering status");
+                }
+                if (orderConfirm.Status.Equals(OrderEnums.Delivering))
+                {
+                    var transaction = orderbytransactions.FirstOrDefault(x =>
+                        x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+                    order.Status = orderConfirm.Status.ToString();
+                    order.UpdatedAt = DateTime.Now;
+                    transaction.Status = TransactionEnums.PAID.ToString();
+                    transaction.FinishedTransactionAt = DateTime.Now;
+                    await _orderRepositories.Update(order);
+                    await _transactionRepositories.Update(transaction);
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Confirm order delivery successfully." }
+                    };
+                }
+
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
+                {
+                    try
+                    {
+                        var transaction = order.Transactions.FirstOrDefault(x =>
+                            x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
+                            x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                        if (transaction == null)
+                        {
+                            throw new CustomException("Order is not Cash on Delivery.");
+                        }
+
+                        // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                        transaction.Status = TransactionEnums.CANCELLED.ToString();
+                        order.Status = OrderEnums.Cancelled.ToString();
+                        order.UpdatedAt = DateTime.Now;
+                        var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => x.DeviceItemId.Equals(deviceItems.Select(di => di.Id)));
+                        await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
+                        await _deviceItemsRepositories.DeleteRange(deviceItems);
+                        await _orderRepositories.Update(order);
+                        await _transactionRepositories.Update(transaction);
+                        await CancelShipping(order);
+
+                        return new ResultModel<MessageResultModel>
+                        {
+                            StatusCodes = (int)HttpStatusCode.OK,
+                            Response = new MessageResultModel { Message = "Order cancelled successfully." }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new CustomException(ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel { Message = "Invalid order status." }
+            };
+        }
     }
 }

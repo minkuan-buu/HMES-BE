@@ -33,8 +33,14 @@ namespace HMES.Data.DTO.RequestModel
         public decimal UnitPrice { get; set; }
         public int Quantity { get; set; }
     }
-    
+
     public class OrderConfirmReqModel
+    {
+        public Guid OrderId { get; set; }
+        public OrderEnums Status { get; set; }
+    }
+
+    public class OrderDeliveryConfirmReqModel
     {
         public Guid OrderId { get; set; }
         public OrderEnums Status { get; set; }
