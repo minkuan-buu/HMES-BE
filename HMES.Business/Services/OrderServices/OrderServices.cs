@@ -1399,7 +1399,7 @@ namespace HMES.Business.Services.OrderServices
                 {
                     throw new CustomException("Order is not in delivering status");
                 }
-                if (orderConfirm.Status.Equals(OrderEnums.Delivering))
+                if (orderConfirm.Status.Equals(OrderEnums.Success) && order.Status.Equals(OrderEnums.Delivering.ToString()))
                 {
                     var transaction = orderbytransactions.FirstOrDefault(x =>
                         x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
@@ -1416,7 +1416,7 @@ namespace HMES.Business.Services.OrderServices
                     };
                 }
 
-                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled) && order.Status.Equals(OrderEnums.Delivering.ToString()))
                 {
                     try
                     {
