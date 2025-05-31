@@ -1388,7 +1388,7 @@ namespace HMES.Business.Services.OrderServices
             {
                 var order = await _orderRepositories.GetSingle(
                     o => o.Id == orderConfirm.OrderId,
-                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
                 );
                 var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
                 if (order == null)
@@ -1399,7 +1399,7 @@ namespace HMES.Business.Services.OrderServices
                 {
                     throw new CustomException("Order is not in delivering status");
                 }
-                if (orderConfirm.Status.Equals(OrderEnums.Success) && order.Status.Equals(OrderEnums.Delivering.ToString()))
+                if (orderConfirm.Status.Equals(OrderEnums.Success))
                 {
                     var transaction = orderbytransactions.FirstOrDefault(x =>
                         x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
@@ -1416,7 +1416,7 @@ namespace HMES.Business.Services.OrderServices
                     };
                 }
 
-                if (orderConfirm.Status.Equals(OrderEnums.Cancelled) && order.Status.Equals(OrderEnums.Delivering.ToString()))
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
                 {
                     try
                     {
