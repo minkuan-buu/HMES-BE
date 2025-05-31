@@ -89,5 +89,13 @@ namespace HMES.API.Controllers
             var result = await _orderServices.ConfirmOrderCOD(orderConfirm);
             return Ok(result);
         }
+
+        [HttpPost("handle-check-delivery")]
+        [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Consultant,Admin")]
+        public async Task<IActionResult> HandleCheckDelivery([FromBody] OrderDeliveryConfirmReqModel orderConfirm)
+        {
+            var result = await _orderServices.HandleCheckDelivery(orderConfirm);
+            return Ok(result);
+        }
     }
 }
