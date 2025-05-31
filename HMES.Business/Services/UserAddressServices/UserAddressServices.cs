@@ -42,7 +42,12 @@ public class UserAddressServices : IUserAddressServices
 
             var userAddresses = await _userAddressRepo.GetList(x => x.UserId.Equals(userId));
 
-            var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
+            var (latitude, longitude) = await GetCoordinatesFromHereAsync($"{userAddressReq.Address}, {userAddressReq.Ward}, {userAddressReq.District}, {userAddressReq.Province}");
+
+            if (latitude == null || longitude == null)
+            {
+                throw new CustomException("Address not found or invalid coordinates.");
+            }
 
             var newUserAddressId = Guid.NewGuid();
             var userAddressEntity = _mapper.Map<UserAddress>(userAddressReq);
@@ -118,6 +123,11 @@ public class UserAddressServices : IUserAddressServices
                 var json = JObject.Parse(responseBody);
 
                 var location = json["items"]?.FirstOrDefault()?["position"];
+                var resultType = json["items"]?.FirstOrDefault()?["resultType"]?.ToString();
+                if (resultType != "houseNumber")
+                {
+                    return (null, null);
+                }
                 if (location != null)
                 {
                     double latitude = location["lat"]?.Value<double>() ?? 0;
@@ -152,7 +162,12 @@ public class UserAddressServices : IUserAddressServices
                 throw new CustomException("Address not found!");
             }
 
-            var (latitude, longitude) = await GetCoordinatesFromHereAsync(userAddressReq.Address);
+           var (latitude, longitude) = await GetCoordinatesFromHereAsync($"{userAddressReq.Address}, {userAddressReq.Ward}, {userAddressReq.District}, {userAddressReq.Province}");
+
+            if (latitude == null || longitude == null)
+            {
+                throw new CustomException("Address not found or invalid coordinates.");
+            }
 
             userAddress.Address = TextConvert.ConvertToUnicodeEscape(userAddressReq.Address);
             userAddress.Name = TextConvert.ConvertToUnicodeEscape(userAddressReq.Name);
