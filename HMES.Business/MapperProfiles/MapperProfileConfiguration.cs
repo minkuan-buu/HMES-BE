@@ -184,7 +184,9 @@ namespace HMES.Business.MapperProfiles
                     )
                 );
 
-            CreateMap<DeviceItem, TicketDeviceItemDto>();
+            CreateMap<DeviceItem, TicketDeviceItemDto>()
+                .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.DeviceItemDetails));
+            CreateMap<DeviceItemDetail, TicketDeviceItemDetailsDto>();
             CreateMap<Ticket, TicketDetailsDto>()
                 .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.User.Name)))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => TextConvert.ConvertFromUnicodeEscape(src.Description)))
