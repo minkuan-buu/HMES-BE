@@ -49,4 +49,14 @@ public class TicketDeviceItemDto
     public Guid Id { get; set; }
     public string Serial { get; set; } = null!;
     public DateTime? WarrantyExpiryDate { get; set; }
+    public List<TicketDeviceItemDetailsDto> Details { get; set; } = new List<TicketDeviceItemDetailsDto>();
+}
+
+public class TicketDeviceItemDetailsDto
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Serial { get; set; } = null!;
 }

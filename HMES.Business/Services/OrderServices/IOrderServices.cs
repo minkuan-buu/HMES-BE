@@ -18,7 +18,7 @@ namespace HMES.Business.Services.OrderServices
         Task<ResultModel<DataResultModel<OrderPaymentResModel>>> GetCODBilling(Guid orderId, string token);
         Task<ResultModel<MessageResultModel>> UpdateOrderAddress(Guid orderId, Guid userAddressId, string token);
         Task HandleGhnCallback(GHNReqModel callbackData);
-        Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(Guid orderId, string token);
-        
+        Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(OrderConfirmReqModel orderConfirm);
+        Task<ResultModel<MessageResultModel>> HandleCheckDelivery(OrderDeliveryConfirmReqModel orderConfirm);
     }
 }

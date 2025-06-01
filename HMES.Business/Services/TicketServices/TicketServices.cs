@@ -164,7 +164,7 @@ public class TicketServices : ITicketServices
                  {
                      throw new CustomException("Device is not in order yet!");
                  }
-                 if(!device.Status.Equals(nameof(DeviceItemStatusEnum.NotAvailable)))
+                 if(device.Status.Equals(nameof(DeviceItemStatusEnum.NotAvailable)))
                  {
                      throw new CustomException("Device is not in available yet!");
                  }
