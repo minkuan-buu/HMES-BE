@@ -64,4 +64,10 @@ namespace HMES.Data.DTO.RequestModel
     {
         public string DeviceItemName { get; set; } = null!;
     }
+
+    public class DeviceActveReqModel
+    {
+        public Guid DeviceItemId { get; set; }
+        public bool IsReconnect { get; set; } = false;
+    }
 }
