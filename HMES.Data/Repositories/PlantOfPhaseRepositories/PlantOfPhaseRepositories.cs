@@ -10,6 +10,8 @@ public class PlantOfPhaseRepositories(HmesContext context)
     public async Task<PlantOfPhase?> GetPlantOfPhasesByPlantIdAndPhaseId(Guid? plantId, Guid? phaseId)
     {
         return await Context.PlantOfPhases
+            .Include(x => x.TargetOfPhases)
+            .ThenInclude(x => x.TargetValue)
             .Where(x => x.PlantId == plantId && x.PhaseId == phaseId).FirstOrDefaultAsync();
     }
 
@@ -36,4 +38,3 @@ public class PlantOfPhaseRepositories(HmesContext context)
             .FirstOrDefaultAsync();
     }
 }
-    
