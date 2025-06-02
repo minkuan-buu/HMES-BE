@@ -376,7 +376,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị!\n";
                     }
                     else if (value != null && (decimal)value > targetValue.MaxValue)
                     {
@@ -384,7 +384,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị!\n";
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
@@ -491,7 +491,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị!\n";
                     }
                     else if (value != null && (decimal)value > targetValue.MaxValue)
                     {
@@ -499,7 +499,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị!\n";
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
