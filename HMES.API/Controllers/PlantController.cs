@@ -17,7 +17,7 @@ public class PlantController: ControllerBase
         _plantServices = plantServices;
     }
 
-    //
+    
     [HttpGet]
     public async Task<IActionResult> GetAllPlantsAsync(
         string? keyword, 
@@ -29,7 +29,7 @@ public class PlantController: ControllerBase
         return Ok(result);
     }
 
-    //
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetByIdAsync(Guid id)
     {
@@ -39,16 +39,16 @@ public class PlantController: ControllerBase
     
     
     [HttpPost]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> AddPlant([FromForm] PlantReqModel plantDto)
     {
         var result = await _plantServices.CreatePlantAsync(plantDto);
         return Ok(result);
     }
     
-    //
+    
     [HttpPut("{id}")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdatePlant(
         Guid id,
         [FromForm] PlantReqModel plantDto)
@@ -57,17 +57,17 @@ public class PlantController: ControllerBase
         return Ok(result);
     }
     
-    //
+    
     [HttpDelete("{id}")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> DeletePlant(Guid id)
     {
         var result = await _plantServices.DeletePlantAsync(id);
         return Ok(result);
     }
-    //
+    
     [HttpPost("{plantId}/target/{targetId}/phase/{phaseId}")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> SetValueForPlant(Guid plantId, Guid targetId,Guid phaseId)
     {
         var result = await _plantServices.SetValueForPlant(plantId, targetId,phaseId);
@@ -75,16 +75,16 @@ public class PlantController: ControllerBase
     }
     
     [HttpDelete("{plantId}/target/{targetId}/phase/{phaseId}")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> RemoveValueForPlant(Guid plantId, Guid targetId,Guid phaseId)
     {
         var result = await _plantServices.RemoveValueForPlant(plantId, targetId,phaseId);
         return Ok(result);
     }
-    //
+    
     
     [HttpPut("target/change")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> UpdateValueForPlant(
         [FromBody] ChangeTargetReqModel changeTargetReqModel)
     {
@@ -93,12 +93,28 @@ public class PlantController: ControllerBase
     }
     
     [HttpGet("not-set-value/{type}")]
-    //[Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
     public async Task<IActionResult> GetPlantNotSetValueOfType(string type)
     {
         var result = await _plantServices.GetPlantNotSetValueOfType(type);
         return Ok(result);
     }
+    [HttpPost("{plantId}/set-phase/{phaseId}")] 
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> SetPhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        var result = await _plantServices.SetPhaseForPlant(plantId, phaseId);
+        return Ok(result);
+    }
+    [HttpDelete("{plantId}/remove-phase/{phaseId}")]
+    [Authorize(AuthenticationSchemes = "HMESAuthentication", Roles = "Admin")]
+    public async Task<IActionResult> RemovePhaseForPlant(Guid plantId, Guid phaseId)
+    {
+        var result = await _plantServices.RemovePhaseForPlant(plantId, phaseId);
+        return Ok(result);
+    }
+    
+    
     
     
     

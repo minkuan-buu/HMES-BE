@@ -197,14 +197,14 @@ namespace HMES.Business.Services.DeviceItemServices
             return await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.IsActive);
         }
 
-        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId)
+        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, DeviceActveReqModel reqModel)
         {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == reqModel.DeviceItemId);
                 var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
-                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                if ((getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true) && reqModel.IsReconnect == false)
                 {
                     throw new Exception("Can't Active Device!");
                 }

@@ -1,4 +1,5 @@
 using HMES.Data.Entities;
+using HMES.Data.Enums;
 using HMES.Data.Repositories.GenericRepositories;
 using HMES.Data.Repositories.PlantRepositories;
 using Microsoft.EntityFrameworkCore;
@@ -9,13 +10,14 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
 {
     public async Task<List<GrowthPhase>> GetGrowthPhasesNoUser()
     {
-        return await Context.GrowthPhases.Where(g => g.UserId == null).ToListAsync();
+        return await Context.GrowthPhases.Where(g => g.UserId == null && g.IsDefault == true).ToListAsync();
     }
 
     public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesAsync()
     {
         var query = Context.GrowthPhases
             .Where(g => g.UserId == null)
+            .OrderBy(g => g.PhaseNumber)
             .AsQueryable();
 
         var totalItems = await query.CountAsync();
@@ -38,9 +40,7 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
     public async Task<(List<GrowthPhase> phases, int TotalItems)> GetAllPhasesOfPlantAsync(Guid plantId)
     {
         var query = Context.GrowthPhases
-            .Include(g => g.PlantOfPhases)
-            .ThenInclude(p => p.Plant)
-            .Where(g => g.PlantOfPhases.Any(p => p.PlantId == plantId))
+            .Where(g => !g.PlantOfPhases.Any(p => p.PlantId == plantId) && g.Status == PhaseStatusEnums.Active.ToString())
             .AsQueryable();
 
         var totalItems = await query.CountAsync();
@@ -60,6 +60,17 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
         return await Context.GrowthPhases
             .Include(g => g.PlantOfPhases)
             .ThenInclude(p => p.Plant)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == id);
+    }
+    
+    public async Task<GrowthPhase?> GetGrowthPhaseByIdWithTargetValue(Guid id)
+    {
+        return await Context.GrowthPhases
+            .Include(g => g.PlantOfPhases)
+            .ThenInclude(p => p.Plant)
+            .Include(g => g.PlantOfPhases)
+            .ThenInclude(p => p.TargetOfPhases)
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == id);
     }

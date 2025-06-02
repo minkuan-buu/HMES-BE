@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text;
 using AutoMapper;
 using HMES.Business.Utilities.Authentication;
@@ -27,6 +28,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using MimeKit.Text;
 using HMES.Data.Repositories.PlantRepositories;
+using HMES.Data.Repositories.DeviceItemDetailRepositories;
 
 namespace HMES.Business.Services.OrderServices
 {
@@ -45,6 +47,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly IDeviceItemsRepositories _deviceItemsRepositories;
         private readonly IProductRepositories _productRepositories;
         private readonly IPlantRepositories _plantRepositories;
+        private readonly IDeviceItemDetailRepositories _deviceItemDetailRepositories;
         private PayOS _payOS;
         private readonly string _ghnToken = Environment.GetEnvironmentVariable("GHN_TOKEN");
         private readonly int _shopId = int.Parse(Environment.GetEnvironmentVariable("GHN_ID_SHOP"));
@@ -53,7 +56,7 @@ namespace HMES.Business.Services.OrderServices
         private readonly string PayOSChecksumKey = Environment.GetEnvironmentVariable("PAY_OS_CHECKSUM_KEY");
         private readonly HttpClient _httpClient;
 
-        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPlantRepositories plantRepositories)
+        public OrderServices(ILogger<OrderServices> logger, IUserRepositories userRepositories, IMapper mapper, IOrderRepositories orderRepositories, IOrderDetailRepositories orderDetailRepositories, ITransactionRepositories transactionRepositories, ICartRepositories cartRepositories, IUserAddressRepositories userAddressRepositories, IDeviceRepositories deviceRepositories, IProductRepositories productRepositories, IDeviceItemsRepositories deviceItemsRepositories, ICartItemsRepositories cartItemsRepositories, IPlantRepositories plantRepositories, IDeviceItemDetailRepositories deviceItemDetailRepositories)
         {
             _logger = logger;
             _userRepositories = userRepositories;
@@ -68,7 +71,7 @@ namespace HMES.Business.Services.OrderServices
             _deviceItemsRepositories = deviceItemsRepositories;
             _cartItemsRepositories = cartItemsRepositories;
             _plantRepositories = plantRepositories;
-
+            _deviceItemDetailRepositories = deviceItemDetailRepositories;
             // Initialize PayOS client
             _payOS = new PayOS(PayOSClientId, PayOSAPIKey, PayOSChecksumKey);
 
@@ -953,6 +956,8 @@ namespace HMES.Business.Services.OrderServices
             {
                 var DefaultPlant = await _plantRepositories.GetSingle(x => x.Name.Equals("Default"));
                 List<DeviceItem> deviceItems = new List<DeviceItem>();
+                List<DeviceItemDetail> deviceItemDetails = new List<DeviceItemDetail>();
+                var detailNames = Enum.GetNames(typeof(DeviceItemDetailNameEnums));
                 foreach (var orderDetail in order.OrderDetails)
                 {
                     if (orderDetail.DeviceId != null)
@@ -975,10 +980,26 @@ namespace HMES.Business.Services.OrderServices
                                 OrderId = order.Id,
                             };
                             deviceItems.Add(deviceItem);
+
+                            for (int j = 0; j < detailNames.Length; j++)
+                            {
+                                deviceItemDetails.Add(new DeviceItemDetail
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Name = detailNames[j],
+                                    Serial = "Kit" + Authentication.GenerateRandomSerial(7),
+                                    Status = "Available",
+                                    DeviceItemId = deviceItem.Id
+                                });
+                            }
                         }
                     }
                 }
                 await _deviceItemsRepositories.InsertRange(deviceItems);
+                if (deviceItemDetails.Count > 0)
+                {
+                    await _deviceItemDetailRepositories.InsertRange(deviceItemDetails);
+                }
                 return deviceItems;
             }
             catch (Exception ex)
@@ -1100,30 +1121,46 @@ namespace HMES.Business.Services.OrderServices
                 // Lấy đơn hàng theo orderId
                 var order = await _orderRepositories.GetSingle(
                     o => o.Id == orderId && o.UserId == userId,
-                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
                 );
+                var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
 
                 if (order == null)
                     throw new CustomException("Order not found");
 
-                if (order.Status != OrderEnums.Delivering.ToString())
-                    throw new CustomException("Order is not in Delivering status");
+                if (order.Status != OrderEnums.IsWaiting.ToString())
+                    throw new CustomException("Order is not in Waiting status");
 
-                if (order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
-                    throw new CustomException("Order is not Cash on Delivery.");
-
-                var transaction = order.Transactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
-
+                if (order.Status.Equals(OrderEnums.Delivering.ToString()))
+                    throw new CustomException("Order is delivering, cannot cancel.");
+                    
+                var transaction = orderbytransactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
                 if (transaction == null)
-                {
                     throw new CustomException("Order is not Cash on Delivery.");
-                }
 
                 // Cập nhật trạng thái đơn hàng thành "Cancelled"
                 transaction.Status = TransactionEnums.CANCELLED.ToString();
                 order.Status = OrderEnums.Cancelled.ToString();
                 order.UpdatedAt = DateTime.Now;
                 var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+
+                // Hoàn trả số lượng sản phẩm & thiết bị nếu đơn hàng bị hủy
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        orderDetail.Product.Amount += orderDetail.Quantity;
+                        await _productRepositories.Update(orderDetail.Product);
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        orderDetail.Device.Quantity += orderDetail.Quantity;
+                        await _deviceRepositories.Update(orderDetail.Device);
+                    }
+                }
+                await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
                 await _deviceItemsRepositories.DeleteRange(deviceItems);
                 await _orderRepositories.Update(order);
                 await _transactionRepositories.Update(transaction);
@@ -1279,33 +1316,200 @@ namespace HMES.Business.Services.OrderServices
                 Response = new DataResultModel<OrderPaymentResModel> { Data = orderResModel }
             };
         }
-        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(Guid orderId, string token)
+        public async Task<ResultModel<MessageResultModel>> ConfirmOrderCOD(OrderConfirmReqModel orderConfirm)
         {
             try
             {
-                var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var order = await _orderRepositories.GetSingle(x => x.Id.Equals(orderId) && x.UserId.Equals(userId), includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,DeviceItems");
+                var order = await _orderRepositories.GetSingle(
+                    o => o.Id == orderConfirm.OrderId,
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress,Transactions"
+                );
                 if (order == null)
                 {
                     throw new CustomException("Order not found");
                 }
                 if (order.Status != OrderEnums.IsWaiting.ToString())
                 {
-                    throw new CustomException("Order is not in pending status");
+                    throw new CustomException("Order is not in waiting status");
                 }
-                order.Status = OrderEnums.Delivering.ToString();
-                order.UpdatedAt = DateTime.Now;
-                await _orderRepositories.Update(order);
-                return new ResultModel<MessageResultModel>
+                if (order.Transactions.FirstOrDefault(x =>
+                        x.PaymentMethod == PaymentMethodEnums.COD.ToString()) == null)
+                    throw new CustomException("Order is not Cash on Delivery.");
+
+                if (orderConfirm.Status.Equals(OrderEnums.Delivering))
                 {
-                    StatusCodes = (int)HttpStatusCode.OK,
-                    Response = new MessageResultModel { Message = "Confirm order successfully." }
-                };
+                    order.Status = orderConfirm.Status.ToString();
+                    order.UpdatedAt = DateTime.Now;
+                    await _orderRepositories.Update(order);
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Confirm order successfully." }
+                    };
+                }
+
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
+                {
+                    try
+                    {
+                        var transaction = order.Transactions.FirstOrDefault(x =>
+                            x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
+                            x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                        if (transaction == null)
+                        {
+                            throw new CustomException("Order is not Cash on Delivery.");
+                        }
+
+                        // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                        transaction.Status = TransactionEnums.CANCELLED.ToString();
+                        order.Status = OrderEnums.Cancelled.ToString();
+                        order.UpdatedAt = DateTime.Now;
+                        var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+                        foreach (var orderDetail in order.OrderDetails)
+                        {
+                            if (orderDetail.Product != null)
+                            {
+                                orderDetail.Product.Amount += orderDetail.Quantity;
+                                await _productRepositories.Update(orderDetail.Product);
+                            }
+                            if (orderDetail.Device != null)
+                            {
+                                orderDetail.Device.Quantity += orderDetail.Quantity;
+                                await _deviceRepositories.Update(orderDetail.Device);
+                            }
+                        }
+                        await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
+                        await _deviceItemsRepositories.DeleteRange(deviceItems);
+                        await _orderRepositories.Update(order);
+                        await _transactionRepositories.Update(transaction);
+                        await CancelShipping(order);
+
+                        return new ResultModel<MessageResultModel>
+                        {
+                            StatusCodes = (int)HttpStatusCode.OK,
+                            Response = new MessageResultModel { Message = "Order cancelled successfully." }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new CustomException(ex.Message);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 throw new CustomException(ex.Message);
             }
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel { Message = "Invalid order status." }
+            };
+        }
+
+        public async Task<ResultModel<MessageResultModel>> HandleCheckDelivery(OrderDeliveryConfirmReqModel orderConfirm)
+        {
+            try
+            {
+                var order = await _orderRepositories.GetSingle(
+                    o => o.Id == orderConfirm.OrderId,
+                    includeProperties: "OrderDetails.Product,OrderDetails.Device,UserAddress"
+                );
+                var orderbytransactions = await _transactionRepositories.GetList(x => x.OrderId.Equals(order.Id), orderBy: x => x.OrderByDescending(y => y.CreatedAt));
+                var userDeviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                if (order == null)
+                {
+                    throw new CustomException("Order not found");
+                }
+                if (order.Status != OrderEnums.Delivering.ToString())
+                {
+                    throw new CustomException("Order is not in delivering status");
+                }
+                if (orderConfirm.Status.Equals(OrderEnums.Success))
+                {
+                    var transaction = orderbytransactions.FirstOrDefault(x =>
+                        x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+                    order.Status = orderConfirm.Status.ToString();
+                    order.UpdatedAt = DateTime.Now;
+                    transaction.Status = TransactionEnums.PAID.ToString();
+                    transaction.FinishedTransactionAt = DateTime.Now;
+                    foreach (var deviceItem in userDeviceItems)
+                    {
+                        deviceItem.Status = DeviceItemStatusEnum.Available.ToString();
+                    }
+                    await _deviceItemsRepositories.UpdateRange(userDeviceItems.ToList());
+                    await _orderRepositories.Update(order);
+                    await _transactionRepositories.Update(transaction);
+                    return new ResultModel<MessageResultModel>
+                    {
+                        StatusCodes = (int)HttpStatusCode.OK,
+                        Response = new MessageResultModel { Message = "Confirm order delivery successfully." }
+                    };
+                }
+
+                if (orderConfirm.Status.Equals(OrderEnums.Cancelled))
+                {
+                    try
+                    {
+                        var transaction = orderbytransactions.FirstOrDefault(x =>
+                            x.PaymentMethod == PaymentMethodEnums.COD.ToString() &&
+                            x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
+
+                        if (transaction == null)
+                        {
+                            throw new CustomException("Order is not Cash on Delivery.");
+                        }
+
+                        // Cập nhật trạng thái đơn hàng thành "Cancelled"
+                        transaction.Status = TransactionEnums.CANCELLED.ToString();
+                        order.Status = OrderEnums.Cancelled.ToString();
+                        order.UpdatedAt = DateTime.Now;
+                        var deviceItems = await _deviceItemsRepositories.GetList(x => x.OrderId.Equals(order.Id));
+                        var deviceItemIds = deviceItems.Select(di => di.Id).ToList();
+                        var deviceItemDetails = await _deviceItemDetailRepositories.GetList(x => deviceItemIds.Contains(x.DeviceItemId));
+                        foreach (var orderDetail in order.OrderDetails)
+                        {
+                            if (orderDetail.Product != null)
+                            {
+                                orderDetail.Product.Amount += orderDetail.Quantity;
+                                await _productRepositories.Update(orderDetail.Product);
+                            }
+                            if (orderDetail.Device != null)
+                            {
+                                orderDetail.Device.Quantity += orderDetail.Quantity;
+                                await _deviceRepositories.Update(orderDetail.Device);
+                            }
+                        }
+                        await _deviceItemDetailRepositories.DeleteRange(deviceItemDetails);
+                        await _deviceItemsRepositories.DeleteRange(deviceItems);
+                        await _orderRepositories.Update(order);
+                        await _transactionRepositories.Update(transaction);
+                        await CancelShipping(order);
+
+                        return new ResultModel<MessageResultModel>
+                        {
+                            StatusCodes = (int)HttpStatusCode.OK,
+                            Response = new MessageResultModel { Message = "Order cancelled successfully." }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new CustomException(ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ex.Message);
+            }
+            return new ResultModel<MessageResultModel>
+            {
+                StatusCodes = (int)HttpStatusCode.BadRequest,
+                Response = new MessageResultModel { Message = "Invalid order status." }
+            };
         }
     }
 }

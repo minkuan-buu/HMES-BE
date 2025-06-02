@@ -125,10 +125,10 @@ namespace HMES.API.Controllers
 
         [HttpPost("me/devices/active")]
         [Authorize(AuthenticationSchemes = "HMESAuthentication")]
-        public async Task<IActionResult> ActiveDevice([FromBody] Guid Id)
+        public async Task<IActionResult> ActiveDevice([FromBody] DeviceActveReqModel req)
         {
             var token = Request.Headers["Authorization"].ToString().Split(" ")[1];
-            var result = await _deviceItemServices.ActiveDevice(token, Id);
+            var result = await _deviceItemServices.ActiveDevice(token, req);
             return Ok(result);
         }
 
