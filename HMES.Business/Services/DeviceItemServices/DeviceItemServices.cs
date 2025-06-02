@@ -311,7 +311,7 @@ namespace HMES.Business.Services.DeviceItemServices
             try
             {
                 var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.UserId == userId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.UserId == userId && x.IsActive, includeProperties: "Plant.PlantOfPhases.TargetOfPhases.TargetValue");
 
                 if (getDevice == null)
                 {
@@ -426,7 +426,7 @@ namespace HMES.Business.Services.DeviceItemServices
         {
             try
             {
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.IsActive, includeProperties: "Plant.PlantOfPhases.TargetOfPhases.TargetValue");
 
                 if (getDevice == null)
                 {
