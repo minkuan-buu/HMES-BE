@@ -9,6 +9,7 @@ public interface IPlantRepositories : IGenericRepositories<Plant>
         string? status, int pageIndex, int pageSize);
     
     Task<Plant?> GetByIdAsync(Guid id);
+    Task<Plant?> GetByIdNotIncludeUserAsync(Guid id);
 
     Task<bool> PlantHasTargetValueType(Guid plantId, string targetType, Guid targetId);
     Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type);
