@@ -399,7 +399,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     ReadAt = null,
                     ReferenceId = getDevice.Id,
                     SenderId = null,
-                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                    Title = TextConvert.ConvertToUnicodeEscape($"Cảnh báo từ thiết bị {TextConvert.ConvertToUnicodeEscape(getDevice.Name)}"),
                 };
                 await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", new
@@ -514,7 +514,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     ReadAt = null,
                     ReferenceId = getDevice.Id,
                     SenderId = null,
-                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                    Title = TextConvert.ConvertToUnicodeEscape($"Cảnh báo từ thiết bị {TextConvert.ConvertToUnicodeEscape(getDevice.Name)}"),
                 };
                 await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", JsonSerializer.Serialize(new
