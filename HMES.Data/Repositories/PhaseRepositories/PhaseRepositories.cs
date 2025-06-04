@@ -90,4 +90,11 @@ public class PhaseRepositories(HmesContext context) : GenericRepositories<Growth
             .Where(g => g.UserId == null)
             .CountAsync();
     }
+
+    public async Task<int> CountDefaultGrowthPhase()
+    {
+        return await Context.GrowthPhases
+            .Where(g => g.UserId == null && g.IsDefault == true)
+            .CountAsync();
+    }
 }
