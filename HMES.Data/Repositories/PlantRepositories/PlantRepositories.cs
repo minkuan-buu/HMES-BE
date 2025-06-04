@@ -91,4 +91,15 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
 
         return plants;
     }
+
+    public async Task<List<Plant>> GetAllPlants()
+    {
+        return await Context.Plants
+            .Include(p => p.PlantOfPhases)
+            .ThenInclude(pp => pp.Phase)
+            .Include(p => p.PlantOfPhases)
+            .ThenInclude(pp => pp.TargetOfPhases)
+            .ThenInclude(tp => tp.TargetValue)
+            .ToListAsync();
+    }
 }

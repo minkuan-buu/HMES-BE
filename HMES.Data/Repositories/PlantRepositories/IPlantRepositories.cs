@@ -13,4 +13,5 @@ public interface IPlantRepositories : IGenericRepositories<Plant>
 
     Task<bool> PlantHasTargetValueType(Guid plantId, string targetType, Guid targetId);
     Task<List<Plant>> GetPlantsWithoutTargetValueOfType(string type);
+    Task<List<Plant>> GetAllPlants();
 }
