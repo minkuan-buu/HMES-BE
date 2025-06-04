@@ -298,6 +298,27 @@ namespace HMES.Business.Services.OrderServices
                     existingOrder.OrderDetails.Clear();
                 }
 
+
+                // Kiểm tra tồn kho Product
+                foreach (var prodReq in orderRequest.Products)
+                {
+                    var product = await _productRepositories.GetSingle(p => p.Id == prodReq.Id);
+                    if (product == null)
+                        throw new CustomException($"Không tìm thấy sản phẩm với Id: {prodReq.Id}");
+                    if (product.Amount < prodReq.Quantity)
+                        throw new CustomException($"Sản phẩm {TextConvert.ConvertFromUnicodeEscape(product.Name)} không đủ số lượng trong kho.");
+                }
+
+                // Kiểm tra tồn kho Device
+                foreach (var devReq in orderRequest.Devices)
+                {
+                    var device = await _deviceRepositories.GetSingle(d => d.Id == devReq.Id);
+                    if (device == null)
+                        throw new CustomException($"Không tìm thấy thiết bị với Id: {devReq.Id}");
+                    if (device.Quantity < devReq.Quantity)
+                        throw new CustomException($"Thiết bị {TextConvert.ConvertFromUnicodeEscape(device.Name)} không đủ số lượng trong kho.");
+                }
+
                 // Xác định orderId
                 Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
 
@@ -1025,6 +1046,21 @@ namespace HMES.Business.Services.OrderServices
 
                 if (order.Status != OrderEnums.Pending.ToString())
                     throw new CustomException("Order is not in pending status");
+                
+                //kiểm tra số lượng trong kho
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        if (orderDetail.Product.Amount < orderDetail.Quantity)
+                            throw new CustomException($"Sản phẩm {TextConvert.ConvertFromUnicodeEscape(orderDetail.Product.Name)} không đủ số lượng trong kho.");
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        if (orderDetail.Device.Quantity < orderDetail.Quantity)
+                            throw new CustomException($"Thiết bị {TextConvert.ConvertFromUnicodeEscape(orderDetail.Device.Name)} không đủ số lượng trong kho.");
+                    }
+                }
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
@@ -1128,8 +1164,11 @@ namespace HMES.Business.Services.OrderServices
                 if (order == null)
                     throw new CustomException("Order not found");
 
-                if (order.Status != OrderEnums.Delivering.ToString())
-                    throw new CustomException("Order is not in Delivering status");
+                if (order.Status != OrderEnums.IsWaiting.ToString())
+                    throw new CustomException("Order is not in Waiting status");
+
+                if (order.Status.Equals(OrderEnums.Delivering.ToString()))
+                    throw new CustomException("Order is delivering, cannot cancel.");
 
                 var transaction = orderbytransactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
                 if (transaction == null)

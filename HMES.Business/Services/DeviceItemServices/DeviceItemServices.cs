@@ -197,14 +197,14 @@ namespace HMES.Business.Services.DeviceItemServices
             return await _deviceItemsRepositories.GetSingle(x => x.Id == deviceItemId && x.IsActive);
         }
 
-        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId)
+        public async Task<ResultModel<IoTToken>> ActiveDevice(string token, DeviceActveReqModel reqModel)
         {
             try
             {
                 var userId = new Guid(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId);
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == reqModel.DeviceItemId);
                 var plant = await _plantRepositories.GetSingle(x => x.Id == getDevice.PlantId && x.Status.Equals(GeneralStatusEnums.Inactive.ToString()));
-                if (getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true)
+                if ((getDevice.UserId == null || !getDevice.Status.Equals(DeviceItemStatusEnum.Available.ToString()) || getDevice.IsActive == true || getDevice.IsOnline == true) && reqModel.IsReconnect == false)
                 {
                     throw new Exception("Can't Active Device!");
                 }
@@ -311,7 +311,7 @@ namespace HMES.Business.Services.DeviceItemServices
             try
             {
                 var userId = Guid.Parse(Authentication.DecodeToken(token, "userid"));
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.UserId == userId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.UserId == userId && x.IsActive, includeProperties: "Plant.PlantOfPhases.TargetOfPhases.TargetValue");
 
                 if (getDevice == null)
                 {
@@ -376,7 +376,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị!\n";
                     }
                     else if (value != null && (decimal)value > targetValue.MaxValue)
                     {
@@ -384,7 +384,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị!\n";
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
@@ -399,7 +399,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     ReadAt = null,
                     ReferenceId = getDevice.Id,
                     SenderId = null,
-                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                    Title = TextConvert.ConvertToUnicodeEscape($"Cảnh báo từ thiết bị {TextConvert.ConvertToUnicodeEscape(getDevice.Name)}"),
                 };
                 await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", new
@@ -426,7 +426,7 @@ namespace HMES.Business.Services.DeviceItemServices
         {
             try
             {
-                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.IsActive, includeProperties: "Plant.TargetOfPlants.TargetValue");
+                var getDevice = await _deviceItemsRepositories.GetSingle(x => x.Id == DeviceId && x.IsActive, includeProperties: "Plant.PlantOfPhases.TargetOfPhases.TargetValue");
 
                 if (getDevice == null)
                 {
@@ -491,7 +491,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang thấp hơn ngưỡng khuyến nghị!\n";
                     }
                     else if (value != null && (decimal)value > targetValue.MaxValue)
                     {
@@ -499,7 +499,7 @@ namespace HMES.Business.Services.DeviceItemServices
                             ? vietnameseMap[targetValue.Type]
                             : targetValue.Type;
 
-                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị! ";
+                        messageWarning += $"{fieldName} đang cao hơn ngưỡng khuyến nghị!\n";
                     }
                 }
                 await _nutritionRDRepositories.InsertRange(nutritionReportDetails);
@@ -514,7 +514,7 @@ namespace HMES.Business.Services.DeviceItemServices
                     ReadAt = null,
                     ReferenceId = getDevice.Id,
                     SenderId = null,
-                    Title = TextConvert.ConvertToUnicodeEscape("Cảnh báo từ HMES"),
+                    Title = TextConvert.ConvertToUnicodeEscape($"Cảnh báo từ thiết bị {TextConvert.ConvertToUnicodeEscape(getDevice.Name)}"),
                 };
                 await _notificationRepositories.Insert(notification);
                 await _mqttService.PublishAsync($"push/notification/{getDevice.UserId.ToString().ToLower()}", JsonSerializer.Serialize(new
