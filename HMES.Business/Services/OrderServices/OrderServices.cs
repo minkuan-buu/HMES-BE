@@ -297,6 +297,7 @@ namespace HMES.Business.Services.OrderServices
                     await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
                     existingOrder.OrderDetails.Clear();
                 }
+                
 
                 // Kiểm tra tồn kho Product
                 foreach (var prodReq in orderRequest.Products)
@@ -317,7 +318,7 @@ namespace HMES.Business.Services.OrderServices
                     if (device.Quantity < devReq.Quantity)
                         throw new CustomException($"Thiết bị {TextConvert.ConvertFromUnicodeEscape(device.Name)} không đủ số lượng trong kho.");
                 }
-                
+
                 // Xác định orderId
                 Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
 
