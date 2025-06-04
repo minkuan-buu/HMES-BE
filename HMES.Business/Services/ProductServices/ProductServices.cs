@@ -124,6 +124,10 @@ public class ProductServices : IProductServices
             {
                 throw new CustomException("The category parent is not at second level!");
             }
+            if (productDto.Price < 0 || productDto.Amount < 0)
+            {
+                throw new CustomException("The price cannot be less than zero!");
+            }
 
             var product = _mapper.Map<Product>(productDto);
             var filePath = $"product/{product.Id}/attachments";
@@ -167,8 +171,16 @@ public class ProductServices : IProductServices
                     StatusCodes = (int)HttpStatusCode.NotFound, Response = null
                 };
             }
-            
+            var isSecondLevel = await _categoryRepository.IsSecondLevelCategory(productDto.CategoryId);
+            if (!isSecondLevel)
+            {
+                throw new CustomException("The category parent is not at second level!");
+            }
 
+            if (productDto.Price < 0 || productDto.Amount < 0)
+            {
+                throw new CustomException("The price cannot be less than zero!");
+            }
             var oldMainImage = product.MainImage;
             
             // Update product details

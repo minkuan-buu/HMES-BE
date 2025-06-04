@@ -65,7 +65,7 @@ public class PlantServices : IPlantServices
 
     public async Task<ResultModel<DataResultModel<PlantResModelWithTarget>>> GetByIdAsync(Guid id)
     {
-        var plant = await _plantRepositories.GetByIdAsync(id);
+        var plant = await _plantRepositories.GetByIdNotIncludeUserAsync(id);
         
         if (plant == null)
         {

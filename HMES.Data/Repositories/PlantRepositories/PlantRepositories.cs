@@ -42,6 +42,20 @@ public class PlantRepositories(HmesContext context) : GenericRepositories<Plant>
         return plant;
     }
 
+    public async Task<Plant?> GetByIdNotIncludeUserAsync(Guid id)
+    {
+        var plant = await Context.Plants
+            .Include(p => p.PlantOfPhases.Where(pop => 
+                Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null)))
+            .ThenInclude(pp => pp.Phase)
+            .Include(p => p.PlantOfPhases.Where(pop => 
+                Context.GrowthPhases.Any(gp => gp.Id == pop.PhaseId && gp.UserId == null)))
+            .ThenInclude(pp => pp.TargetOfPhases)
+            .ThenInclude(tp => tp.TargetValue)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        return plant;
+    }
+
     public async Task<bool> PlantHasTargetValueType(Guid plantId, string targetType, Guid phaseId)
     {
         return await Context.Plants

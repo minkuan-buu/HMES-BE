@@ -15,7 +15,7 @@ namespace HMES.Business.Services.DeviceItemServices
         Task<ResultModel<MessageResultModel>> SetPhaseForDevice(Guid deviceItemId, Guid phaseId, string token);
 
 
-        Task<ResultModel<IoTToken>> ActiveDevice(string token, Guid DeviceId);
+        Task<ResultModel<IoTToken>> ActiveDevice(string token, DeviceActveReqModel req);
         Task<ResultModel<MessageResultModel>> DeactiveDevice(Guid DeviceId);
         Task<DeviceItem> GetDeviceItemById(Guid deviceItemId);
         Task<ResultModel<MessageResultModel>> UpdateLog(UpdateLogIoT deviceItem, string token, Guid DeviceId); //From Mobile App
