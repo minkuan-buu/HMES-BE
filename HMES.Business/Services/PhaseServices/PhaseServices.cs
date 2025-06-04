@@ -162,6 +162,31 @@ public class PhaseServices : IPhaseServices
                 phase.PhaseNumber = count + 1;
                 break;
         }
+        
+        var defaultCount = await _phaseRepository.CountDefaultGrowthPhase();
+        if (defaultCount < 3)
+        {
+            phase.IsDefault = true;
+            var plants = await _plantRepositories.GetAllPlants();
+            List<PlantOfPhase> plantsOfPhase = new List<PlantOfPhase>();
+            if (plants.Count > 0)
+            {
+                foreach (var plant in plants)
+                {
+                    var plantOfPhase = new PlantOfPhase
+                    {
+                        Id = Guid.NewGuid(),
+                        PlantId = plant.Id,
+                        PhaseId = phase.Id
+                    };
+                    plantsOfPhase.Add(plantOfPhase);
+                }
+                if (plantsOfPhase.Count > 0)
+                {
+                    await _plantOfPhaseRepository.InsertRange(plantsOfPhase);
+                }
+            }
+        }
 
         await _phaseRepository.Insert(phase);
         var phaseDto = _mapper.Map<PhaseResModel>(phase);

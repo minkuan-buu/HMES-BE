@@ -16,5 +16,6 @@ public interface IPhaseRepositories : IGenericRepositories<GrowthPhase>
     Task<GrowthPhase?> GetGrowthPhaseByName(string name);
     Task<int> CountGrowthPhase();
 
-    
+
+    Task<int> CountDefaultGrowthPhase();
 }
