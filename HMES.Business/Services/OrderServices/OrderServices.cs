@@ -297,7 +297,7 @@ namespace HMES.Business.Services.OrderServices
                     await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
                     existingOrder.OrderDetails.Clear();
                 }
-                
+
 
                 // Kiểm tra tồn kho Product
                 foreach (var prodReq in orderRequest.Products)
@@ -1046,6 +1046,21 @@ namespace HMES.Business.Services.OrderServices
 
                 if (order.Status != OrderEnums.Pending.ToString())
                     throw new CustomException("Order is not in pending status");
+                
+                //kiểm tra số lượng trong kho
+                foreach (var orderDetail in order.OrderDetails)
+                {
+                    if (orderDetail.Product != null)
+                    {
+                        if (orderDetail.Product.Amount < orderDetail.Quantity)
+                            throw new CustomException($"Sản phẩm {TextConvert.ConvertFromUnicodeEscape(orderDetail.Product.Name)} không đủ số lượng trong kho.");
+                    }
+                    if (orderDetail.Device != null)
+                    {
+                        if (orderDetail.Device.Quantity < orderDetail.Quantity)
+                            throw new CustomException($"Thiết bị {TextConvert.ConvertFromUnicodeEscape(orderDetail.Device.Name)} không đủ số lượng trong kho.");
+                    }
+                }
 
                 // Cập nhật trạng thái đơn hàng thành "CashOnDelivery"
                 await CreateShippingGHN(order, "CashOnDelivery");
