@@ -297,6 +297,27 @@ namespace HMES.Business.Services.OrderServices
                     await _orderDetailRepositories.DeleteRange(existingOrder.OrderDetails.ToList());
                     existingOrder.OrderDetails.Clear();
                 }
+                
+
+                // Kiểm tra tồn kho Product
+                foreach (var prodReq in orderRequest.Products)
+                {
+                    var product = await _productRepositories.GetSingle(p => p.Id == prodReq.Id);
+                    if (product == null)
+                        throw new CustomException($"Không tìm thấy sản phẩm với Id: {prodReq.Id}");
+                    if (product.Amount < prodReq.Quantity)
+                        throw new CustomException($"Sản phẩm {TextConvert.ConvertFromUnicodeEscape(product.Name)} không đủ số lượng trong kho.");
+                }
+
+                // Kiểm tra tồn kho Device
+                foreach (var devReq in orderRequest.Devices)
+                {
+                    var device = await _deviceRepositories.GetSingle(d => d.Id == devReq.Id);
+                    if (device == null)
+                        throw new CustomException($"Không tìm thấy thiết bị với Id: {devReq.Id}");
+                    if (device.Quantity < devReq.Quantity)
+                        throw new CustomException($"Thiết bị {TextConvert.ConvertFromUnicodeEscape(device.Name)} không đủ số lượng trong kho.");
+                }
 
                 // Xác định orderId
                 Guid orderId = existingOrder != null ? existingOrder.Id : Guid.NewGuid();
@@ -1133,7 +1154,7 @@ namespace HMES.Business.Services.OrderServices
 
                 if (order.Status.Equals(OrderEnums.Delivering.ToString()))
                     throw new CustomException("Order is delivering, cannot cancel.");
-                    
+
                 var transaction = orderbytransactions.FirstOrDefault(x => x.PaymentMethod == PaymentMethodEnums.COD.ToString() && x.Status.Equals(TransactionEnums.PROCESSING.ToString()));
                 if (transaction == null)
                     throw new CustomException("Order is not Cash on Delivery.");
