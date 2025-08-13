@@ -11,8 +11,8 @@ namespace HMES.Business.Utilities.Authentication;
 
 public class Authentication
 {
-    private static string Key = "TestingIssuerSigningKeyPTEducationMS@123";
-    private static string Issuser = "TestingJWTIssuerSigningPTEducationMS@123";
+    private static string Key = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
+    private static string Issuser = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("JWT_ISSUER environment variable is not set.");
 
     public Authentication()
     {
